@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "Sistema de Subastas",
+    "slug": "sistema-de-subastas",
+    "scheme": "subastas",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#f6efe5"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Backoffice de Subastas</title>
+    <link rel="stylesheet" href="/static/admin.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Backoffice minimo</p>
+          <h1>Operaciones de subastas</h1>
+          <p class="lead">
+            Aprobacion de clientes, verificacion de medios de pago, revision de consignaciones y cierre de eventos.
+          </p>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <header class="card-header">
+            <h2>Usuarios pendientes</h2>
+            <span>{{ dashboard.pending_users|length }}</span>
+          </header>
+          {% for user in dashboard.pending_users %}
+          <form class="stack" method="post" action="/admin/users/{{ user.id }}/approve">
+            <div>
+              <strong>{{ user.full_name }}</strong>
+              <p>{{ user.email }} - DNI {{ user.document_number }}</p>
+            </div>
+            <div class="actions">
+              <p>La categoria se asigna automaticamente segun subastas participadas y medios de pago cargados.</p>
+              <button type="submit">Aprobar</button>
+            </div>
+          </form>
+          {% else %}
+          <p class="empty">No hay usuarios pendientes.</p>
+          {% endfor %}
+        </article>
+
+        <article class="card">
+          <header class="card-header">
+            <h2>Medios de pago pendientes</h2>
+            <span>{{ dashboard.pending_payments|length }}</span>
+          </header>
+          {% for payment in dashboard.pending_payments %}
+          <form class="stack" method="post" action="/admin/payments/{{ payment.id }}/verify">
+            <div>
+              <strong>{{ payment.display_name }}</strong>
+              <p>{{ payment.type.value }} - {{ payment.currency.value }} - {{ payment.available_amount }}</p>
+            </div>
+            <button type="submit">Verificar</button>
+          </form>
+          {% else %}
+          <p class="empty">No hay medios de pago pendientes.</p>
+          {% endfor %}
+        </article>
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <h2>Consignaciones</h2>
+          <span>{{ dashboard.pending_consignments|length }}</span>
+        </header>
+        {% for item in dashboard.pending_consignments %}
+        <form class="consignment" method="post" action="/admin/consignments/{{ item.id }}/review">
+          <div class="stack">
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.description }}</p>
+          </div>
+          <div class="consignment-grid">
+            <input name="proposed_base_price" type="number" step="0.01" placeholder="Precio base" />
+            <input name="commission_rate" type="number" step="0.01" placeholder="Comision" />
+            <input name="assigned_auction_id" type="number" placeholder="ID subasta" />
+            <input name="storage_location" type="text" placeholder="Deposito / ubicacion" />
+            <input name="insurance_policy" type="text" placeholder="Poliza de seguro" />
+            <input name="rejection_reason" type="text" placeholder="Motivo de rechazo" />
+          </div>
+          <div class="actions">
+            <button type="submit" name="approve" value="true">Aceptar</button>
+            <button type="submit" name="approve" value="">Rechazar</button>
+          </div>
+        </form>
+        {% else %}
+        <p class="empty">No hay consignaciones pendientes.</p>
+        {% endfor %}
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <h2>Subastas</h2>
+          <span>{{ dashboard.auctions|length }}</span>
+        </header>
+        <div class="auction-list">
+          {% for auction in dashboard.auctions %}
+          <form class="auction-row" method="post" action="/admin/subastas/{{ auction.id }}/close">
+            <div>
+              <strong>{{ auction.title }}</strong>
+              <p>{{ auction.category.value }} - {{ auction.currency.value }} - {{ auction.location }}</p>
+            </div>
+            <button type="submit">Cerrar subasta</button>
+          </form>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
