@@ -1,0 +1,167 @@
+:root {
+  --bg: #f5efe6;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-strong: #fffdf8;
+  --text: #1b1a17;
+  --muted: #655f57;
+  --accent: #8b3d14;
+  --accent-soft: #d59d62;
+  --border: rgba(27, 26, 23, 0.1);
+  --shadow: 0 24px 60px rgba(73, 41, 17, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(213, 157, 98, 0.35), transparent 32%),
+    linear-gradient(180deg, #f8f1e9 0%, #efe3d3 100%);
+  color: var(--text);
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+  display: grid;
+  gap: 24px;
+}
+
+.hero,
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.hero {
+  padding: 32px;
+}
+
+.hero h1,
+.card h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+  font-size: 12px;
+  margin: 0 0 12px;
+}
+
+.lead {
+  max-width: 720px;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.card {
+  padding: 24px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.card-header span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.stack {
+  display: grid;
+  gap: 10px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+.actions,
+.auction-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.consignment {
+  display: grid;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+
+.consignment-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+input,
+select,
+button {
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  font: inherit;
+}
+
+button {
+  background: linear-gradient(135deg, #8b3d14 0%, #b85f2d 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.92;
+}
+
+.empty,
+.stack p,
+.auction-row p,
+.consignment p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.auction-list {
+  display: grid;
+  gap: 12px;
+}
+
+.auction-row {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 720px) {
+  .actions,
+  .auction-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
