@@ -44,6 +44,14 @@ export const countryOptions = [
   { label: "Francia", code: 250 }
 ];
 
+export const categoryOrder: Record<UserCategory, number> = {
+  comun: 0,
+  especial: 1,
+  plata: 2,
+  oro: 3,
+  platino: 4
+};
+
 export function avatarFromSeed(seed: string): string {
   return `https://i.pravatar.cc/300?u=${encodeURIComponent(seed)}`;
 }
@@ -67,6 +75,25 @@ export function memberLabel(category: UserCategory | string | undefined): string
       return "Especial";
     default:
       return "Comun";
+  }
+}
+
+export function categoryEyebrow(category: UserCategory | string | undefined): string {
+  return memberLabel(category).toUpperCase();
+}
+
+export function catalogDescription(category: UserCategory | string | undefined): string {
+  switch (category) {
+    case "platino":
+      return "Grandes iconos de coleccion con demanda global, ticket patrimonial y acceso reservado.";
+    case "oro":
+      return "Alta joyeria y relojeria de firma para compradores con perfil consolidado.";
+    case "plata":
+      return "Arte moderno y piezas de autor con mas profundidad curatorial y procedencia documentada.";
+    case "especial":
+      return "Relojes firmados y obra autentica para usuarios que ya superaron el nivel inicial.";
+    default:
+      return "Diseno, fotografia y objetos coleccionables para comenzar a construir una buena sala.";
   }
 }
 
@@ -104,7 +131,7 @@ export function categoryProgress(
     return {
       currentLabel,
       nextLabel: "Platino",
-      summary: "Siguiente categoría: Platino.",
+      summary: "Siguiente categoria: Platino.",
       detail: detailParts.length
         ? `Para subir te faltan ${detailParts.join(" y ")}.`
         : "Ya cumples los requisitos y tu categoria se actualizara al refrescar tu perfil.",
@@ -119,7 +146,7 @@ export function categoryProgress(
     return {
       currentLabel,
       nextLabel: "Oro",
-      summary: "Siguiente categoría: Oro.",
+      summary: "Siguiente categoria: Oro.",
       detail:
         missingAuctions > 0
           ? `Te faltan ${missingAuctions} subasta${missingAuctions === 1 ? "" : "s"} participada${missingAuctions === 1 ? "" : "s"}.`
@@ -136,7 +163,7 @@ export function categoryProgress(
     return {
       currentLabel,
       nextLabel: "Plata",
-      summary: "Siguiente categoría: Plata.",
+      summary: "Siguiente categoria: Plata.",
       detail:
         missingPayments === 0 || missingAuctions === 0
           ? "Ya cumples una de las condiciones y tu categoria se actualizara al refrescar tu perfil."
@@ -152,7 +179,7 @@ export function categoryProgress(
   return {
     currentLabel,
     nextLabel: "Especial",
-    summary: "Siguiente categoría: Especial.",
+    summary: "Siguiente categoria: Especial.",
     detail:
       missingPayments === 0 || missingAuctions === 0
         ? "Ya cumples una de las condiciones y tu categoria se actualizara al refrescar tu perfil."
@@ -199,7 +226,7 @@ export function paymentSubtitle(payment: PaymentMethod): string {
   }
   if (payment.type === "cuenta_bancaria") {
     const bankLabel = payment.issuing_bank ?? payment.display_name;
-    return `${bankLabel} · ${payment.currency}`;
+    return `${bankLabel} - ${payment.currency}`;
   }
   if (holderName) {
     return `Titular: ${holderName}`;

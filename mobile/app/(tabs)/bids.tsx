@@ -1,29 +1,86 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import * as api from "@/src/lib/api";
-import { formatMoney } from "@/src/lib/luxury";
+import { ActiveAuction, Metrics, NotificationItem } from "@/src/lib/types";
+import { browseArtwork, formatEventDate, formatMoney, memberLabel } from "@/src/lib/luxury";
 import { useSession } from "@/src/lib/session";
 import { palette } from "@/src/lib/theme";
-import { Metrics, NotificationItem } from "@/src/lib/types";
+
+function resolveActiveAuctionImage(source: string | null | undefined) {
+  if (!source || source.includes("images.example.com")) {
+    return browseArtwork[0];
+  }
+  return source;
+}
 
 export default function BidsScreen() {
   const router = useRouter();
   const { token, user } = useSession();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [activeAuction, setActiveAuction] = useState<ActiveAuction | null>(null);
 
-  useEffect(() => {
+  async function loadData() {
     if (!token) {
       return;
     }
 
-    api.getMetrics(token).then(setMetrics);
-    api.listNotifications(token).then(setNotifications);
+    const [metricsResponse, notificationsResponse, activeAuctionResponse] = await Promise.all([
+      api.getMetrics(token),
+      api.listNotifications(token),
+      api.getActiveAuction(token)
+    ]);
+
+    setMetrics(metricsResponse);
+    setNotifications(notificationsResponse);
+    setActiveAuction(activeAuctionResponse);
+  }
+
+  useEffect(() => {
+    loadData().catch(() => undefined);
   }, [token]);
+
+  function handleEnterActiveAuction() {
+    if (!activeAuction) {
+      return;
+    }
+
+    router.push({
+      pathname: "/auction/[id]",
+      params: { id: String(activeAuction.auction_id) }
+    });
+  }
+
+  function confirmLeaveAuction() {
+    if (!activeAuction || !token) {
+      return;
+    }
+
+    Alert.alert(
+      "Abandonar subasta",
+      "Se eliminara tu ultima puja activa de esta sala y podras participar en otra subasta. Si ibas ganando, la mejor oferta volvera al siguiente postor.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Abandonar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await api.leaveAuction(token, activeAuction.auction_id);
+              await loadData();
+              Alert.alert("Subasta abandonada", response.message);
+            } catch (error) {
+              Alert.alert("No se pudo abandonar la subasta", error instanceof Error ? error.message : "Error inesperado");
+            }
+          }
+        }
+      ]
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -32,8 +89,63 @@ export default function BidsScreen() {
           <Text style={styles.heroEyebrow}>Centro de pujas</Text>
           <Text style={styles.heroTitle}>Pulso de subastas</Text>
           <Text style={styles.heroCopy}>
-            Sigue tu actividad en vivo, los compromisos de pago y las salas en las que {user?.full_name.split(" ")[0] ?? "vos"} estas participando ahora.
+            Sigue tu actividad en vivo, los compromisos de pago y la sala en la que {user?.full_name.split(" ")[0] ?? "vos"} estas participando ahora.
           </Text>
+        </View>
+
+        <View style={styles.section}>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Subasta en curso</Text>
+            <Text style={styles.sectionLink}>{activeAuction ? "Activa" : "Sin participacion"}</Text>
+          </View>
+
+          {activeAuction ? (
+            <View style={styles.activeAuctionCard}>
+              <Image source={{ uri: resolveActiveAuctionImage(activeAuction.current_lot_image_url) }} style={styles.activeAuctionImage} />
+              <View style={styles.activeAuctionBody}>
+                <Text style={styles.activeAuctionCategory}>{memberLabel(activeAuction.category).toUpperCase()}</Text>
+                <Text style={styles.activeAuctionTitle}>{activeAuction.title}</Text>
+                <Text style={styles.activeAuctionLot}>{activeAuction.current_lot_title ?? "Lote en espera"}</Text>
+                <Text style={styles.activeAuctionMeta}>
+                  {activeAuction.location} - {formatEventDate(activeAuction.scheduled_at)}
+                </Text>
+                <View style={styles.activeAuctionStats}>
+                  <View style={styles.activeAuctionStatCard}>
+                    <Text style={styles.activeAuctionStatLabel}>Precio actual</Text>
+                    <Text style={styles.activeAuctionStatValue}>
+                      {activeAuction.current_price != null ? formatMoney(activeAuction.currency, activeAuction.current_price) : "Sin ofertas"}
+                    </Text>
+                  </View>
+                  <View style={styles.activeAuctionStatCard}>
+                    <Text style={styles.activeAuctionStatLabel}>Tu ultima puja</Text>
+                    <Text style={styles.activeAuctionStatValue}>
+                      {activeAuction.my_latest_bid != null ? formatMoney(activeAuction.currency, activeAuction.my_latest_bid) : "Aun no pujaste"}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.activeAuctionStatus}>
+                  {activeAuction.my_is_leading ? "Actualmente vas ganando este lote." : "Tu oferta ya no es la lider."}
+                </Text>
+
+                <View style={styles.activeAuctionActions}>
+                  <Pressable style={styles.enterButton} onPress={handleEnterActiveAuction}>
+                    <Text style={styles.enterButtonText}>Volver a la sala</Text>
+                  </Pressable>
+                  <Pressable style={styles.leaveButton} onPress={confirmLeaveAuction}>
+                    <Text style={styles.leaveButtonText}>Abandonar</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No estas participando en ninguna subasta</Text>
+              <Text style={styles.emptyCopy}>Cuando ingreses a una sala, aqui vas a poder seguirla y abandonarla si decides salir.</Text>
+              <Pressable style={styles.emptyAction} onPress={() => router.push("/(tabs)/auctions")}>
+                <Text style={styles.emptyActionText}>Explorar subastas</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
 
         <View style={styles.grid}>
@@ -77,14 +189,6 @@ export default function BidsScreen() {
             ) : null}
           </View>
         </View>
-
-        <Pressable style={styles.focusCard} onPress={() => router.push("/(tabs)/auctions")}>
-          <View>
-            <Text style={styles.focusEyebrow}>Listo para competir</Text>
-            <Text style={styles.focusTitle}>Entrar a la siguiente sala</Text>
-          </View>
-          <Feather name="arrow-right" color={palette.gold} size={28} />
-        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -113,10 +217,10 @@ const styles = StyleSheet.create({
   heroCard: {
     borderRadius: 28,
     padding: 24,
-    backgroundColor: "#171717"
+    backgroundColor: palette.surfaceMuted
   },
   heroEyebrow: {
-    color: "rgba(255,255,255,0.56)",
+    color: palette.textMuted,
     fontSize: 12,
     fontWeight: "800",
     letterSpacing: 2.6,
@@ -131,9 +235,123 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   heroCopy: {
-    color: "rgba(255,255,255,0.75)",
+    color: palette.text,
     lineHeight: 22,
     fontSize: 15
+  },
+  section: {
+    gap: 14
+  },
+  sectionHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
+  sectionTitle: {
+    color: palette.ink,
+    fontSize: 20,
+    fontWeight: "800"
+  },
+  sectionLink: {
+    color: palette.accent,
+    fontWeight: "700"
+  },
+  activeAuctionCard: {
+    borderRadius: 24,
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.border,
+    overflow: "hidden"
+  },
+  activeAuctionImage: {
+    width: "100%",
+    height: 220,
+    backgroundColor: palette.surfaceMuted
+  },
+  activeAuctionBody: {
+    padding: 18,
+    gap: 12
+  },
+  activeAuctionCategory: {
+    color: palette.textMuted,
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    fontWeight: "800"
+  },
+  activeAuctionTitle: {
+    color: palette.ink,
+    fontSize: 24,
+    fontFamily: "Georgia",
+    fontWeight: "700"
+  },
+  activeAuctionLot: {
+    color: palette.text,
+    fontSize: 18,
+    fontWeight: "700"
+  },
+  activeAuctionMeta: {
+    color: palette.textMuted,
+    lineHeight: 22
+  },
+  activeAuctionStats: {
+    flexDirection: "row",
+    gap: 12
+  },
+  activeAuctionStatCard: {
+    flex: 1,
+    borderRadius: 16,
+    backgroundColor: palette.backgroundSoft,
+    padding: 14
+  },
+  activeAuctionStatLabel: {
+    color: palette.textMuted,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    fontWeight: "800",
+    marginBottom: 8
+  },
+  activeAuctionStatValue: {
+    color: palette.ink,
+    fontSize: 16,
+    fontWeight: "800"
+  },
+  activeAuctionStatus: {
+    color: palette.accent,
+    lineHeight: 22
+  },
+  activeAuctionActions: {
+    flexDirection: "row",
+    gap: 12
+  },
+  enterButton: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: palette.accent,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  enterButtonText: {
+    color: palette.onAccent,
+    fontSize: 16,
+    fontWeight: "800"
+  },
+  leaveButton: {
+    flex: 1,
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: palette.surfaceWarm,
+    borderWidth: 1,
+    borderColor: palette.border,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  leaveButtonText: {
+    color: palette.ink,
+    fontSize: 16,
+    fontWeight: "800"
   },
   grid: {
     flexDirection: "row",
@@ -163,23 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 1.6
-  },
-  section: {
-    gap: 14
-  },
-  sectionHead: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
-  },
-  sectionTitle: {
-    color: palette.ink,
-    fontSize: 20,
-    fontWeight: "800"
-  },
-  sectionLink: {
-    color: palette.accent,
-    fontWeight: "700"
   },
   alertList: {
     gap: 12
@@ -236,27 +437,17 @@ const styles = StyleSheet.create({
     color: palette.text,
     lineHeight: 22
   },
-  focusCard: {
-    borderRadius: 24,
-    backgroundColor: palette.goldSoft,
-    paddingHorizontal: 22,
-    paddingVertical: 18,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center"
+  emptyAction: {
+    marginTop: 16,
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: palette.accent,
+    alignItems: "center",
+    justifyContent: "center"
   },
-  focusEyebrow: {
-    color: palette.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 2,
-    fontSize: 12,
+  emptyActionText: {
+    color: palette.onAccent,
     fontWeight: "800",
-    marginBottom: 8
-  },
-  focusTitle: {
-    color: palette.ink,
-    fontSize: 22,
-    fontFamily: "Georgia",
-    fontWeight: "700"
+    fontSize: 16
   }
 });

@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   label: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 16,
     fontWeight: "700"
   }

@@ -65,6 +65,29 @@ export interface JoinAuctionResult {
   user_category: UserCategory;
 }
 
+export interface ActiveAuction {
+  auction_id: number;
+  title: string;
+  category: UserCategory;
+  currency: Currency;
+  scheduled_at: string;
+  location: string;
+  current_lot_id?: number | null;
+  current_lot_title?: string | null;
+  current_lot_image_url?: string | null;
+  current_price?: number | null;
+  my_latest_bid?: number | null;
+  my_is_leading: boolean;
+}
+
+export interface LeaveAuctionResult {
+  message: string;
+  auction_id: number;
+  removed_bid_amount?: number | null;
+  new_current_bid?: number | null;
+  new_current_bidder_id?: number | null;
+}
+
 export interface CompleteRegistrationPayload {
   user_id: number;
   password: string;
@@ -77,6 +100,7 @@ export interface AuctionSummary {
   category: UserCategory;
   currency: Currency;
   state: string;
+  auctioneer_name: string;
   location: string;
   can_view_catalog: boolean;
   view_block_reason?: string | null;
@@ -84,6 +108,11 @@ export interface AuctionSummary {
   block_reason?: string | null;
   current_lot_title?: string | null;
   best_offer?: number | null;
+  preview_lot_title?: string | null;
+  preview_image_url?: string | null;
+  preview_base_price?: number | null;
+  total_lots: number;
+  remaining_lots: number;
 }
 
 export interface AuctionLot {
@@ -108,6 +137,9 @@ export interface AuctionLot {
 
 export interface AuctionDetail extends AuctionSummary {
   auctioneer_name: string;
+  current_lot?: AuctionLot | null;
+  upcoming_lots: AuctionLot[];
+  completed_lots: AuctionLot[];
   lots: AuctionLot[];
 }
 

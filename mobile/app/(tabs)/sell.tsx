@@ -71,7 +71,7 @@ export default function SellScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>Consigna con ELITE</Text>
+          <Text style={styles.heroEyebrow}>Consigna con ATELIER</Text>
           <Text style={styles.heroTitle}>Ofrece piezas unicas a nuestros especialistas</Text>
           <Text style={styles.heroCopy}>
             Envia procedencia, fotografias y notas de estado para ubicar tu pieza en una futura sala en vivo o venta privada curada.
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     borderRadius: 28,
-    backgroundColor: "#111111",
+    backgroundColor: palette.surfaceMuted,
     padding: 24
   },
   heroEyebrow: {
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   heroCopy: {
-    color: "rgba(255,255,255,0.72)",
+    color: palette.text,
     lineHeight: 22
   },
   formCard: {
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     opacity: 0.72
   },
   submitButtonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 17,
     fontWeight: "800"
   },

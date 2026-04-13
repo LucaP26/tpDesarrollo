@@ -90,7 +90,7 @@ export default function ForgotPasswordScreen() {
           const shouldContinue = feedbackTitle === "Correo enviado";
           setFeedbackVisible(false);
           if (shouldContinue) {
-            router.replace({ pathname: "/reset-password", params: { email: email.trim().toLowerCase() } });
+            router.push({ pathname: "/reset-password", params: { email: email.trim().toLowerCase() } });
           }
         }}
       />
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     opacity: 0.7
   },
   primaryButtonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 17,
     fontWeight: "800"
   }

@@ -10,6 +10,11 @@ from app.core.config import Settings
 
 
 def _build_sqlalchemy_url(settings: Settings, database_name: str) -> str:
+    if settings.sqlserver_driver.lower() == "pymssql":
+        user = quote_plus(settings.sqlserver_user)
+        password = quote_plus(settings.sqlserver_password)
+        return f"mssql+pymssql://{user}:{password}@{settings.sqlserver_host}:{settings.sqlserver_port}/{database_name}"
+
     driver = quote_plus(settings.sqlserver_driver)
     if settings.sqlserver_trusted_connection:
         return (

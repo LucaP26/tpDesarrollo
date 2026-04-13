@@ -32,7 +32,7 @@ export function FeedbackModal({ visible, title, message, onClose }: FeedbackModa
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(18, 24, 38, 0.35)",
+    backgroundColor: palette.overlay,
     alignItems: "center",
     justifyContent: "center",
     padding: 24
@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: palette.surfaceWarm,
+    backgroundColor: palette.accentSoft,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 16
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     marginTop: 20
   },
   buttonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 16,
     fontWeight: "800"
   }

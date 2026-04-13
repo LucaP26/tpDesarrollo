@@ -16,3 +16,11 @@ Thumbs.db
 .idea/
 .vscode/
 coverage/
+.python312/
+.venv_runtime/
+.repo-sync/
+tmp/
+mobile/.design_refs/
+android-current.png
+android-emulator-screen.png
+mobile/android/app/debug.keystore

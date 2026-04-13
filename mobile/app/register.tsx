@@ -357,7 +357,7 @@ export default function RegisterScreen() {
           ) : null}
           <Pressable style={[styles.primaryButton, submitting && styles.buttonDisabled]} onPress={handleSubmit} disabled={submitting}>
             <Text style={styles.primaryButtonText}>{submitting ? "Enviando..." : "Continuar al siguiente paso"}</Text>
-            <Feather name="arrow-right" color={palette.white} size={18} />
+            <Feather name="arrow-right" color={palette.onAccent} size={18} />
           </Pressable>
           <Text style={styles.legal}>
             Al hacer clic en "Continuar", aceptas nuestros Terminos de Servicio y la Politica de Privacidad para el manejo de bienes de lujo.
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#C8D4E3",
+    borderColor: palette.ghost,
     borderRadius: 18,
     paddingVertical: 28,
     alignItems: "center",
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     opacity: 0.7
   },
   primaryButtonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 18,
     fontWeight: "800"
   },
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(18, 24, 38, 0.25)",
+    backgroundColor: palette.overlaySoft,
     justifyContent: "flex-end",
     padding: 18
   },

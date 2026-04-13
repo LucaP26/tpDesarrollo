@@ -15,6 +15,7 @@ from app.domain.enums import (
     UserCategory,
 )
 from app.domain.schemas import (
+    ActiveAuctionResponse,
     AppUser,
     AuctionDetailResponse,
     AuctionLotRecord,
@@ -25,6 +26,7 @@ from app.domain.schemas import (
     BidRecord,
     BidResponse,
     JoinAuctionResponse,
+    LeaveAuctionResponse,
     PurchaseRecord,
 )
 from app.services.notifications import NotificationService
@@ -74,6 +76,22 @@ class AuctionService:
             return "No podes estar conectado a mas de una subasta al mismo tiempo."
         return None
 
+    def _ordered_lots(self, auction: AuctionRecord) -> list[AuctionLotRecord]:
+        return [self.store.lots[lot_id] for lot_id in auction.lot_ids if lot_id in self.store.lots]
+
+    def _current_lot_record(self, auction: AuctionRecord) -> AuctionLotRecord | None:
+        for lot in self._ordered_lots(auction):
+            if not lot.sold:
+                return lot
+        return None
+
+    def _preview_lot_record(self, auction: AuctionRecord) -> AuctionLotRecord | None:
+        lots = self._ordered_lots(auction)
+        if not lots:
+            return None
+        remaining = [lot for lot in lots if not lot.sold]
+        return remaining[-1] if remaining else lots[-1]
+
     def _matching_verified_payments(self, user: AppUser, currency: Currency) -> list:
         return [
             payment
@@ -104,6 +122,19 @@ class AuctionService:
             return min_bid, None
         max_bid = round(anchor + (lot.base_price * 0.20), 2)
         return min_bid, max_bid
+
+    def _recalculate_lot_bids(self, lot: AuctionLotRecord) -> None:
+        remaining_bids = [self.store.bids[bid_id] for bid_id in lot.bid_ids if bid_id in self.store.bids]
+        if not remaining_bids:
+            lot.current_bid = None
+            lot.current_bidder_id = None
+            return
+
+        best_bid = max(remaining_bids, key=lambda bid: (bid.amount, bid.created_at))
+        lot.current_bid = best_bid.amount
+        lot.current_bidder_id = best_bid.user_id
+        for bid in remaining_bids:
+            bid.status = BidStatus.CONFIRMADA if bid.id == best_bid.id else BidStatus.SUPERADA
 
     def _current_commitment(self, user_id: int, currency: Currency) -> float:
         commitment = 0.0
@@ -136,6 +167,9 @@ class AuctionService:
 
     def _lot_view(self, user: AppUser, auction: AuctionRecord, lot: AuctionLotRecord) -> AuctionLotView:
         block_reason = self._bid_block_reason(user, auction)
+        current_lot = self._current_lot_record(auction)
+        if current_lot and current_lot.id != lot.id and not lot.sold:
+            block_reason = "Solo podes pujar por el lote que esta actualmente en exhibicion."
         min_bid, max_bid = self._compute_bid_range(auction, lot)
         return AuctionLotView(
             id=lot.id,
@@ -161,7 +195,10 @@ class AuctionService:
         self._sync_category(user)
         summaries: list[AuctionSummaryResponse] = []
         for auction in sorted(self.store.auctions.values(), key=self._scheduled_at):
-            current_lot = self.store.lots[auction.lot_ids[0]] if auction.lot_ids else None
+            lots = self._ordered_lots(auction)
+            current_lot = self._current_lot_record(auction)
+            preview_lot = self._preview_lot_record(auction)
+            remaining_lots = len([lot for lot in lots if not lot.sold])
             view_block_reason = self._can_view(user, auction)
             block_reason = self._bid_block_reason(user, auction)
             summaries.append(
@@ -172,6 +209,7 @@ class AuctionService:
                     category=auction.category,
                     currency=auction.currency,
                     state=auction.state,
+                    auctioneer_name=auction.auctioneer_name,
                     location=auction.location,
                     can_view_catalog=view_block_reason is None,
                     view_block_reason=view_block_reason,
@@ -179,6 +217,11 @@ class AuctionService:
                     block_reason=block_reason,
                     current_lot_title=current_lot.title if current_lot else None,
                     best_offer=current_lot.current_bid if current_lot else None,
+                    preview_lot_title=preview_lot.title if preview_lot else None,
+                    preview_image_url=preview_lot.image_urls[0] if preview_lot and preview_lot.image_urls else None,
+                    preview_base_price=preview_lot.base_price if preview_lot else None,
+                    total_lots=len(lots),
+                    remaining_lots=remaining_lots,
                 )
             )
         return summaries
@@ -192,7 +235,11 @@ class AuctionService:
         if view_block_reason:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=view_block_reason)
         block_reason = self._bid_block_reason(user, auction)
-        lots = [self._lot_view(user, auction, self.store.lots[lot_id]) for lot_id in auction.lot_ids]
+        lots = [self._lot_view(user, auction, lot) for lot in self._ordered_lots(auction)]
+        current_lot = next((lot for lot in lots if not lot.sold), None)
+        upcoming_lots = [lot for lot in lots if current_lot and lot.id != current_lot.id and not lot.sold]
+        completed_lots = [lot for lot in lots if lot.sold]
+        preview_lot = self._preview_lot_record(auction)
         return AuctionDetailResponse(
             id=auction.id,
             title=auction.title,
@@ -206,7 +253,17 @@ class AuctionService:
             view_block_reason=None,
             can_bid=block_reason is None,
             block_reason=block_reason,
+            current_lot=current_lot,
+            upcoming_lots=upcoming_lots,
+            completed_lots=completed_lots,
             lots=lots,
+            current_lot_title=current_lot.title if current_lot else None,
+            best_offer=current_lot.current_bid if current_lot else None,
+            preview_lot_title=preview_lot.title if preview_lot else None,
+            preview_image_url=preview_lot.image_urls[0] if preview_lot and preview_lot.image_urls else None,
+            preview_base_price=preview_lot.base_price if preview_lot else None,
+            total_lots=len(lots),
+            remaining_lots=len(upcoming_lots) + (1 if current_lot else 0),
         )
 
     def join_auction(self, user: AppUser, auction_id: int) -> JoinAuctionResponse:
@@ -231,6 +288,109 @@ class AuctionService:
             user_category=user.category,
         )
 
+    def get_active_auction(self, user: AppUser) -> ActiveAuctionResponse | None:
+        self._sync_category(user)
+        auction_id = self.store.active_connections_by_user.get(user.id)
+        if not auction_id:
+            return None
+
+        auction = self.store.auctions.get(auction_id)
+        if not auction or auction.state != AuctionState.ABIERTA:
+            self.store.active_connections_by_user.pop(user.id, None)
+            return None
+
+        current_lot = self._current_lot_record(auction)
+        my_latest_bid = None
+        if current_lot:
+            my_bids = [
+                self.store.bids[bid_id]
+                for bid_id in current_lot.bid_ids
+                if bid_id in self.store.bids and self.store.bids[bid_id].user_id == user.id
+            ]
+            if my_bids:
+                my_latest_bid = max(my_bids, key=lambda bid: bid.created_at).amount
+
+        return ActiveAuctionResponse(
+            auction_id=auction.id,
+            title=auction.title,
+            category=auction.category,
+            currency=auction.currency,
+            scheduled_at=self._scheduled_at(auction),
+            location=auction.location,
+            current_lot_id=current_lot.id if current_lot else None,
+            current_lot_title=current_lot.title if current_lot else None,
+            current_lot_image_url=current_lot.image_urls[0] if current_lot and current_lot.image_urls else None,
+            current_price=current_lot.current_bid if current_lot and current_lot.current_bid is not None else (current_lot.base_price if current_lot else None),
+            my_latest_bid=my_latest_bid,
+            my_is_leading=current_lot.current_bidder_id == user.id if current_lot else False,
+        )
+
+    async def leave_auction(self, user: AppUser, auction_id: int) -> LeaveAuctionResponse:
+        auction = self.store.auctions.get(auction_id)
+        if not auction:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subasta no encontrada.")
+        if self.store.active_connections_by_user.get(user.id) != auction_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No estas participando activamente en esa subasta.")
+
+        removed_bid_amount = None
+        new_current_bid = None
+        new_current_bidder_id = None
+        current_lot = self._current_lot_record(auction)
+
+        async with self.store.lock_for_auction(auction_id):
+            pending_lots = [lot for lot in self._ordered_lots(auction) if not lot.sold]
+            for lot in pending_lots:
+                user_bid_ids = [bid_id for bid_id in lot.bid_ids if bid_id in self.store.bids and self.store.bids[bid_id].user_id == user.id]
+                if not user_bid_ids:
+                    continue
+
+                removed_bids = [self.store.bids[bid_id] for bid_id in user_bid_ids]
+                latest_removed_bid = max(removed_bids, key=lambda bid: bid.created_at)
+                removed_bid_amount = latest_removed_bid.amount
+
+                lot.bid_ids = [bid_id for bid_id in lot.bid_ids if bid_id not in user_bid_ids]
+                for bid_id in user_bid_ids:
+                    self.store.bids.pop(bid_id, None)
+
+                self._recalculate_lot_bids(lot)
+                if current_lot and lot.id == current_lot.id:
+                    new_current_bid = lot.current_bid
+                    new_current_bidder_id = lot.current_bidder_id
+
+            self.store.active_connections_by_user.pop(user.id, None)
+            self.notifications.create(
+                user.id,
+                "Abandonaste la subasta",
+                "Ya puedes ingresar a otra sala. Tus pujas activas en la sala actual fueron retiradas.",
+                NotificationKind.INFO,
+            )
+
+            if current_lot:
+                min_bid, max_bid = self._compute_bid_range(auction, current_lot)
+                await self.realtime.broadcast(
+                    auction.id,
+                    {
+                        "type": "bid.updated",
+                        "auction_id": auction.id,
+                        "lot_id": current_lot.id,
+                        "amount": current_lot.current_bid,
+                        "user_id": current_lot.current_bidder_id,
+                        "min_bid": min_bid,
+                        "max_bid": max_bid,
+                        "timestamp": utc_now().isoformat(),
+                    },
+                )
+
+            self.store.persist_all()
+
+        return LeaveAuctionResponse(
+            message="Abandonaste la subasta actual y ya puedes participar en otra.",
+            auction_id=auction.id,
+            removed_bid_amount=removed_bid_amount,
+            new_current_bid=new_current_bid,
+            new_current_bidder_id=new_current_bidder_id,
+        )
+
     async def place_bid(self, user: AppUser, auction_id: int, lot_id: int, payload: BidCreate) -> BidResponse:
         auction = self.store.auctions.get(auction_id)
         lot = self.store.lots.get(lot_id)
@@ -238,6 +398,12 @@ class AuctionService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lote no encontrado.")
         if auction.state != AuctionState.ABIERTA or lot.sold:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La subasta ya no recibe pujas.")
+        current_lot = self._current_lot_record(auction)
+        if not current_lot or current_lot.id != lot.id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Solo podes pujar por el lote que esta actualmente en exhibicion.",
+            )
         if self.store.active_connections_by_user.get(user.id) != auction_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Primero debes conectarte a la subasta.")
 
@@ -326,6 +492,73 @@ class AuctionService:
                 max_bid=next_max_bid,
             )
 
+    def _close_single_lot(self, auction: AuctionRecord, lot: AuctionLotRecord) -> dict:
+        if lot.current_bidder_id is not None and lot.current_bid is not None:
+            winning_bid = self.store.bids[lot.bid_ids[-1]] if lot.bid_ids else None
+            purchase = PurchaseRecord(
+                id=self.store.next_id("purchases"),
+                auction_id=auction.id,
+                lot_id=lot.id,
+                buyer_user_id=lot.current_bidder_id,
+                owner_user_id=lot.owner_user_id,
+                hammer_price=lot.current_bid,
+                commission_amount=round(lot.current_bid * lot.commission_rate, 2),
+                shipping_amount=round(lot.base_price * 0.05, 2),
+                total_amount=round(lot.current_bid + (lot.current_bid * lot.commission_rate) + (lot.base_price * 0.05), 2),
+                currency=auction.currency,
+                payment_method_id=winning_bid.payment_method_id if winning_bid else None,
+                created_at=utc_now(),
+            )
+            self.store.purchases[purchase.id] = purchase
+            lot.sold = True
+            winner = self.store.users[lot.current_bidder_id]
+            winner.won_purchase_ids.append(purchase.id)
+            if winning_bid:
+                winning_bid.status = BidStatus.GANADORA
+            self.notifications.create(
+                winner.id,
+                "Ganaste la subasta",
+                f"El lote {lot.piece_number} es tuyo. Total a pagar: {purchase.total_amount} {auction.currency.value}.",
+                NotificationKind.OPERACION,
+            )
+            self.notifications.create(
+                lot.owner_user_id,
+                "Lote vendido",
+                f"Tu lote {lot.piece_number} fue vendido por {lot.current_bid} {auction.currency.value}.",
+                NotificationKind.INFO,
+            )
+            return {"sold_to_company": False, "purchase_id": purchase.id}
+
+        lot.sold = True
+        lot.sold_to_company = True
+        return {"sold_to_company": True, "purchase_id": None}
+
+    def close_current_lot(self, auction_id: int) -> dict:
+        auction = self.store.auctions.get(auction_id)
+        if not auction:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subasta no encontrada.")
+
+        current_lot = self._current_lot_record(auction)
+        if not current_lot:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No hay lotes pendientes en esta subasta.")
+
+        result = self._close_single_lot(auction, current_lot)
+        next_lot = self._current_lot_record(auction)
+        if next_lot is None:
+            auction.state = AuctionState.CERRADA
+
+        self.store.persist_all()
+        return {
+            "auction_id": auction.id,
+            "closed_lot_id": current_lot.id,
+            "closed_lot_title": current_lot.title,
+            "winner_user_id": current_lot.current_bidder_id,
+            "sold_to_company": result["sold_to_company"],
+            "next_lot_id": next_lot.id if next_lot else None,
+            "next_lot_title": next_lot.title if next_lot else None,
+            "state": auction.state,
+        }
+
     def close_auction(self, auction_id: int) -> dict:
         auction = self.store.auctions.get(auction_id)
         if not auction:
@@ -334,47 +567,12 @@ class AuctionService:
 
         closed_lots = 0
         company_purchases = 0
-        for lot_id in auction.lot_ids:
-            lot = self.store.lots[lot_id]
+        for lot in self._ordered_lots(auction):
             if lot.sold:
                 continue
             closed_lots += 1
-            if lot.current_bidder_id is not None and lot.current_bid is not None:
-                purchase = PurchaseRecord(
-                    id=self.store.next_id("purchases"),
-                    auction_id=auction.id,
-                    lot_id=lot.id,
-                    buyer_user_id=lot.current_bidder_id,
-                    owner_user_id=lot.owner_user_id,
-                    hammer_price=lot.current_bid,
-                    commission_amount=round(lot.current_bid * lot.commission_rate, 2),
-                    shipping_amount=round(lot.base_price * 0.05, 2),
-                    total_amount=round(lot.current_bid + (lot.current_bid * lot.commission_rate) + (lot.base_price * 0.05), 2),
-                    currency=auction.currency,
-                    payment_method_id=self.store.bids[lot.bid_ids[-1]].payment_method_id if lot.bid_ids else None,
-                    created_at=utc_now(),
-                )
-                self.store.purchases[purchase.id] = purchase
-                lot.sold = True
-                winner = self.store.users[lot.current_bidder_id]
-                winner.won_purchase_ids.append(purchase.id)
-                winning_bid = self.store.bids[lot.bid_ids[-1]]
-                winning_bid.status = BidStatus.GANADORA
-                self.notifications.create(
-                    winner.id,
-                    "Ganaste la subasta",
-                    f"El lote {lot.piece_number} es tuyo. Total a pagar: {purchase.total_amount} {auction.currency.value}.",
-                    NotificationKind.OPERACION,
-                )
-                self.notifications.create(
-                    lot.owner_user_id,
-                    "Lote vendido",
-                    f"Tu lote {lot.piece_number} fue vendido por {lot.current_bid} {auction.currency.value}.",
-                    NotificationKind.INFO,
-                )
-            else:
-                lot.sold = True
-                lot.sold_to_company = True
+            result = self._close_single_lot(auction, lot)
+            if result["sold_to_company"]:
                 company_purchases += 1
 
         disconnected_users = [
