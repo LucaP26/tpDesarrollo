@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,14 @@ type FeaturedCard = {
   viewBlockReason?: string | null;
 };
 
+const departments = [
+  { label: "Arte", icon: "image" as const },
+  { label: "Relojes", icon: "clock" as const },
+  { label: "Joyas", icon: "star" as const },
+  { label: "Diseno", icon: "grid" as const },
+  { label: "Coleccion", icon: "hexagon" as const }
+];
+
 function resolveFeatureImage(source: string | undefined, fallback: string) {
   if (!source || source.includes("images.example.com")) {
     return fallback;
@@ -57,13 +65,17 @@ export default function HomeScreen() {
 
     async function loadFeatured() {
       if (!token) {
+        if (active) {
+          setFeaturedCards(fallbackFeaturedCards());
+          setLoading(false);
+        }
         return;
       }
 
       try {
         const auctions = await api.listAuctions(token);
         const nextCards = await Promise.all(
-          auctions.slice(0, 2).map(async (auction, index) => {
+          auctions.slice(0, 4).map(async (auction, index) => {
             const fallback = homeShowcase[index % homeShowcase.length];
 
             try {
@@ -73,7 +85,7 @@ export default function HomeScreen() {
                 auctionId: auction.id,
                 title: firstLot?.title ?? fallback.title,
                 subtitle: firstLot?.story ?? detail.location,
-                badge: auction.best_offer ? "Cierra pronto" : fallback.badge,
+                badge: auction.best_offer ? "Cierre activo" : fallback.badge,
                 price: formatMoney(detail.currency, firstLot?.current_bid ?? firstLot?.base_price ?? auction.best_offer),
                 image: resolveFeatureImage(firstLot?.image_urls[0], fallback.image),
                 canViewCatalog: auction.can_view_catalog,
@@ -84,7 +96,7 @@ export default function HomeScreen() {
                 auctionId: auction.id,
                 title: auction.current_lot_title ?? fallback.title,
                 subtitle: auction.title,
-                badge: auction.best_offer ? "Cierra pronto" : fallback.badge,
+                badge: auction.best_offer ? "Cierre activo" : fallback.badge,
                 price: formatMoney(auction.currency, auction.best_offer),
                 image: fallback.image,
                 canViewCatalog: auction.can_view_catalog,
@@ -116,6 +128,9 @@ export default function HomeScreen() {
 
   const firstName = user?.full_name.split(" ")[0] ?? "Miembro";
   const avatarUri = profileAvatar(user?.avatar_image_url, user?.email ?? "guest@luxury.local");
+  const cardsToDisplay = useMemo(() => (featuredCards.length ? featuredCards : fallbackFeaturedCards()), [featuredCards]);
+  const heroCard = cardsToDisplay[0];
+  const closingCards = (cardsToDisplay.length > 1 ? cardsToDisplay.slice(1) : cardsToDisplay).slice(0, 3);
 
   function handleFeaturedPress(card: FeaturedCard) {
     if (!card.auctionId) {
@@ -133,11 +148,15 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.brand}>ELITE</Text>
+        <View style={styles.topBar}>
+          <View style={styles.brandBlock}>
+            <Text style={styles.brand}>ATELIER</Text>
+            <Text style={styles.brandCaption}>Casa privada de subastas</Text>
+          </View>
+
           <View style={styles.memberBlock}>
             <View>
-              <Text style={styles.memberEyebrow}>Categoría</Text>
+              <Text style={styles.memberEyebrow}>Categoria</Text>
               <Text style={styles.memberValue}>{memberLabel(user?.category)}</Text>
             </View>
             <Pressable style={styles.avatarWrap} onPress={() => router.push("/(tabs)/profile")}>
@@ -149,16 +168,50 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <Pressable style={styles.heroCard} onPress={() => handleFeaturedPress(heroCard)}>
+          <ImageBackground source={{ uri: heroCard.image }} style={styles.heroImage} imageStyle={styles.heroImageRadius}>
+            <View style={styles.heroOverlay} />
+            <View style={styles.heroShade} />
+
+            <View style={styles.heroContent}>
+              <Text style={styles.heroEyebrow}>Subasta en vivo · lote destacado</Text>
+              <Text style={styles.heroTitle}>{heroCard.title}</Text>
+              <Text style={styles.heroSubtitle}>{heroCard.subtitle}</Text>
+
+              <View style={styles.heroStats}>
+                <View style={styles.heroStatCard}>
+                  <Text style={styles.heroStatLabel}>Oferta actual</Text>
+                  <Text style={styles.heroStatValue}>{heroCard.price}</Text>
+                </View>
+                <View style={styles.heroDivider} />
+                <View style={styles.heroStatCard}>
+                  <Text style={styles.heroStatLabel}>Acceso</Text>
+                  <Text style={styles.heroStatValueSmall}>{heroCard.canViewCatalog ? "Disponible" : "Restringido"}</Text>
+                </View>
+              </View>
+            </View>
+          </ImageBackground>
+        </Pressable>
+
+        <View style={styles.departmentsSection}>
+          <Text style={styles.sectionEyebrow}>Departamentos</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.departmentsRow}>
+            {departments.map((item) => (
+              <View key={item.label} style={styles.departmentItem}>
+                <View style={styles.departmentBubble}>
+                  <Feather name={item.icon} size={20} color={palette.accent} />
+                </View>
+                <Text style={styles.departmentLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
         <View style={styles.sectionHead}>
-          <View>
-            <Text style={styles.eyebrow}>Subastas destacadas</Text>
-            <Text style={styles.sectionTitle}>Piezas seleccionadas</Text>
-          </View>
-          <View style={styles.pager}>
-            <View style={styles.pagerActive} />
-            <View style={styles.pagerDot} />
-            <View style={styles.pagerDot} />
-          </View>
+          <Text style={styles.sectionEyebrow}>Cierres proximos</Text>
+          <Pressable onPress={() => router.push("/(tabs)/auctions")}>
+            <Text style={styles.sectionLink}>Ver todos</Text>
+          </Pressable>
         </View>
 
         {loading ? (
@@ -166,35 +219,45 @@ export default function HomeScreen() {
             <ActivityIndicator color={palette.accent} />
           </View>
         ) : (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carousel}>
-            {featuredCards.map((card, index) => (
-              <Pressable
-                key={`${card.title}-${index}`}
-                style={styles.featureCard}
-                onPress={() => handleFeaturedPress(card)}
-              >
-                <ImageBackground source={{ uri: card.image }} style={styles.featureImage} imageStyle={styles.featureImageRadius}>
-                  <View style={styles.overlay} />
-                  <View style={styles.featureContent}>
-                    <Text style={styles.badge}>{card.badge}</Text>
-                    <Text style={styles.featureTitle}>{card.title}</Text>
-                    <Text style={styles.featureSubtitle}>{card.subtitle}</Text>
-                    <Text style={styles.featurePrice}>{card.price}</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.closingRow}>
+            {closingCards.map((card, index) => (
+              <Pressable key={`${card.title}-${index}`} style={styles.closingCard} onPress={() => handleFeaturedPress(card)}>
+                <ImageBackground source={{ uri: card.image }} style={styles.closingImage} imageStyle={styles.closingImageRadius}>
+                  <View style={styles.closingBadge}>
+                    <Text style={styles.closingBadgeText}>{index === 0 ? "Live" : "Curado"}</Text>
+                  </View>
+                  <View style={styles.closingEye}>
+                    <Feather name="eye" size={16} color={palette.ink} />
                   </View>
                 </ImageBackground>
+
+                <View style={styles.closingBody}>
+                  <Text style={styles.closingMeta}>Coleccion privada</Text>
+                  <Text style={styles.closingTitle}>{card.title}</Text>
+                  <Text style={styles.closingCopy}>{card.subtitle}</Text>
+
+                  <View style={styles.closingFooter}>
+                    <View>
+                      <Text style={styles.closingFooterLabel}>Oferta actual</Text>
+                      <Text style={styles.closingFooterValue}>{card.price}</Text>
+                    </View>
+                    <Text style={styles.closingFooterTime}>{index === 0 ? "Finaliza hoy" : "Proximo evento"}</Text>
+                  </View>
+                </View>
               </Pressable>
             ))}
           </ScrollView>
         )}
 
         <Pressable style={styles.catalogCard} onPress={() => router.push("/(tabs)/auctions")}>
-          <View>
-            <Text style={styles.catalogEyebrow}>Descubrir</Text>
-            <Text style={styles.catalogTitle}>Ver catalogo</Text>
+          <View style={styles.catalogCopyBlock}>
+            <Text style={styles.catalogEyebrow}>Vista privada</Text>
+            <Text style={styles.catalogTitle}>Ver catalogos</Text>
             <Text style={styles.catalogCopy}>Explora salas en vivo y catalogos programados elegidos para {firstName}.</Text>
           </View>
+
           <View style={styles.catalogArrow}>
-            <Feather name="arrow-right" color={palette.gold} size={34} />
+            <Feather name="arrow-right" color={palette.onAccent} size={28} />
           </View>
         </Pressable>
 
@@ -209,9 +272,12 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        <View style={styles.trustRow}>
-          <Text style={styles.trustText}>Autenticidad garantizada</Text>
-          <Text style={styles.trustText}>Custodia segura</Text>
+        <View style={styles.editorialCard}>
+          <Text style={styles.editorialEyebrow}>Mirada curatorial</Text>
+          <Text style={styles.editorialTitle}>ATELIER protege procedencia, custodia y piezas de alta deseabilidad.</Text>
+          <Text style={styles.editorialCopy}>
+            Descubre catalogos premium, sigue la subasta activa y administra tu perfil de comprador desde una sola galeria privada.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -224,23 +290,34 @@ const styles = StyleSheet.create({
     backgroundColor: palette.background
   },
   content: {
-    paddingBottom: 24
+    paddingBottom: 34
   },
-  header: {
+  topBar: {
+    paddingHorizontal: 22,
+    paddingTop: 10,
+    paddingBottom: 18,
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 24
+    gap: 18
+  },
+  brandBlock: {
+    flex: 1,
+    gap: 6
   },
   brand: {
-    fontSize: 48,
-    lineHeight: 48,
-    letterSpacing: -3,
-    color: palette.ink,
+    color: palette.accent,
+    fontSize: 30,
+    lineHeight: 34,
+    letterSpacing: 5,
     fontFamily: "Georgia",
     fontWeight: "700"
+  },
+  brandCaption: {
+    color: palette.textMuted,
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 2
   },
   memberBlock: {
     flexDirection: "row",
@@ -252,7 +329,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 2,
+    letterSpacing: 1.8,
     textAlign: "right"
   },
   memberValue: {
@@ -270,7 +347,7 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 29,
     padding: 3,
-    backgroundColor: palette.gold
+    backgroundColor: palette.goldSoft
   },
   avatar: {
     width: "100%",
@@ -289,162 +366,304 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: palette.backgroundSoft
   },
-  sectionHead: {
-    paddingHorizontal: 24,
-    paddingBottom: 18,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between"
+  heroCard: {
+    marginHorizontal: 18,
+    borderRadius: 34,
+    overflow: "hidden",
+    backgroundColor: palette.surfaceMuted,
+    minHeight: 560
   },
-  eyebrow: {
-    color: palette.textMuted,
+  heroImage: {
+    minHeight: 560,
+    justifyContent: "flex-end"
+  },
+  heroImageRadius: {
+    borderRadius: 34
+  },
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(14, 14, 14, 0.22)"
+  },
+  heroShade: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    left: 0,
+    height: "58%",
+    backgroundColor: "rgba(14, 14, 14, 0.52)"
+  },
+  heroContent: {
+    paddingHorizontal: 24,
+    paddingBottom: 28,
+    gap: 10
+  },
+  heroEyebrow: {
+    color: palette.accent,
     textTransform: "uppercase",
     letterSpacing: 3,
-    fontSize: 12,
-    fontWeight: "800",
-    marginBottom: 8
+    fontSize: 11,
+    fontWeight: "800"
   },
-  sectionTitle: {
+  heroTitle: {
     color: palette.ink,
-    fontSize: 28,
-    lineHeight: 30,
-    letterSpacing: -1.4,
+    fontSize: 38,
+    lineHeight: 42,
     fontFamily: "Georgia",
     fontWeight: "700"
   },
-  pager: {
+  heroSubtitle: {
+    color: palette.text,
+    fontSize: 15,
+    lineHeight: 24,
+    maxWidth: 280
+  },
+  heroStats: {
+    marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingBottom: 8
+    gap: 18
   },
-  pagerActive: {
-    width: 42,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: palette.gold
+  heroStatCard: {
+    gap: 4
   },
-  pagerDot: {
-    width: 14,
-    height: 6,
-    borderRadius: 999,
-    backgroundColor: "#D9DDE4"
+  heroStatLabel: {
+    color: palette.textMuted,
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 1.8,
+    fontWeight: "700"
   },
-  loaderBlock: {
-    height: 420,
+  heroStatValue: {
+    color: palette.accent,
+    fontSize: 28,
+    lineHeight: 32,
+    fontFamily: "Georgia",
+    fontWeight: "700"
+  },
+  heroStatValueSmall: {
+    color: palette.ink,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "700"
+  },
+  heroDivider: {
+    width: 1,
+    height: 42,
+    backgroundColor: palette.border
+  },
+  departmentsSection: {
+    marginTop: 28
+  },
+  departmentsRow: {
+    paddingHorizontal: 22,
+    paddingTop: 14,
+    gap: 18
+  },
+  departmentItem: {
+    width: 78,
+    alignItems: "center",
+    gap: 10
+  },
+  departmentBubble: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: palette.surfaceWarm,
+    borderWidth: 1,
+    borderColor: palette.border,
     alignItems: "center",
     justifyContent: "center"
   },
-  carousel: {
-    paddingHorizontal: 24,
+  departmentLabel: {
+    color: palette.textMuted,
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    fontWeight: "700",
+    textAlign: "center"
+  },
+  sectionHead: {
+    marginTop: 34,
+    marginBottom: 18,
+    paddingHorizontal: 22,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  sectionEyebrow: {
+    color: palette.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 2.2,
+    fontSize: 12,
+    fontWeight: "800"
+  },
+  sectionLink: {
+    color: palette.accent,
+    fontSize: 11,
+    textTransform: "uppercase",
+    letterSpacing: 2,
+    fontWeight: "700"
+  },
+  loaderBlock: {
+    height: 260,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  closingRow: {
+    paddingHorizontal: 22,
     gap: 18
   },
-  featureCard: {
-    width: 330,
-    height: 420,
-    borderRadius: 34,
-    overflow: "hidden"
-  },
-  featureImage: {
-    flex: 1,
-    justifyContent: "flex-end"
-  },
-  featureImageRadius: {
-    borderRadius: 34
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(10, 10, 10, 0.24)"
-  },
-  featureContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 26
-  },
-  badge: {
-    alignSelf: "flex-start",
-    marginBottom: 18,
-    backgroundColor: palette.gold,
-    color: palette.white,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    fontSize: 14,
-    fontWeight: "800",
+  closingCard: {
+    width: 292,
+    borderRadius: 24,
     overflow: "hidden",
-    textTransform: "uppercase"
+    backgroundColor: palette.surface,
+    borderWidth: 1,
+    borderColor: palette.border
   },
-  featureTitle: {
-    color: palette.white,
-    fontSize: 28,
-    lineHeight: 30,
-    letterSpacing: -1.3,
+  closingImage: {
+    height: 240,
+    justifyContent: "space-between"
+  },
+  closingImageRadius: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24
+  },
+  closingBadge: {
+    marginTop: 14,
+    marginLeft: 14,
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    backgroundColor: "rgba(215, 142, 119, 0.22)",
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  closingBadgeText: {
+    color: palette.danger,
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1.6
+  },
+  closingEye: {
+    alignSelf: "flex-end",
+    marginRight: 14,
+    marginBottom: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "rgba(28, 27, 27, 0.72)",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  closingBody: {
+    padding: 20,
+    gap: 8
+  },
+  closingMeta: {
+    color: palette.textMuted,
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    fontWeight: "700"
+  },
+  closingTitle: {
+    color: palette.ink,
+    fontSize: 22,
+    lineHeight: 28,
     fontFamily: "Georgia",
     fontWeight: "700"
   },
-  featureSubtitle: {
-    marginTop: 8,
-    color: "rgba(255,255,255,0.82)",
-    fontSize: 15,
-    lineHeight: 22
+  closingCopy: {
+    color: palette.text,
+    fontSize: 14,
+    lineHeight: 22,
+    minHeight: 44
   },
-  featurePrice: {
-    marginTop: 16,
-    color: palette.gold,
+  closingFooter: {
+    marginTop: 8,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: palette.border,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  closingFooterLabel: {
+    color: palette.textMuted,
+    fontSize: 10,
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    fontWeight: "700"
+  },
+  closingFooterValue: {
+    marginTop: 4,
+    color: palette.accent,
     fontSize: 20,
-    fontWeight: "800"
+    fontFamily: "Georgia",
+    fontWeight: "700"
+  },
+  closingFooterTime: {
+    color: palette.textMuted,
+    fontSize: 11,
+    fontWeight: "700"
   },
   catalogCard: {
     marginTop: 34,
-    marginHorizontal: 24,
-    borderRadius: 28,
-    backgroundColor: "#1E1D1D",
-    paddingHorizontal: 24,
-    paddingVertical: 28,
+    marginHorizontal: 22,
+    borderRadius: 26,
+    backgroundColor: palette.surfaceMuted,
+    borderWidth: 1,
+    borderColor: palette.border,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 18
+    gap: 16
+  },
+  catalogCopyBlock: {
+    flex: 1
   },
   catalogEyebrow: {
-    color: "rgba(255,255,255,0.56)",
+    color: palette.textMuted,
     textTransform: "uppercase",
-    letterSpacing: 3,
-    fontSize: 12,
+    letterSpacing: 2.3,
+    fontSize: 11,
     fontWeight: "800",
     marginBottom: 10
   },
   catalogTitle: {
-    color: palette.white,
-    fontSize: 24,
-    lineHeight: 26,
-    letterSpacing: -1,
+    color: palette.ink,
+    fontSize: 28,
+    lineHeight: 32,
     fontFamily: "Georgia",
     fontWeight: "700"
   },
   catalogCopy: {
     marginTop: 10,
-    color: "rgba(255,255,255,0.64)",
-    lineHeight: 22,
-    maxWidth: 220
+    color: palette.text,
+    lineHeight: 22
   },
   catalogArrow: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: "rgba(211, 171, 47, 0.16)",
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    backgroundColor: palette.accent,
     alignItems: "center",
     justifyContent: "center"
   },
   actionRow: {
     marginTop: 18,
-    marginHorizontal: 24,
+    marginHorizontal: 22,
     flexDirection: "row",
     gap: 14
   },
   tile: {
     flex: 1,
-    borderRadius: 24,
-    backgroundColor: palette.backgroundSoft,
+    borderRadius: 22,
+    backgroundColor: palette.surface,
     borderWidth: 1,
     borderColor: palette.border,
     paddingVertical: 22,
@@ -454,29 +673,43 @@ const styles = StyleSheet.create({
     color: palette.textMuted,
     textTransform: "uppercase",
     letterSpacing: 2.2,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800",
     marginBottom: 8
   },
   tileTitle: {
     color: palette.ink,
     fontSize: 24,
-    lineHeight: 26,
-    letterSpacing: -1,
+    lineHeight: 28,
     fontFamily: "Georgia",
     fontWeight: "700"
   },
-  trustRow: {
-    marginTop: 34,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 24
+  editorialCard: {
+    marginTop: 28,
+    marginHorizontal: 22,
+    borderRadius: 28,
+    backgroundColor: palette.backgroundSoft,
+    borderWidth: 1,
+    borderColor: palette.border,
+    padding: 22,
+    gap: 10
   },
-  trustText: {
-    color: palette.textMuted,
-    fontSize: 11,
-    fontWeight: "800",
+  editorialEyebrow: {
+    color: palette.accent,
     textTransform: "uppercase",
-    letterSpacing: 1.5
+    letterSpacing: 2.4,
+    fontSize: 11,
+    fontWeight: "800"
+  },
+  editorialTitle: {
+    color: palette.ink,
+    fontSize: 27,
+    lineHeight: 34,
+    fontFamily: "Georgia",
+    fontWeight: "700"
+  },
+  editorialCopy: {
+    color: palette.text,
+    lineHeight: 24
   }
 });

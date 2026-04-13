@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     opacity: 0.7
   },
   primaryButtonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 17,
     fontWeight: "800"
   }

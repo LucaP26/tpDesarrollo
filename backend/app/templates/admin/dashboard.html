@@ -95,13 +95,23 @@
         </header>
         <div class="auction-list">
           {% for auction in dashboard.auctions %}
-          <form class="auction-row" method="post" action="/admin/subastas/{{ auction.id }}/close">
+          <div class="auction-row">
             <div>
               <strong>{{ auction.title }}</strong>
               <p>{{ auction.category.value }} - {{ auction.currency.value }} - {{ auction.location }}</p>
+              {% if auction.current_lot_title %}
+              <p>Lote en sala: {{ auction.current_lot_title }}</p>
+              {% endif %}
             </div>
-            <button type="submit">Cerrar subasta</button>
-          </form>
+            <div class="actions">
+              <form method="post" action="/admin/subastas/{{ auction.id }}/current-lot/close">
+                <button type="submit">Cerrar lote actual</button>
+              </form>
+              <form method="post" action="/admin/subastas/{{ auction.id }}/close">
+                <button type="submit">Cerrar subasta</button>
+              </form>
+            </div>
+          </div>
           {% endfor %}
         </div>
       </section>

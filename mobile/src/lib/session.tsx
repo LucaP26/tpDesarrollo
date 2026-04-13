@@ -1,4 +1,4 @@
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { createContext, PropsWithChildren, useCallback, useContext, useMemo, useState } from "react";
 
 import * as api from "./api";
 import { AuthPayload, UserProfile } from "./types";
@@ -18,38 +18,39 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  async function handleLogin(email: string, password: string) {
-    const auth = await api.login(email, password);
-    handleAuthenticate(auth);
-  }
-
-  function handleAuthenticate(auth: AuthPayload) {
+  const handleAuthenticate = useCallback((auth: AuthPayload) => {
     setToken(auth.access_token);
     setUser(auth.user);
-  }
+  }, []);
 
-  function updateUser(patch: Partial<UserProfile>) {
+  const handleLogin = useCallback(async (email: string, password: string) => {
+    const auth = await api.login(email, password);
+    handleAuthenticate(auth);
+  }, [handleAuthenticate]);
+
+  const updateUser = useCallback((patch: Partial<UserProfile>) => {
     setUser((current) => (current ? { ...current, ...patch } : current));
-  }
+  }, []);
 
-  function logout() {
+  const logout = useCallback(() => {
     setToken(null);
     setUser(null);
-  }
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      token,
+      user,
+      login: handleLogin,
+      authenticate: handleAuthenticate,
+      updateUser,
+      logout
+    }),
+    [handleAuthenticate, handleLogin, logout, token, updateUser, user]
+  );
 
   return (
-    <SessionContext.Provider
-      value={{
-        token,
-        user,
-        login: handleLogin,
-        authenticate: handleAuthenticate,
-        updateUser,
-        logout
-      }}
-    >
-      {children}
-    </SessionContext.Provider>
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
   );
 }
 

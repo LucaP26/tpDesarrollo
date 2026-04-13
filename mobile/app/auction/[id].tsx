@@ -1,6 +1,5 @@
-import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -14,14 +13,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import * as api from "@/src/lib/api";
-import { browseArtwork, formatEventDate, formatMoney, homeShowcase } from "@/src/lib/luxury";
+import { browseArtwork, categoryEyebrow, formatEventDate, formatMoney, homeShowcase, profileAvatar } from "@/src/lib/luxury";
 import { buildRestrictionAlert } from "@/src/lib/restrictions";
 import { useSession } from "@/src/lib/session";
 import { palette } from "@/src/lib/theme";
-import { AuctionDetail } from "@/src/lib/types";
+import { AuctionDetail, AuctionLot } from "@/src/lib/types";
 
 function resolveLotImage(source: string | undefined, index: number) {
-  if (!source || source.includes("images.example.com")) {
+  if (!source || source.includes("images.example.com") || source.includes("placehold.co")) {
     if (index < homeShowcase.length) {
       return homeShowcase[index].image;
     }
@@ -30,14 +29,36 @@ function resolveLotImage(source: string | undefined, index: number) {
   return source;
 }
 
+function lotStatus(lot: AuctionLot, currentLotId?: number | null) {
+  if (lot.sold) {
+    return {
+      label: lot.sold_to_company ? "Adjudicado a la casa" : "Adjudicado",
+      tone: "soft" as const
+    };
+  }
+
+  if (lot.id === currentLotId) {
+    return {
+      label: "En vivo",
+      tone: "live" as const
+    };
+  }
+
+  return {
+    label: "Siguiente",
+    tone: "queue" as const
+  };
+}
+
 export default function AuctionRoomScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const auctionId = Number(params.id);
-  const { token, updateUser } = useSession();
+  const { token, user, updateUser } = useSession();
   const [auction, setAuction] = useState<AuctionDetail | null>(null);
-  const [offers, setOffers] = useState<Record<number, string>>({});
+  const [offerInput, setOfferInput] = useState("");
   const [loading, setLoading] = useState(true);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -54,11 +75,7 @@ export default function AuctionRoomScreen() {
         }
         updateUser({ category: joinResult.user_category });
         setAuction(detail);
-        const nextOffers: Record<number, string> = {};
-        detail.lots.forEach((lot) => {
-          nextOffers[lot.id] = String(lot.min_bid);
-        });
-        setOffers(nextOffers);
+        setOfferInput(detail.current_lot ? String(detail.current_lot.min_bid) : "");
       } catch (error) {
         if (!active) {
           return;
@@ -76,48 +93,82 @@ export default function AuctionRoomScreen() {
     return () => {
       active = false;
     };
-  }, [auctionId, token]);
+  }, [auctionId, token, router, updateUser]);
 
-  async function handleBid(lotId: number) {
-    if (!token || !auction) {
+  const currentLot = auction?.current_lot ?? null;
+  const lots = useMemo(() => auction?.lots ?? [], [auction]);
+  const avatarUri = profileAvatar(user?.avatar_image_url, user?.email ?? "profile@luxury.local");
+
+  function confirmLeaveAuction() {
+    if (!token || !auction || leaving) {
       return;
     }
 
-    const selectedLot = auction.lots.find((lot) => lot.id === lotId);
-    if (!selectedLot?.can_bid) {
-      const alert = buildRestrictionAlert(selectedLot?.block_reason, "puja");
+    Alert.alert(
+      "Abandonar sala",
+      "Si sales de esta subasta, tu ultima puja activa se eliminara y podras ingresar a otra sala.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Abandonar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLeaving(true);
+              const response = await api.leaveAuction(token, auction.id);
+              Alert.alert("Saliste de la subasta", response.message, [
+                {
+                  text: "Entendido",
+                  onPress: () => router.replace("/(tabs)/auctions")
+                }
+              ]);
+            } catch (error) {
+              Alert.alert("No se pudo abandonar la subasta", error instanceof Error ? error.message : "Error inesperado");
+            } finally {
+              setLeaving(false);
+            }
+          }
+        }
+      ]
+    );
+  }
+
+  async function handleBid() {
+    if (!token || !auction || !currentLot) {
+      return;
+    }
+
+    if (!currentLot.can_bid) {
+      const alert = buildRestrictionAlert(currentLot.block_reason, "puja");
       Alert.alert(alert.title, alert.message);
       return;
     }
 
-    const amount = Number((offers[lotId] ?? "").replace(",", ".").trim());
+    const amount = Number(offerInput.replace(",", ".").trim());
     if (Number.isNaN(amount)) {
       Alert.alert("Monto invalido", "Ingresa un monto numerico valido para continuar.");
       return;
     }
-    if (amount < selectedLot.min_bid) {
+    if (amount < currentLot.min_bid) {
       Alert.alert(
         "Monto inferior al minimo",
-        `La oferta ingresada es menor al minimo admitido para este lote.\n\nMinimo permitido: ${formatMoney(auction.currency, selectedLot.min_bid)}.`
+        `La oferta ingresada es menor al minimo admitido para este lote.\n\nMinimo permitido: ${formatMoney(auction.currency, currentLot.min_bid)}.`
       );
       return;
     }
-    if (selectedLot.max_bid !== null && selectedLot.max_bid !== undefined && amount > selectedLot.max_bid) {
+    if (currentLot.max_bid !== null && currentLot.max_bid !== undefined && amount > currentLot.max_bid) {
       Alert.alert(
         "Monto superior al maximo",
-        `La oferta ingresada es mayor al maximo admitido para este lote.\n\nMaximo permitido: ${formatMoney(auction.currency, selectedLot.max_bid)}.`
+        `La oferta ingresada es mayor al maximo admitido para este lote.\n\nMaximo permitido: ${formatMoney(auction.currency, currentLot.max_bid)}.`
       );
       return;
     }
 
     try {
-      await api.placeBid(token, auction.id, lotId, amount);
+      await api.placeBid(token, auction.id, currentLot.id, amount);
       const refreshed = await api.getAuction(token, auction.id);
       setAuction(refreshed);
-      setOffers((current) => ({
-        ...current,
-        [lotId]: String(refreshed.lots.find((lot) => lot.id === lotId)?.min_bid ?? amount)
-      }));
+      setOfferInput(refreshed.current_lot ? String(refreshed.current_lot.min_bid) : "");
       Alert.alert("Puja confirmada", "Tu oferta se registro correctamente.");
     } catch (error) {
       Alert.alert("No se pudo registrar la puja", error instanceof Error ? error.message : "Error inesperado");
@@ -126,9 +177,9 @@ export default function AuctionRoomScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.loadingState}>
-          <Text style={styles.loadingText}>Cargando sala de subasta...</Text>
+          <Text style={styles.loadingText}>Cargando catalogo...</Text>
         </View>
       </SafeAreaView>
     );
@@ -136,7 +187,7 @@ export default function AuctionRoomScreen() {
 
   if (!auction) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <View style={styles.loadingState}>
           <Text style={styles.loadingText}>No se encontro la subasta.</Text>
         </View>
@@ -145,79 +196,121 @@ export default function AuctionRoomScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Feather name="arrow-left" color={palette.ink} size={22} />
+          <Pressable onPress={() => router.replace("/(tabs)/home")} style={styles.backArrowButton}>
+            <Text style={styles.backArrowText}>{"\u2190"}</Text>
           </Pressable>
-          <Text style={styles.topTitle}>Sala de subasta</Text>
-          <View style={styles.backButton} />
+          <Text style={styles.topTitle}>Catalogo de sala</Text>
+          <Pressable onPress={() => router.push("/(tabs)/profile")} style={styles.profileButton}>
+            <Image source={{ uri: avatarUri }} style={styles.profileImage} />
+          </Pressable>
         </View>
 
         <View style={styles.heroCard}>
-          <Text style={styles.heroEyebrow}>{auction.category.toUpperCase()}</Text>
+          <View style={styles.heroHeader}>
+            <Text style={styles.heroEyebrow}>{categoryEyebrow(auction.category)}</Text>
+            <Pressable
+              style={[styles.leaveAuctionChip, leaving && styles.leaveAuctionChipDisabled]}
+              onPress={confirmLeaveAuction}
+              disabled={leaving}
+            >
+              <Text style={styles.leaveAuctionChipText}>{leaving ? "Saliendo..." : "Abandonar sala"}</Text>
+            </Pressable>
+          </View>
           <Text style={styles.heroTitle}>{auction.title}</Text>
           <Text style={styles.heroMeta}>
             {auction.location} - {formatEventDate(auction.scheduled_at)} - {auction.auctioneer_name}
           </Text>
           <Text style={styles.heroCopy}>
-            Catalogo en vivo con validacion de pujas, limites minimos y maximos, y reglas por categoria.
+            La sala muestra un lote a la vez. Cuando se adjudica el lote en exhibicion, la subasta avanza al siguiente.
           </Text>
         </View>
 
         <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Lotes</Text>
-          <Text style={styles.sectionMeta}>{auction.lots.length} piezas</Text>
+          <Text style={styles.sectionTitle}>Lotes del catalogo</Text>
+          <Text style={styles.sectionMeta}>{lots.length} piezas</Text>
         </View>
 
-        <View style={styles.lotList}>
-          {auction.lots.map((lot, index) => (
-            <View key={lot.id} style={styles.lotCard}>
-              <Image source={{ uri: resolveLotImage(lot.image_urls[0], index) }} style={styles.lotImage} />
-              <View style={styles.lotContent}>
-                <View style={styles.lotHeader}>
-                  <View style={styles.lotHeaderText}>
-                    <Text style={styles.lotPiece}>{lot.piece_number}</Text>
-                    <Text style={styles.lotTitle}>{lot.title}</Text>
-                  </View>
-                  <View style={[styles.stateBadge, !lot.can_bid && styles.stateBadgeMuted]}>
-                    <Text style={styles.stateBadgeText}>{lot.can_bid ? "Abierta" : "Restringida"}</Text>
-                  </View>
-                </View>
+        <View style={styles.catalogList}>
+          {lots.map((lot, index) => {
+            const status = lotStatus(lot, currentLot?.id);
+            return (
+              <View key={lot.id} style={styles.lotCard}>
+                <Image source={{ uri: resolveLotImage(lot.image_urls[0], index) }} style={styles.lotImage} />
 
-                <Text style={styles.lotDescription}>{lot.description}</Text>
-                {lot.story ? <Text style={styles.lotStory}>{lot.story}</Text> : null}
-
-                <View style={styles.metricRow}>
-                  <Metric label="Base" value={formatMoney(auction.currency, lot.base_price)} />
-                  <Metric label="Actual" value={formatMoney(auction.currency, lot.current_bid ?? lot.base_price)} />
-                </View>
-                <View style={styles.metricRow}>
-                  <Metric label="Puja minima" value={formatMoney(auction.currency, lot.min_bid)} />
-                  <Metric label="Puja maxima" value={lot.max_bid ? formatMoney(auction.currency, lot.max_bid) : "Sin limite"} />
-                </View>
-
-                {!lot.can_bid && lot.block_reason ? <Text style={styles.blockCopy}>{lot.block_reason}</Text> : null}
-
-                <TextInput
-                  style={styles.bidInput}
-                  keyboardType="numeric"
-                  value={offers[lot.id]}
-                  onChangeText={(text) => setOffers((current) => ({ ...current, [lot.id]: text }))}
-                  placeholder="Ingresa tu oferta"
-                  placeholderTextColor={palette.textMuted}
-                />
-
-                <Pressable
-                  style={[styles.bidButton, !lot.can_bid && styles.bidButtonDisabled]}
-                  onPress={() => handleBid(lot.id)}
+                <View
+                  style={[
+                    styles.lotInfo,
+                    status.tone === "live" && styles.lotInfoLive,
+                    status.tone === "queue" && styles.lotInfoQueue,
+                    status.tone === "soft" && styles.lotInfoSoft
+                  ]}
                 >
-                  <Text style={styles.bidButtonText}>{lot.can_bid ? "Pujar" : "Ver motivo"}</Text>
-                </Pressable>
+                  <View
+                    style={[
+                      styles.lotBadge,
+                      status.tone === "queue" && styles.lotBadgeQueue,
+                      status.tone === "soft" && styles.lotBadgeSoft
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.lotBadgeText,
+                        status.tone === "soft" && styles.lotBadgeTextSoft
+                      ]}
+                    >
+                      {status.label}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.lotId}>{lot.piece_number}</Text>
+                  <Text style={styles.lotTitle}>{lot.title}</Text>
+                  <Text style={styles.lotDescription}>{lot.description}</Text>
+
+                  <View style={styles.lotFooter}>
+                    <Text style={styles.lotPrice}>Base {formatMoney(auction.currency, lot.base_price)}</Text>
+                    {lot.current_bid ? (
+                      <Text style={styles.lotCurrentBid}>Actual {formatMoney(auction.currency, lot.current_bid)}</Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                {currentLot?.id === lot.id ? (
+                  <View style={styles.bidPanel}>
+                    <View style={styles.metricRow}>
+                      <Metric label="Base" value={formatMoney(auction.currency, currentLot.base_price)} />
+                      <Metric label="Actual" value={formatMoney(auction.currency, currentLot.current_bid ?? currentLot.base_price)} />
+                    </View>
+                    <View style={styles.metricRow}>
+                      <Metric label="Minimo" value={formatMoney(auction.currency, currentLot.min_bid)} />
+                      <Metric label="Maximo" value={currentLot.max_bid ? formatMoney(auction.currency, currentLot.max_bid) : "Sin limite"} />
+                    </View>
+
+                    {currentLot.story ? <Text style={styles.storyCopy}>{currentLot.story}</Text> : null}
+                    {!currentLot.can_bid && currentLot.block_reason ? <Text style={styles.blockCopy}>{currentLot.block_reason}</Text> : null}
+
+                    <TextInput
+                      style={styles.bidInput}
+                      keyboardType="numeric"
+                      value={offerInput}
+                      onChangeText={setOfferInput}
+                      placeholder="Ingresa tu oferta"
+                      placeholderTextColor={palette.textMuted}
+                    />
+
+                    <Pressable
+                      style={[styles.bidButton, !currentLot.can_bid && styles.bidButtonDisabled]}
+                      onPress={handleBid}
+                    >
+                      <Text style={styles.bidButtonText}>{currentLot.can_bid ? "Pujar por este lote" : "Ver motivo"}</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -240,7 +333,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 12,
+    paddingTop: 18,
     paddingBottom: 28
   },
   loadingState: {
@@ -257,13 +350,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 18
+    marginBottom: 20,
+    minHeight: 44
   },
-  backButton: {
+  backArrowButton: {
+    width: 42,
+    height: 42,
+    alignItems: "flex-start",
+    justifyContent: "center"
+  },
+  backArrowText: {
+    color: palette.ink,
+    fontSize: 30,
+    lineHeight: 30,
+    fontWeight: "500"
+  },
+  profileButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: 1,
+    borderColor: palette.border,
+    backgroundColor: palette.backgroundSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden"
+  },
+  profileImage: {
     width: 36,
     height: 36,
-    alignItems: "center",
-    justifyContent: "center"
+    borderRadius: 18,
+    backgroundColor: palette.surface
   },
   topTitle: {
     color: palette.ink,
@@ -272,37 +389,61 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     borderRadius: 28,
-    backgroundColor: "#151515",
+    backgroundColor: palette.surfaceMuted,
     padding: 24,
     marginBottom: 22
+  },
+  heroHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 14
   },
   heroEyebrow: {
     color: palette.gold,
     textTransform: "uppercase",
     letterSpacing: 2.4,
     fontSize: 12,
+    fontWeight: "800"
+  },
+  leaveAuctionChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: palette.ghost,
+    backgroundColor: palette.surfaceWarm,
+    paddingHorizontal: 14,
+    paddingVertical: 9
+  },
+  leaveAuctionChipDisabled: {
+    opacity: 0.65
+  },
+  leaveAuctionChipText: {
+    color: palette.accent,
+    fontSize: 12,
     fontWeight: "800",
-    marginBottom: 10
+    letterSpacing: 1,
+    textTransform: "uppercase"
   },
   heroTitle: {
     color: palette.white,
     fontSize: 30,
     lineHeight: 34,
-    fontFamily: "Georgia",
-    fontWeight: "700"
+    fontWeight: "800"
   },
   heroMeta: {
     marginTop: 10,
-    color: "rgba(255,255,255,0.78)",
+    color: palette.text,
     lineHeight: 22
   },
   heroCopy: {
     marginTop: 12,
-    color: "rgba(255,255,255,0.66)",
+    color: palette.text,
     lineHeight: 22
   },
   sectionHead: {
     marginBottom: 14,
+    marginTop: 6,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center"
@@ -319,72 +460,100 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     fontWeight: "700"
   },
-  lotList: {
-    gap: 16
+  catalogList: {
+    gap: 18
   },
   lotCard: {
-    borderRadius: 24,
+    borderRadius: 30,
+    overflow: "hidden",
     backgroundColor: palette.surface,
     borderWidth: 1,
-    borderColor: palette.border,
-    overflow: "hidden"
+    borderColor: palette.border
   },
   lotImage: {
     width: "100%",
-    height: 220,
-    backgroundColor: palette.surfaceMuted
-  },
-  lotContent: {
-    padding: 18,
-    gap: 14
-  },
-  lotHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
-    alignItems: "flex-start"
-  },
-  lotHeaderText: {
-    flex: 1
-  },
-  lotPiece: {
-    color: palette.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 1.8,
-    fontSize: 11,
-    fontWeight: "800",
-    marginBottom: 6
-  },
-  lotTitle: {
-    color: palette.ink,
-    fontSize: 22,
-    lineHeight: 26,
-    fontFamily: "Georgia",
-    fontWeight: "700"
-  },
-  stateBadge: {
-    borderRadius: 999,
-    backgroundColor: palette.goldSoft,
-    paddingHorizontal: 12,
-    paddingVertical: 7
-  },
-  stateBadgeMuted: {
+    height: 240,
     backgroundColor: palette.surfaceWarm
   },
-  stateBadgeText: {
-    color: palette.gold,
-    textTransform: "uppercase",
-    fontSize: 11,
+  lotInfo: {
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 20,
+    gap: 8
+  },
+  lotInfoLive: {
+    backgroundColor: "#3A3834"
+  },
+  lotInfoQueue: {
+    backgroundColor: "#2A2826"
+  },
+  lotInfoSoft: {
+    backgroundColor: "#26211D"
+  },
+  lotBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    backgroundColor: palette.accent,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    marginBottom: 6
+  },
+  lotBadgeQueue: {
+    backgroundColor: palette.surfaceMuted
+  },
+  lotBadgeSoft: {
+    backgroundColor: palette.ghost
+  },
+  lotBadgeText: {
+    color: palette.white,
+    fontSize: 12,
     fontWeight: "800",
+    textTransform: "uppercase",
     letterSpacing: 1
+  },
+  lotBadgeTextSoft: {
+    color: palette.ink
+  },
+  lotId: {
+    color: palette.text,
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1.6
+  },
+  lotTitle: {
+    color: palette.white,
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: "800"
   },
   lotDescription: {
     color: palette.text,
-    lineHeight: 22
+    fontSize: 15,
+    lineHeight: 24
   },
-  lotStory: {
-    color: palette.textMuted,
-    lineHeight: 22
+  lotFooter: {
+    marginTop: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12
+  },
+  lotPrice: {
+    color: palette.white,
+    fontSize: 15,
+    fontWeight: "800"
+  },
+  lotCurrentBid: {
+    color: palette.gold,
+    fontSize: 15,
+    fontWeight: "800"
+  },
+  bidPanel: {
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    backgroundColor: palette.surface
   },
   metricRow: {
     flexDirection: "row",
@@ -408,6 +577,10 @@ const styles = StyleSheet.create({
     color: palette.ink,
     fontSize: 16,
     fontWeight: "800"
+  },
+  storyCopy: {
+    color: palette.text,
+    lineHeight: 22
   },
   blockCopy: {
     color: palette.accent,

@@ -529,7 +529,7 @@ export default function RegisterPaymentScreen() {
             </View>
           ) : null}
           <Pressable style={[styles.primaryButton, submitting && styles.buttonDisabled]} onPress={handleSubmit} disabled={submitting}>
-            <MaterialCommunityIcons name="credit-card-check-outline" color={palette.white} size={20} />
+            <MaterialCommunityIcons name="credit-card-check-outline" color={palette.onAccent} size={20} />
             <Text style={styles.primaryButtonText}>
               {submitting ? "Guardando..." : isRegistrationFlow ? "Finalizar registro" : mode === "edit" ? "Guardar cambios" : "Guardar medio de pago"}
             </Text>
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     opacity: 0.7
   },
   primaryButtonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 18,
     fontWeight: "800"
   },
@@ -831,19 +831,19 @@ const styles = StyleSheet.create({
     minHeight: 54,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D89A95",
-    backgroundColor: "#FFF4F3",
+    borderColor: palette.danger,
+    backgroundColor: palette.dangerSoft,
     alignItems: "center",
     justifyContent: "center"
   },
   deleteButtonText: {
-    color: "#C0443E",
+    color: palette.danger,
     fontSize: 16,
     fontWeight: "800"
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(18, 24, 38, 0.25)",
+    backgroundColor: palette.overlaySoft,
     justifyContent: "flex-end",
     padding: 18
   },

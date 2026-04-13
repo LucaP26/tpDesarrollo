@@ -15,27 +15,22 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import * as api from "@/src/lib/api";
-import { browseArtwork, browseStatus, formatEventDate, memberLabel, profileAvatar } from "@/src/lib/luxury";
+import {
+  catalogDescription,
+  categoryEyebrow,
+  categoryOrder,
+  formatEventDate,
+  memberLabel,
+  profileAvatar
+} from "@/src/lib/luxury";
 import { buildRestrictionAlert } from "@/src/lib/restrictions";
 import { useSession } from "@/src/lib/session";
 import { palette } from "@/src/lib/theme";
 import { AuctionSummary } from "@/src/lib/types";
 
 type AuctionCard = AuctionSummary & {
-  image: string;
   lotsAvailable: number;
 };
-
-function resolveArtwork(index: number) {
-  return browseArtwork[index % browseArtwork.length];
-}
-
-function resolveAuctionImage(source: string | undefined, index: number) {
-  if (!source || source.includes("images.example.com")) {
-    return resolveArtwork(index);
-  }
-  return source;
-}
 
 export default function AuctionsScreen() {
   const router = useRouter();
@@ -43,49 +38,45 @@ export default function AuctionsScreen() {
   const [search, setSearch] = useState("");
   const [cards, setCards] = useState<AuctionCard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-
-    async function loadAuctions() {
-      if (!token) {
-        return;
-      }
-
-      try {
-        const auctions = await api.listAuctions(token);
-        const details = await Promise.all(
-          auctions.map(async (auction, index) => {
-            try {
-              const detail = await api.getAuction(token, auction.id);
-              return {
-                ...auction,
-                image: resolveAuctionImage(detail.lots[0]?.image_urls[0], index),
-                lotsAvailable: detail.lots.length
-              };
-            } catch {
-              return {
-                ...auction,
-                image: resolveArtwork(index),
-                lotsAvailable: auction.can_view_catalog ? 24 + index * 12 : 0
-              };
-            }
-          })
-        );
-
-        if (active) {
-          setCards(details);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
+  async function loadAuctions(activeRef?: { current: boolean }) {
+    if (!token) {
+      setLoading(false);
+      return;
     }
 
-    loadAuctions();
+    try {
+      setErrorMessage(null);
+      const auctions = await api.listAuctions(token);
+      const details = auctions
+        .map((auction) => ({
+          ...auction,
+          lotsAvailable: auction.remaining_lots || auction.total_lots
+        }))
+        .sort((left, right) => categoryOrder[left.category] - categoryOrder[right.category]);
+
+      if (!activeRef || activeRef.current) {
+        setCards(details);
+      }
+    } catch (error) {
+      if (!activeRef || activeRef.current) {
+        setCards([]);
+        setErrorMessage(error instanceof Error ? error.message : "No pudimos cargar los catalogos.");
+      }
+    } finally {
+      if (!activeRef || activeRef.current) {
+        setLoading(false);
+      }
+    }
+  }
+
+  useEffect(() => {
+    const active = { current: true };
+    setLoading(true);
+    loadAuctions(active);
     return () => {
-      active = false;
+      active.current = false;
     };
   }, [token]);
 
@@ -94,10 +85,17 @@ export default function AuctionsScreen() {
     if (!query) {
       return cards;
     }
+
     return cards.filter((item) =>
-      [item.title, item.location, item.current_lot_title ?? "", item.category, memberLabel(item.category)].some((value) =>
-        value.toLowerCase().includes(query)
-      )
+      [
+        item.title,
+        item.location,
+        item.auctioneer_name,
+        item.preview_lot_title ?? "",
+        item.category,
+        memberLabel(item.category),
+        categoryEyebrow(item.category)
+      ].some((value) => value.toLowerCase().includes(query))
     );
   }, [cards, search]);
 
@@ -107,6 +105,7 @@ export default function AuctionsScreen() {
       Alert.alert(alert.title, alert.message);
       return;
     }
+
     router.push({
       pathname: "/auction/[id]",
       params: { id: String(item.id) }
@@ -120,7 +119,7 @@ export default function AuctionsScreen() {
           <Pressable onPress={() => router.push("/(tabs)/home")} style={styles.iconButton}>
             <Feather name="menu" size={24} color={palette.accent} />
           </Pressable>
-          <Text style={styles.title}>Subastas</Text>
+          <Text style={styles.title}>Catalogos</Text>
           <Pressable onPress={() => router.push("/(tabs)/profile")} style={styles.profileButton}>
             <Image source={{ uri: profileAvatar(user?.avatar_image_url, user?.email ?? "profile@luxury.local") }} style={styles.profileImage} />
           </Pressable>
@@ -131,14 +130,17 @@ export default function AuctionsScreen() {
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Buscar lotes, artistas, marcas o categorias"
+            placeholder="Buscar catalogos o categorias"
             placeholderTextColor={palette.textMuted}
             style={styles.searchInput}
           />
         </View>
 
         <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Categorias destacadas</Text>
+          <View style={styles.sectionCopyWrap}>
+            <Text style={styles.sectionEyebrow}>Una sala por categoria</Text>
+            <Text style={styles.sectionTitle}>Catalogos curados</Text>
+          </View>
           <Pressable onPress={() => setSearch("")}>
             <Text style={styles.filterLabel}>Limpiar</Text>
           </Pressable>
@@ -150,40 +152,65 @@ export default function AuctionsScreen() {
           </View>
         ) : (
           <View style={styles.cardList}>
-            {filteredCards.map((item, index) => {
-              const status = browseStatus(item.best_offer, index);
+            {errorMessage ? (
+              <View style={styles.errorCard}>
+                <Text style={styles.errorTitle}>No pudimos cargar las subastas</Text>
+                <Text style={styles.errorCopy}>{errorMessage}</Text>
+                <Pressable
+                  style={styles.retryButton}
+                  onPress={() => {
+                    setLoading(true);
+                    loadAuctions();
+                  }}
+                >
+                  <Text style={styles.retryButtonText}>Reintentar</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {filteredCards.map((item) => {
+              const accessCopy = item.can_view_catalog
+                ? `${item.lotsAvailable} lotes listos para sala`
+                : `Requiere categoria ${memberLabel(item.category)}`;
+
               return (
-                <View key={item.id} style={styles.card}>
-                  <View style={styles.imageWrap}>
-                    <Image source={{ uri: item.image }} style={styles.cardImage} />
-                    <View style={[styles.badge, status.tone === "slate" && styles.badgeSlate]}>
-                      <Text style={styles.badgeText}>{status.tone === "accent" ? "Activa" : `Desde ${formatEventDate(item.scheduled_at)}`}</Text>
+                <Pressable
+                  key={item.id}
+                  style={[styles.catalogCard, !item.can_view_catalog && styles.catalogCardLocked]}
+                  onPress={() => handleOpenCatalog(item)}
+                >
+                  <View style={styles.catalogTopRow}>
+                    <Text style={styles.catalogCategory}>{categoryEyebrow(item.category)}</Text>
+                    <Text style={styles.catalogTopMeta}>{accessCopy}</Text>
+                  </View>
+
+                  <Text style={styles.catalogTitle}>{item.title}</Text>
+                  <Text style={styles.catalogMeta}>
+                    {item.location} - {formatEventDate(item.scheduled_at)} - {item.auctioneer_name}
+                  </Text>
+                  <Text style={styles.catalogCopy}>{catalogDescription(item.category)}</Text>
+
+                  <View style={styles.catalogBottomRow}>
+                    <View style={styles.catalogBottomCopy}>
+                      <Text style={styles.catalogBottomLabel}>Pieza destacada</Text>
+                      <Text style={styles.catalogBottomValue}>{item.preview_lot_title ?? "Catalogo premium en preparacion"}</Text>
+                    </View>
+                    <View style={styles.catalogCategoryChip}>
+                      <Text style={styles.catalogCategoryChipText}>{memberLabel(item.category)}</Text>
                     </View>
                   </View>
-                  <View style={styles.cardFooter}>
-                    <View style={styles.cardMeta}>
-                      <Text style={styles.cardTitle}>{item.current_lot_title ?? item.title}</Text>
-                      <Text style={styles.cardSubtitle}>
-                        {item.can_view_catalog ? `${item.lotsAvailable} lotes disponibles` : "Catalogo restringido para tu categoria"}
-                      </Text>
-                      <Text style={styles.cardDate}>{item.location}</Text>
-                    </View>
-                    <Pressable
-                      style={[styles.catalogButton, !item.can_view_catalog && styles.catalogButtonDisabled]}
-                      onPress={() => handleOpenCatalog(item)}
-                    >
-                      <Text style={styles.catalogButtonText}>
-                        {item.can_view_catalog ? "Ver catalogo" : `Categoria ${memberLabel(item.category)}`}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
+
+                  {!item.can_view_catalog ? (
+                    <Text style={styles.catalogRestriction}>{item.view_block_reason ?? "Tu categoria actual no alcanza para abrir esta sala."}</Text>
+                  ) : null}
+                </Pressable>
               );
             })}
+
             {!filteredCards.length ? (
               <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>No hay subastas coincidentes</Text>
-                <Text style={styles.emptyCopy}>Prueba con otra palabra o limpia la busqueda para ver las salas programadas.</Text>
+                <Text style={styles.emptyTitle}>No encontramos catalogos con esa busqueda</Text>
+                <Text style={styles.emptyCopy}>Prueba con la categoria de la sala o limpia la busqueda para volver a ver todas.</Text>
               </View>
             ) : null}
           </View>
@@ -227,10 +254,10 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 23,
     borderWidth: 1,
-    borderColor: palette.accentSoft,
+    borderColor: palette.border,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: palette.surfaceWarm
+    backgroundColor: palette.surface
   },
   profileImage: {
     width: 34,
@@ -255,13 +282,28 @@ const styles = StyleSheet.create({
     marginTop: 22,
     marginBottom: 14,
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between"
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 14
+  },
+  sectionCopyWrap: {
+    flex: 1
+  },
+  sectionEyebrow: {
+    color: palette.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 2.2,
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 8
   },
   sectionTitle: {
     color: palette.ink,
-    fontSize: 18,
-    fontWeight: "800"
+    fontSize: 28,
+    lineHeight: 30,
+    letterSpacing: -1.2,
+    fontFamily: "Georgia",
+    fontWeight: "700"
   },
   filterLabel: {
     color: palette.accent,
@@ -274,85 +316,99 @@ const styles = StyleSheet.create({
   cardList: {
     gap: 16
   },
-  card: {
-    borderRadius: 22,
-    backgroundColor: palette.surface,
-    borderWidth: 1,
-    borderColor: palette.border,
-    overflow: "hidden",
+  catalogCard: {
+    borderRadius: 28,
+    backgroundColor: palette.surfaceMuted,
+    paddingHorizontal: 22,
+    paddingVertical: 22,
+    gap: 14,
     shadowColor: palette.shadow,
-    shadowOpacity: 0.18,
-    shadowRadius: 18,
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 12 },
     elevation: 4
   },
-  imageWrap: {
-    position: "relative"
+  catalogCardLocked: {
+    backgroundColor: palette.surfaceWarm
   },
-  cardImage: {
-    width: "100%",
-    height: 260,
-    backgroundColor: palette.surfaceMuted
+  catalogTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12
   },
-  badge: {
-    position: "absolute",
-    top: 14,
-    left: 14,
-    borderRadius: 8,
-    backgroundColor: palette.accent,
-    paddingHorizontal: 12,
-    paddingVertical: 8
+  catalogCategory: {
+    color: palette.gold,
+    textTransform: "uppercase",
+    letterSpacing: 2.6,
+    fontSize: 12,
+    fontWeight: "800"
   },
-  badgeSlate: {
-    backgroundColor: "#5E6778"
+  catalogTopMeta: {
+    color: palette.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1.1
   },
-  badgeText: {
+  catalogTitle: {
     color: palette.white,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: "800"
+  },
+  catalogMeta: {
+    color: palette.text,
+    fontSize: 15,
+    lineHeight: 22
+  },
+  catalogCopy: {
+    color: palette.text,
+    fontSize: 15,
+    lineHeight: 24
+  },
+  catalogBottomRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 16
+  },
+  catalogBottomCopy: {
+    flex: 1,
+    gap: 4
+  },
+  catalogBottomLabel: {
+    color: palette.textMuted,
+    fontSize: 11,
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 1.6
+  },
+  catalogBottomValue: {
+    color: palette.white,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "700"
+  },
+  catalogCategoryChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: palette.ghost,
+    backgroundColor: palette.goldSoft,
+    paddingHorizontal: 14,
+    paddingVertical: 9
+  },
+  catalogCategoryChipText: {
+    color: palette.gold,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 0.8
+    letterSpacing: 1.2
   },
-  cardFooter: {
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    flexDirection: "row",
-    gap: 12,
-    alignItems: "center",
-    justifyContent: "space-between"
-  },
-  cardMeta: {
-    flex: 1
-  },
-  cardTitle: {
-    color: palette.ink,
-    fontSize: 18,
-    lineHeight: 22,
-    fontWeight: "800",
-    marginBottom: 4
-  },
-  cardSubtitle: {
-    color: palette.text,
-    fontSize: 16
-  },
-  cardDate: {
-    marginTop: 4,
-    color: palette.textMuted,
-    fontSize: 14
-  },
-  catalogButton: {
-    borderRadius: 12,
-    backgroundColor: palette.accent,
-    paddingHorizontal: 18,
-    paddingVertical: 14
-  },
-  catalogButtonDisabled: {
-    backgroundColor: palette.nav
-  },
-  catalogButtonText: {
-    color: palette.white,
-    fontSize: 16,
-    fontWeight: "800"
+  catalogRestriction: {
+    color: palette.danger,
+    fontSize: 14,
+    lineHeight: 21
   },
   emptyCard: {
     borderRadius: 20,
@@ -360,6 +416,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: palette.border,
     padding: 22
+  },
+  errorCard: {
+    borderRadius: 22,
+    backgroundColor: palette.dangerSoft,
+    borderWidth: 1,
+    borderColor: palette.ghost,
+    padding: 22,
+    gap: 10
+  },
+  errorTitle: {
+    color: palette.ink,
+    fontSize: 19,
+    fontWeight: "800"
+  },
+  errorCopy: {
+    color: palette.text,
+    lineHeight: 22
+  },
+  retryButton: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    backgroundColor: palette.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    marginTop: 4
+  },
+  retryButtonText: {
+    color: palette.onAccent,
+    fontSize: 14,
+    fontWeight: "800"
   },
   emptyTitle: {
     color: palette.ink,

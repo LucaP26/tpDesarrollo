@@ -7,7 +7,7 @@ import { palette } from "@/src/lib/theme";
 export default function RootLayout() {
   return (
     <SessionProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: palette.backgroundSoft },
@@ -22,7 +22,7 @@ export default function RootLayout() {
         <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="register-payment" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auction/[id]" options={{ title: "Sala de subasta" }} />
+        <Stack.Screen name="auction/[id]" options={{ headerShown: false }} />
       </Stack>
     </SessionProvider>
   );

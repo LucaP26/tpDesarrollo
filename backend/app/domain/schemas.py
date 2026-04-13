@@ -284,6 +284,7 @@ class AuctionSummaryResponse(BaseApiModel):
     category: UserCategory
     currency: Currency
     state: AuctionState
+    auctioneer_name: str
     location: str
     can_view_catalog: bool = True
     view_block_reason: str | None = None
@@ -291,6 +292,11 @@ class AuctionSummaryResponse(BaseApiModel):
     block_reason: str | None = None
     current_lot_title: str | None = None
     best_offer: float | None = None
+    preview_lot_title: str | None = None
+    preview_image_url: str | None = None
+    preview_base_price: float | None = None
+    total_lots: int = 0
+    remaining_lots: int = 0
 
 
 class AuctionLotView(BaseApiModel):
@@ -326,6 +332,16 @@ class AuctionDetailResponse(BaseApiModel):
     view_block_reason: str | None = None
     can_bid: bool
     block_reason: str | None = None
+    current_lot_title: str | None = None
+    best_offer: float | None = None
+    preview_lot_title: str | None = None
+    preview_image_url: str | None = None
+    preview_base_price: float | None = None
+    total_lots: int = 0
+    remaining_lots: int = 0
+    current_lot: AuctionLotView | None = None
+    upcoming_lots: list[AuctionLotView] = Field(default_factory=list)
+    completed_lots: list[AuctionLotView] = Field(default_factory=list)
     lots: list[AuctionLotView]
 
 
@@ -336,6 +352,29 @@ class JoinAuctionResponse(BaseApiModel):
     block_reason: str | None = None
     websocket_path: str
     user_category: UserCategory
+
+
+class ActiveAuctionResponse(BaseApiModel):
+    auction_id: int
+    title: str
+    category: UserCategory
+    currency: Currency
+    scheduled_at: datetime
+    location: str
+    current_lot_id: int | None = None
+    current_lot_title: str | None = None
+    current_lot_image_url: str | None = None
+    current_price: float | None = None
+    my_latest_bid: float | None = None
+    my_is_leading: bool = False
+
+
+class LeaveAuctionResponse(BaseApiModel):
+    message: str
+    auction_id: int
+    removed_bid_amount: float | None = None
+    new_current_bid: float | None = None
+    new_current_bidder_id: int | None = None
 
 
 class BidCreate(BaseApiModel):

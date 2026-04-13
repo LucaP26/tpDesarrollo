@@ -1,10 +1,11 @@
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import { useFonts } from "expo-font";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Platform } from "react-native";
 
 import * as api from "@/src/lib/api";
 import { categoryProgress, memberLabel, paymentSubtitle, profileAvatar } from "@/src/lib/luxury";
@@ -74,8 +75,13 @@ function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 async function selectedImageToDataUrl(file: SelectedImage): Promise<string> {
-  if (file.base64?.startsWith("data:")) {
-    return file.base64;
+  if (file.base64) {
+    if (file.base64.startsWith("data:")) {
+      return file.base64;
+    }
+
+    const mimeType = file.mimeType ?? "image/jpeg";
+    return `data:${mimeType};base64,${file.base64}`;
   }
 
   if (file.file) {
@@ -90,6 +96,10 @@ async function selectedImageToDataUrl(file: SelectedImage): Promise<string> {
 export default function ProfileScreen() {
   const router = useRouter();
   const { token, user, updateUser, logout } = useSession();
+  const [iconFontsLoaded] = useFonts({
+    ...Feather.font,
+    ...MaterialCommunityIcons.font
+  });
   const initialName = useMemo(() => splitName(user?.full_name), [user?.full_name]);
   const [firstName, setFirstName] = useState(initialName.firstName);
   const [lastName, setLastName] = useState(initialName.lastName);
@@ -106,6 +116,47 @@ export default function ProfileScreen() {
     [metrics?.auctions_joined, payments.length, user?.category]
   );
   const avatarUri = profileAvatar(user?.avatar_image_url, user?.email ?? "profile@luxury.local");
+
+  function inlineFallback(symbol: string, color: string, size: number, weight: "700" | "800" = "700") {
+    return (
+      <Text
+        style={{
+          color,
+          fontSize: size,
+          lineHeight: size + 2,
+          fontWeight: weight
+        }}
+      >
+        {symbol}
+      </Text>
+    );
+  }
+
+  function confirmGalleryAccess() {
+    return new Promise<boolean>((resolve) => {
+      let handled = false;
+
+      const finish = (value: boolean) => {
+        if (!handled) {
+          handled = true;
+          resolve(value);
+        }
+      };
+
+      Alert.alert(
+        "Acceso a la galeria",
+        "Subastas quiere acceder a tu galeria para que elijas una foto de perfil.",
+        [
+          { text: "Cancelar", style: "cancel", onPress: () => finish(false) },
+          { text: "Continuar", onPress: () => finish(true) }
+        ],
+        {
+          cancelable: true,
+          onDismiss: () => finish(false)
+        }
+      );
+    });
+  }
 
   useEffect(() => {
     setFirstName(initialName.firstName);
@@ -207,26 +258,71 @@ export default function ProfileScreen() {
     }
 
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: ["image/png", "image/jpeg"],
-        multiple: false,
-        copyToCacheDirectory: true,
-        base64: Platform.OS === "web"
-      });
+      let nextFile: SelectedImage | null = null;
 
-      if (result.canceled) {
-        return;
+      if (Platform.OS === "web") {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: ["image/png", "image/jpeg"],
+          multiple: false,
+          copyToCacheDirectory: true,
+          base64: true
+        });
+
+        if (result.canceled) {
+          return;
+        }
+
+        const asset = result.assets[0];
+        nextFile = {
+          uri: asset.uri,
+          name: asset.name,
+          mimeType: asset.mimeType ?? null,
+          size: asset.size,
+          base64: asset.uri.startsWith("data:") ? asset.uri : null,
+          file: asset.file
+        };
+      } else {
+        const grantedByUser = await confirmGalleryAccess();
+        if (!grantedByUser) {
+          return;
+        }
+
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+          Alert.alert(
+            "Permiso denegado",
+            "No pudimos abrir la galeria porque no diste permiso para acceder a tus fotos."
+          );
+          return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ["images"],
+          allowsEditing: true,
+          aspect: [1, 1],
+          quality: 0.9,
+          base64: true,
+          selectionLimit: 1
+        });
+
+        if (result.canceled) {
+          return;
+        }
+
+        const asset = result.assets[0];
+        nextFile = {
+          uri: asset.uri,
+          name: asset.fileName ?? `perfil-${Date.now()}.jpg`,
+          mimeType: asset.mimeType ?? null,
+          size: asset.fileSize,
+          base64: asset.base64 ?? null,
+          file: asset.file
+        };
       }
 
-      const asset = result.assets[0];
-      const nextFile: SelectedImage = {
-        uri: asset.uri,
-        name: asset.name,
-        mimeType: asset.mimeType ?? null,
-        size: asset.size,
-        base64: asset.base64 ?? null,
-        file: asset.file
-      };
+      if (!nextFile) {
+        return;
+      }
 
       if (!isAllowedImage(nextFile)) {
         Alert.alert("Formato no valido", "Selecciona una imagen PNG o JPG para tu foto de perfil.");
@@ -255,7 +351,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
           <Pressable onPress={() => router.push("/(tabs)/home")} style={styles.iconButton}>
-            <Feather name="arrow-left" color={palette.ink} size={24} />
+            {iconFontsLoaded ? <Feather name="arrow-left" color={palette.ink} size={24} /> : inlineFallback("←", palette.ink, 24)}
           </Pressable>
           <Text style={styles.screenTitle}>Perfil de usuario</Text>
           <Pressable
@@ -267,7 +363,7 @@ export default function ProfileScreen() {
             }
             style={styles.iconButton}
           >
-            <Feather name="settings" color={palette.ink} size={22} />
+            {iconFontsLoaded ? <Feather name="settings" color={palette.ink} size={22} /> : inlineFallback("⚙", palette.ink, 22)}
           </Pressable>
         </View>
 
@@ -276,15 +372,15 @@ export default function ProfileScreen() {
             <Image source={{ uri: avatarUri }} style={styles.avatar} />
             <Pressable style={styles.cameraChip} onPress={handleChangeAvatar} disabled={uploadingAvatar}>
               {uploadingAvatar ? (
-                <ActivityIndicator color={palette.white} size="small" />
+                <ActivityIndicator color={palette.onAccent} size="small" />
               ) : (
-                <Feather name="camera" color={palette.white} size={18} />
+                (iconFontsLoaded ? <Feather name="camera" color={palette.onAccent} size={18} /> : inlineFallback("📷", palette.onAccent, 18))
               )}
             </Pressable>
           </View>
           <Text style={styles.heroName}>{`${firstName} ${lastName}`.trim() || user?.full_name || "Nuevo miembro"}</Text>
           <View style={styles.memberBadge}>
-            <Feather name="award" color={palette.accent} size={14} />
+            {iconFontsLoaded ? <Feather name="award" color={palette.accent} size={14} /> : inlineFallback("★", palette.accent, 14)}
             <Text style={styles.memberBadgeText}>{memberLabel(user?.category)}</Text>
           </View>
         </View>
@@ -361,9 +457,13 @@ export default function ProfileScreen() {
               <View key={payment.id} style={styles.paymentCard}>
                 <View style={styles.paymentIconWrap}>
                   {payment.type === "cuenta_bancaria" ? (
-                    <Feather name="briefcase" color={palette.accent} size={22} />
+                    iconFontsLoaded ? <Feather name="briefcase" color={palette.accent} size={22} /> : inlineFallback("▣", palette.accent, 22)
                   ) : (
-                    <MaterialCommunityIcons name="credit-card-outline" color={palette.accent} size={22} />
+                    iconFontsLoaded ? (
+                      <MaterialCommunityIcons name="credit-card-outline" color={palette.accent} size={22} />
+                    ) : (
+                      inlineFallback("◫", palette.accent, 22)
+                    )
                   )}
                 </View>
                 <View style={styles.paymentMeta}>
@@ -397,14 +497,18 @@ export default function ProfileScreen() {
           </View>
 
           <Pressable style={styles.addPaymentButton} onPress={handleAddPayment}>
-            <Feather name="plus-circle" color={palette.accent} size={20} />
+            {iconFontsLoaded ? <Feather name="plus-circle" color={palette.accent} size={20} /> : inlineFallback("+", palette.accent, 22, "800")}
             <Text style={styles.addPaymentText}>Agregar nuevo medio de pago</Text>
           </Pressable>
         </View>
 
         {editingProfile ? (
           <Pressable style={styles.saveButton} onPress={handleSave} disabled={saving}>
-            <MaterialCommunityIcons name="content-save-outline" color={palette.white} size={22} />
+            {iconFontsLoaded ? (
+              <MaterialCommunityIcons name="content-save-outline" color={palette.onAccent} size={22} />
+            ) : (
+              inlineFallback("✓", palette.onAccent, 22, "800")
+            )}
             <Text style={styles.saveButtonText}>{saving ? "Guardando..." : "Guardar todos los cambios"}</Text>
           </Pressable>
         ) : null}
@@ -495,13 +599,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8
+    gap: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: palette.accentSoft,
+    backgroundColor: palette.surfaceWarm,
+    paddingHorizontal: 14,
+    paddingVertical: 8
   },
   memberBadgeText: {
     color: palette.accent,
     textTransform: "uppercase",
-    letterSpacing: 1.8,
-    fontSize: 13,
+    letterSpacing: 1.1,
+    fontSize: 12,
     fontWeight: "800"
   },
   section: {
@@ -518,8 +628,6 @@ const styles = StyleSheet.create({
     gap: 14
   },
   progressHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-start",
     gap: 12
   },
@@ -538,9 +646,12 @@ const styles = StyleSheet.create({
     lineHeight: 24
   },
   progressBadge: {
+    alignSelf: "flex-start",
     borderRadius: 999,
+    borderWidth: 1,
+    borderColor: palette.accentSoft,
     backgroundColor: palette.surfaceWarm,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 8
   },
   progressBadgeText: {
@@ -548,7 +659,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 1.2
+    letterSpacing: 1
   },
   progressDetail: {
     color: palette.text,
@@ -692,11 +803,11 @@ const styles = StyleSheet.create({
     fontSize: 14
   },
   paymentDeleteButton: {
-    borderColor: "#D89A95",
-    backgroundColor: "#FFF4F3"
+    borderColor: palette.danger,
+    backgroundColor: palette.dangerSoft
   },
   paymentDelete: {
-    color: "#C0443E",
+    color: palette.danger,
     fontWeight: "800",
     fontSize: 14
   },
@@ -705,8 +816,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#F7B28F",
-    backgroundColor: "#FFF7F2",
+    borderColor: palette.accentDeep,
+    backgroundColor: palette.goldSoft,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -734,7 +845,7 @@ const styles = StyleSheet.create({
     elevation: 6
   },
   saveButtonText: {
-    color: palette.white,
+    color: palette.onAccent,
     fontSize: 18,
     fontWeight: "800"
   }

@@ -11,6 +11,7 @@ from app.domain.schemas import (
     AdminAuctionCreateRequest,
     AdminConsignmentReviewRequest,
     AdminUserApprovalRequest,
+    ActiveAuctionResponse,
     AppUser,
     AuthTokenResponse,
     BidCreate,
@@ -20,6 +21,7 @@ from app.domain.schemas import (
     ConsignmentResponse,
     HistoryEntryResponse,
     JoinAuctionResponse,
+    LeaveAuctionResponse,
     LoginRequest,
     MessageResponse,
     MetricsResponse,
@@ -162,6 +164,14 @@ def list_auctions(current_user: AppUser = Depends(get_current_user), container: 
     return container.auctions.list_auctions(current_user)
 
 
+@api_router.get("/subastas/activa", response_model=ActiveAuctionResponse | None)
+def get_active_auction(
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+):
+    return container.auctions.get_active_auction(current_user)
+
+
 @api_router.get("/subastas/{auction_id}", response_model=AuctionDetailResponse)
 def get_auction(auction_id: int, current_user: AppUser = Depends(get_current_user), container: ServiceContainer = Depends(get_container)):
     return container.auctions.get_auction(current_user, auction_id)
@@ -174,6 +184,15 @@ def join_auction(
     container: ServiceContainer = Depends(get_container),
 ) -> JoinAuctionResponse:
     return container.auctions.join_auction(current_user, auction_id)
+
+
+@api_router.post("/subastas/{auction_id}/abandonar", response_model=LeaveAuctionResponse)
+async def leave_auction(
+    auction_id: int,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> LeaveAuctionResponse:
+    return await container.auctions.leave_auction(current_user, auction_id)
 
 
 @api_router.post("/subastas/{auction_id}/lotes/{lot_id}/pujas", response_model=BidResponse)
@@ -269,6 +288,11 @@ def admin_close_auction(auction_id: int, container: ServiceContainer = Depends(g
     return container.admin.close_auction(auction_id)
 
 
+@api_router.post("/admin/subastas/{auction_id}/current-lot/close")
+def admin_close_current_lot(auction_id: int, container: ServiceContainer = Depends(get_container)):
+    return container.admin.close_current_lot(auction_id)
+
+
 @admin_router.get("", response_class=HTMLResponse)
 @admin_router.get("/", response_class=HTMLResponse)
 @admin_router.get("/dashboard", response_class=HTMLResponse)
@@ -331,6 +355,12 @@ def admin_dashboard_review_consignment(
 @admin_router.post("/subastas/{auction_id}/close")
 def admin_dashboard_close_auction(auction_id: int, container: ServiceContainer = Depends(get_container)):
     container.admin.close_auction(auction_id)
+    return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@admin_router.post("/subastas/{auction_id}/current-lot/close")
+def admin_dashboard_close_current_lot(auction_id: int, container: ServiceContainer = Depends(get_container)):
+    container.admin.close_current_lot(auction_id)
     return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 

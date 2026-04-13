@@ -1,4 +1,5 @@
 import {
+  ActiveAuction,
   ApiMessage,
   AuctionDetail,
   AuctionSummary,
@@ -7,6 +8,7 @@ import {
   CompleteRegistrationPayload,
   Consignment,
   JoinAuctionResult,
+  LeaveAuctionResult,
   Metrics,
   NotificationItem,
   PaymentMethod,
@@ -18,13 +20,35 @@ import {
 } from "./types";
 import { Platform } from "react-native";
 
+function normalizeApiBaseUrl(value?: string) {
+  return value?.replace(/\/$/, "");
+}
+
+function normalizeAndroidHost(value?: string) {
+  const normalized = normalizeApiBaseUrl(value);
+  if (!normalized) {
+    return normalized;
+  }
+  return normalized
+    .replace("://127.0.0.1", "://10.0.2.2")
+    .replace("://localhost", "://10.0.2.2");
+}
+
 function resolveApiBaseUrl() {
   if (Platform.OS === "web" && typeof window !== "undefined") {
     const protocol = window.location.protocol === "https:" ? "https:" : "http:";
     return `${protocol}//${window.location.hostname}:8000/api/v1`;
   }
 
-  return process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+  if (Platform.OS === "android") {
+    return (
+      normalizeAndroidHost(process.env.EXPO_PUBLIC_API_BASE_URL_ANDROID) ??
+      normalizeAndroidHost(process.env.EXPO_PUBLIC_API_BASE_URL) ??
+      "http://10.0.2.2:8000/api/v1"
+    );
+  }
+
+  return normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 }
 
 const API_BASE_URL = resolveApiBaseUrl();
@@ -164,8 +188,16 @@ export function getAuction(token: string, auctionId: number) {
   return request<AuctionDetail>(`/subastas/${auctionId}`, {}, token);
 }
 
+export function getActiveAuction(token: string) {
+  return request<ActiveAuction | null>("/subastas/activa", {}, token);
+}
+
 export function joinAuction(token: string, auctionId: number) {
   return request<JoinAuctionResult>(`/subastas/${auctionId}/join`, { method: "POST" }, token);
+}
+
+export function leaveAuction(token: string, auctionId: number) {
+  return request<LeaveAuctionResult>(`/subastas/${auctionId}/abandonar`, { method: "POST" }, token);
 }
 
 export function placeBid(token: string, auctionId: number, lotId: number, amount: number) {

@@ -51,7 +51,9 @@ class AdminService:
         )
 
     def _auction_summary(self, auction: AuctionRecord) -> AuctionSummaryResponse:
-        current_lot = self.store.lots[auction.lot_ids[0]] if auction.lot_ids else None
+        lots = self.auctions._ordered_lots(auction)
+        current_lot = self.auctions._current_lot_record(auction)
+        preview_lot = self.auctions._preview_lot_record(auction)
         return AuctionSummaryResponse(
             id=auction.id,
             title=auction.title,
@@ -66,6 +68,11 @@ class AdminService:
             block_reason=None,
             current_lot_title=current_lot.title if current_lot else None,
             best_offer=current_lot.current_bid if current_lot else None,
+            preview_lot_title=preview_lot.title if preview_lot else None,
+            preview_image_url=preview_lot.image_urls[0] if preview_lot and preview_lot.image_urls else None,
+            preview_base_price=preview_lot.base_price if preview_lot else None,
+            total_lots=len(lots),
+            remaining_lots=len([lot for lot in lots if not lot.sold]),
         )
 
     def dashboard(self) -> AdminDashboardResponse:
@@ -231,3 +238,6 @@ class AdminService:
 
     def close_auction(self, auction_id: int) -> dict:
         return self.auctions.close_auction(auction_id)
+
+    def close_current_lot(self, auction_id: int) -> dict:
+        return self.auctions.close_current_lot(auction_id)

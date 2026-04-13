@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Sistema de Subastas",
-    "slug": "sistema-de-subastas",
+    "name": "ATELIER",
+    "slug": "atelier",
     "scheme": "subastas",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -9,7 +9,18 @@
       "backgroundColor": "#f6efe5"
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Subastas necesita acceso a tu galeria para actualizar tu foto de perfil."
+        }
+      ],
+      "expo-font"
+    ],
+    "android": {
+      "package": "com.anonymous.sistemadesubastas"
+    }
   }
 }
