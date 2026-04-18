@@ -1,0 +1,8 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/curator_background" />
+    <item>
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/splash_reference" />
+    </item>
+</layer-list>
