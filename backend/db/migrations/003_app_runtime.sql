@@ -12,6 +12,7 @@ BEGIN
         document_number VARCHAR(20) NOT NULL,
         first_name VARCHAR(150) NOT NULL,
         last_name VARCHAR(150) NOT NULL,
+        gender VARCHAR(20) NOT NULL,
         legal_address VARCHAR(350) NOT NULL,
         country_code INT NOT NULL,
         category VARCHAR(20) NOT NULL,
@@ -19,8 +20,8 @@ BEGIN
         registration_stage VARCHAR(40) NOT NULL,
         roles_json NVARCHAR(MAX) NOT NULL,
         password_hash VARCHAR(500) NULL,
-        document_front_image_url VARCHAR(500) NULL,
-        document_back_image_url VARCHAR(500) NULL,
+        document_front_image_url NVARCHAR(MAX) NULL,
+        document_back_image_url NVARCHAR(MAX) NULL,
         CONSTRAINT pk_app_users PRIMARY KEY (id),
         CONSTRAINT uq_app_users_email UNIQUE (email)
     );

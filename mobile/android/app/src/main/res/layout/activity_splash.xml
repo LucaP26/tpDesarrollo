@@ -3,7 +3,7 @@
     android:id="@+id/rootSplash"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/curator_background">
+    android:background="@color/atelier_background">
 
     <ImageView
         android:layout_width="match_parent"
@@ -29,3 +29,4 @@
         android:text="@string/enter_gallery"
         android:textColor="@android:color/transparent" />
 </FrameLayout>
+

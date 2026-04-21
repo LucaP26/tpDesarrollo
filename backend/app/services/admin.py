@@ -39,6 +39,8 @@ class AdminService:
         return UserProfileResponse(
             id=user.id,
             email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
             full_name=f"{user.first_name} {user.last_name}",
             document_number=user.document_number,
             legal_address=user.legal_address,

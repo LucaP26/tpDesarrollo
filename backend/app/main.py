@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import admin_router, api_router, attach_websocket
+from app.api.routes import admin_router, api_router, attach_websocket, public_router
 from app.core.config import settings
 from app.services.container import ServiceContainer
 
@@ -12,6 +12,7 @@ app = FastAPI(title=settings.app_name, debug=settings.debug)
 
 container = ServiceContainer(settings)
 app.state.container = container
+app.include_router(public_router)
 app.include_router(api_router, prefix=settings.api_prefix)
 app.include_router(admin_router, prefix=settings.admin_prefix)
 static_dir = Path(__file__).resolve().parent / "static"

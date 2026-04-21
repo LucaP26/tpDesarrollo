@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/curator_background"
+    android:background="@color/atelier_background"
     android:fillViewport="true">
 
     <LinearLayout
@@ -20,8 +20,8 @@
             android:layout_height="wrap_content"
             android:fontFamily="serif"
             android:letterSpacing="0.22"
-            android:text="CURATOR"
-            android:textColor="@color/curator_accent"
+            android:text="ATELIER"
+            android:textColor="@color/atelier_accent"
             android:textSize="34sp" />
 
         <LinearLayout
@@ -34,21 +34,21 @@
             <View
                 android:layout_width="28dp"
                 android:layout_height="1dp"
-                android:background="@color/curator_text_muted" />
+                android:background="@color/atelier_text_muted" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="12dp"
-                android:text="EST. 1924"
+                android:text="DESDE 1924"
                 android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="10sp" />
 
             <View
                 android:layout_width="28dp"
                 android:layout_height="1dp"
-                android:background="@color/curator_text_muted" />
+                android:background="@color/atelier_text_muted" />
         </LinearLayout>
 
         <TextView
@@ -57,7 +57,7 @@
             android:layout_marginTop="56dp"
             android:fontFamily="serif"
             android:text="Bienvenido de nuevo"
-            android:textColor="@color/curator_ink"
+            android:textColor="@color/atelier_ink"
             android:textSize="34sp" />
 
         <TextView
@@ -66,28 +66,14 @@
             android:layout_marginTop="12dp"
             android:gravity="center"
             android:lineSpacingExtra="4dp"
-            android:text="Entra al curator de subastas exclusivas y coleccionables de alto valor."
-            android:textColor="@color/curator_text"
+            android:text="Entra a ATELIER, subastas exclusivas y coleccionables de alto valor."
+            android:textColor="@color/atelier_text"
             android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/networkStatusText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/bg_chip_surface"
-            android:gravity="center"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="12dp"
-            android:text="Debes permitir acceso a la red para continuar."
-            android:textColor="@color/curator_accent"
-            android:textSize="13sp"
-            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="42dp"
+            android:layout_marginTop="32dp"
             android:orientation="vertical">
 
             <TextView
@@ -95,7 +81,7 @@
                 android:layout_height="wrap_content"
                 android:text="Correo electronico"
                 android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="11sp" />
 
             <EditText
@@ -104,11 +90,11 @@
                 android:layout_height="56dp"
                 android:layout_marginTop="10dp"
                 android:background="@drawable/bg_input"
-                android:hint="curador@curator.com"
+                android:hint="curador@atelier.com"
                 android:inputType="textEmailAddress"
                 android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textColorHint="@color/curator_text_muted" />
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -123,7 +109,7 @@
                     android:layout_weight="1"
                     android:text="Contrasena"
                     android:textAllCaps="true"
-                    android:textColor="@color/curator_text_muted"
+                    android:textColor="@color/atelier_text_muted"
                     android:textSize="11sp" />
 
                 <TextView
@@ -132,7 +118,7 @@
                     android:layout_height="wrap_content"
                     android:text="Olvidaste?"
                     android:textAllCaps="true"
-                    android:textColor="@color/curator_text_muted"
+                    android:textColor="@color/atelier_text_muted"
                     android:textSize="10sp" />
             </LinearLayout>
 
@@ -145,8 +131,8 @@
                 android:hint="********"
                 android:inputType="textPassword"
                 android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textColorHint="@color/curator_text_muted" />
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
 
             <Button
                 android:id="@+id/loginButton"
@@ -171,7 +157,7 @@
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1"
-                android:background="@color/curator_border" />
+                android:background="@color/atelier_border" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -179,14 +165,14 @@
                 android:layout_marginHorizontal="12dp"
                 android:text="Opciones de acceso"
                 android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="10sp" />
 
             <View
                 android:layout_width="0dp"
                 android:layout_height="1dp"
                 android:layout_weight="1"
-                android:background="@color/curator_border" />
+                android:background="@color/atelier_border" />
         </LinearLayout>
 
         <TextView
@@ -194,7 +180,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:text="No tenes una cuenta?"
-            android:textColor="@color/curator_text"
+            android:textColor="@color/atelier_text"
             android:textSize="14sp" />
 
         <Button
@@ -207,7 +193,7 @@
             android:paddingHorizontal="22dp"
             android:text="Registrarse"
             android:textAllCaps="true"
-            android:textColor="@color/curator_accent"
+            android:textColor="@color/atelier_accent"
             android:textSize="11sp" />
 
         <LinearLayout
@@ -222,7 +208,7 @@
                 android:layout_height="wrap_content"
                 android:text="Politica de privacidad"
                 android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="10sp" />
 
             <TextView
@@ -230,7 +216,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="14dp"
                 android:text="|"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="10sp" />
 
             <TextView
@@ -238,8 +224,9 @@
                 android:layout_height="wrap_content"
                 android:text="Terminos del servicio"
                 android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="10sp" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
+

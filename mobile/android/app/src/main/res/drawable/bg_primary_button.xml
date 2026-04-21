@@ -2,6 +2,7 @@
     <corners android:radius="999dp" />
     <gradient
         android:angle="0"
-        android:endColor="@color/curator_accent_deep"
-        android:startColor="@color/curator_accent" />
+        android:endColor="@color/atelier_accent_deep"
+        android:startColor="@color/atelier_accent" />
 </shape>
+

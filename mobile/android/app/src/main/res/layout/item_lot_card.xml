@@ -11,13 +11,13 @@
         android:layout_width="match_parent"
         android:layout_height="250dp"
         android:adjustViewBounds="true"
-        android:background="@color/curator_surface_soft"
+        android:background="@color/atelier_surface_soft"
         android:scaleType="centerCrop" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/curator_surface_muted"
+        android:background="@color/atelier_surface_muted"
         android:orientation="vertical"
         android:padding="20dp">
 
@@ -39,7 +39,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -49,7 +49,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:fontFamily="serif"
-            android:textColor="@color/curator_ink"
+            android:textColor="@color/atelier_ink"
             android:textSize="30sp" />
 
         <TextView
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:lineSpacingExtra="3dp"
-            android:textColor="@color/curator_text"
+            android:textColor="@color/atelier_text"
             android:textSize="15sp" />
 
         <TextView
@@ -67,7 +67,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:fontFamily="serif"
-            android:textColor="@color/curator_accent"
+            android:textColor="@color/atelier_accent"
             android:textSize="26sp" />
 
         <TextView
@@ -75,7 +75,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="@color/curator_ink"
+            android:textColor="@color/atelier_ink"
             android:textSize="14sp" />
 
         <EditText
@@ -87,8 +87,8 @@
             android:hint="Ingresa tu puja"
             android:inputType="numberDecimal"
             android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_text_muted" />
 
         <Button
             android:id="@+id/bidButton"
@@ -102,3 +102,4 @@
             android:textSize="12sp" />
     </LinearLayout>
 </LinearLayout>
+

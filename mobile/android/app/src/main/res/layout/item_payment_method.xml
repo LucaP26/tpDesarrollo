@@ -18,8 +18,8 @@
             android:id="@+id/paymentTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/curator_ink"
-            android:textSize="18sp"
+            android:textColor="@color/atelier_ink"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <TextView
@@ -27,19 +27,39 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:textColor="@color/curator_text"
+            android:textColor="@color/atelier_text"
             android:textSize="14sp" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/paymentStatus"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_chip_surface"
-        android:paddingHorizontal="12dp"
-        android:paddingVertical="8dp"
-        android:textAllCaps="true"
-        android:textColor="@color/curator_accent"
-        android:textSize="10sp"
-        android:textStyle="bold" />
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/paymentStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_chip_surface"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_accent"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/paymentDeleteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Eliminar"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_danger"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>

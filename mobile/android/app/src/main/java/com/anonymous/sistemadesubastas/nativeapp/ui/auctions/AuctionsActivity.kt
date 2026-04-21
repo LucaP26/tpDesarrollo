@@ -50,6 +50,8 @@ class AuctionsActivity : BaseActivity() {
         loadAuctions()
     }
 
+    override fun shouldMonitorNetwork(): Boolean = true
+
     private fun loadAuctions() {
         AppExecutors.ioThenMain(
             task = { auctionRepository.listAuctions() },
@@ -58,7 +60,11 @@ class AuctionsActivity : BaseActivity() {
                 renderAuctions(filterAuctions(binding.searchInput.text?.toString().orEmpty()))
             },
             onError = { throwable ->
-                alert("No pudimos cargar subastas", throwable.message ?: "Intenta de nuevo.")
+                showErrorOrHandleSession(
+                    title = "No pudimos cargar subastas",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
             }
         )
     }
@@ -82,7 +88,7 @@ class AuctionsActivity : BaseActivity() {
         if (auctions.isEmpty()) {
             val empty = TextView(this).apply {
                 text = "No hay salas para ese filtro todavia."
-                setTextColor(ContextCompat.getColor(context, com.anonymous.sistemadesubastas.R.color.curator_text))
+                setTextColor(ContextCompat.getColor(context, com.anonymous.sistemadesubastas.R.color.atelier_text))
                 textSize = 15f
             }
             binding.auctionsContainer.addView(empty)
@@ -142,7 +148,11 @@ class AuctionsActivity : BaseActivity() {
                 }
             },
             onError = { throwable ->
-                alert("No se pudo ingresar", throwable.message ?: "Intenta de nuevo en unos instantes.")
+                showErrorOrHandleSession(
+                    title = "No se pudo ingresar",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo en unos instantes."
+                )
             }
         )
     }
@@ -151,3 +161,4 @@ class AuctionsActivity : BaseActivity() {
         const val EXTRA_FILTER = "extra_filter"
     }
 }
+

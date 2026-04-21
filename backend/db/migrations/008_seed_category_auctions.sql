@@ -6,40 +6,84 @@
 
 IF NOT EXISTS (SELECT 1 FROM dbo.app_users WHERE id = -1)
 BEGIN
-    INSERT INTO dbo.app_users (
-        id,
-        email,
-        document_number,
-        first_name,
-        last_name,
-        legal_address,
-        country_code,
-        category,
-        approved,
-        registration_stage,
-        roles_json,
-        password_hash,
-        document_front_image_url,
-        document_back_image_url,
-        avatar_image_url
-    )
-    VALUES (
-        -1,
-        'catalogo@eliteauctions.local',
-        '99999999',
-        'Casa',
-        'Elite',
-        'Av. del Libertador 4100, Buenos Aires',
-        32,
-        'platino',
-        1,
-        'registro_completado',
-        '["duenio"]',
-        NULL,
-        NULL,
-        NULL,
-        NULL
-    );
+    IF COL_LENGTH('app_users', 'gender') IS NULL
+    BEGIN
+        INSERT INTO dbo.app_users (
+            id,
+            email,
+            document_number,
+            first_name,
+            last_name,
+            legal_address,
+            country_code,
+            category,
+            approved,
+            registration_stage,
+            roles_json,
+            password_hash,
+            document_front_image_url,
+            document_back_image_url,
+            avatar_image_url
+        )
+        VALUES (
+            -1,
+            'catalogo@eliteauctions.local',
+            '99999999',
+            'Casa',
+            'Elite',
+            'Av. del Libertador 4100, Buenos Aires',
+            32,
+            'platino',
+            1,
+            'registro_completado',
+            '["duenio"]',
+            NULL,
+            NULL,
+            NULL,
+            NULL
+        );
+    END;
+    ELSE
+    BEGIN
+        EXEC(
+            N'INSERT INTO dbo.app_users (
+                id,
+                email,
+                document_number,
+                first_name,
+                last_name,
+                gender,
+                legal_address,
+                country_code,
+                category,
+                approved,
+                registration_stage,
+                roles_json,
+                password_hash,
+                document_front_image_url,
+                document_back_image_url,
+                avatar_image_url
+            )
+            VALUES (
+                -1,
+                ''catalogo@eliteauctions.local'',
+                ''99999999'',
+                ''Casa'',
+                ''Elite'',
+                ''otro'',
+                ''Av. del Libertador 4100, Buenos Aires'',
+                32,
+                ''platino'',
+                1,
+                ''registro_completado'',
+                ''[""duenio""]'',
+                NULL,
+                NULL,
+                NULL,
+                NULL
+            );'
+        );
+    END;
 END;
 GO
 

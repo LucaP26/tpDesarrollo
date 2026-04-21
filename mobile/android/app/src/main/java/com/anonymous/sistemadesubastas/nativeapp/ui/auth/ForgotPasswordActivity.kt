@@ -19,6 +19,10 @@ class ForgotPasswordActivity : BaseActivity() {
         binding.requestButton.setOnClickListener { requestRecovery() }
     }
 
+    override fun shouldMonitorNetwork(): Boolean = true
+
+    override fun shouldRequestMobileDataConsent(): Boolean = false
+
     private fun requestRecovery() {
         val email = binding.emailInput.text?.toString()?.trim().orEmpty()
         if (!email.contains("@")) {

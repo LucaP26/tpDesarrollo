@@ -2,6 +2,7 @@ package com.anonymous.sistemadesubastas.nativeapp.data.network
 
 import com.anonymous.sistemadesubastas.BuildConfig
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -26,6 +27,10 @@ class ApiClient(private val tokenProvider: () -> String?) {
         return execute(path = path, method = "POST", body = body, authenticated = authenticated)
     }
 
+    fun delete(path: String, authenticated: Boolean = true): JSONObject {
+        return execute(path = path, method = "DELETE", body = null, authenticated = authenticated)
+    }
+
     private fun execute(path: String, method: String, body: JSONObject?, authenticated: Boolean): JSONObject {
         return executeNullable(path, method, body, authenticated) ?: JSONObject()
     }
@@ -36,13 +41,18 @@ class ApiClient(private val tokenProvider: () -> String?) {
         val (code, payload) = readResponse(connection)
 
         if (code !in 200..299) {
-            val json = if (payload.isNotBlank() && payload != "null") JSONObject(payload) else JSONObject()
-            throw ApiException(json.optString("detail").ifBlank { "Error inesperado" })
+            val json = parseJsonObject(payload)
+            throw ApiException(
+                message = json?.optString("detail").takeUnless { it.isNullOrBlank() }
+                    ?: payload.takeIf { it.isNotBlank() && it != "null" }
+                    ?: "Error inesperado",
+                statusCode = code
+            )
         }
         if (payload.isBlank() || payload == "null") {
             return null
         }
-        return JSONObject(payload)
+        return parseJsonObject(payload) ?: JSONObject()
     }
 
     private fun executeArray(path: String, method: String, body: JSONObject?, authenticated: Boolean): JSONArray {
@@ -51,8 +61,13 @@ class ApiClient(private val tokenProvider: () -> String?) {
         val (code, payload) = readResponse(connection)
 
         if (code !in 200..299) {
-            val errorJson = if (payload.isNotBlank()) JSONObject(payload) else JSONObject()
-            throw ApiException(errorJson.optString("detail").ifBlank { "Error inesperado" })
+            val errorJson = parseJsonObject(payload)
+            throw ApiException(
+                message = errorJson?.optString("detail").takeUnless { it.isNullOrBlank() }
+                    ?: payload.takeIf { it.isNotBlank() && it != "null" }
+                    ?: "Error inesperado",
+                statusCode = code
+            )
         }
 
         return if (payload.isNotBlank()) JSONArray(payload) else JSONArray()
@@ -69,7 +84,7 @@ class ApiClient(private val tokenProvider: () -> String?) {
         if (authenticated) {
             val token = tokenProvider()
             if (token.isNullOrBlank()) {
-                throw ApiException("Falta token de acceso.")
+                throw ApiException("Falta token de acceso.", statusCode = 401)
             }
             connection.setRequestProperty("Authorization", "Bearer $token")
         }
@@ -93,6 +108,20 @@ class ApiClient(private val tokenProvider: () -> String?) {
         }.orEmpty()
         return code to payload
     }
+
+    private fun parseJsonObject(payload: String): JSONObject? {
+        if (payload.isBlank() || payload == "null") {
+            return null
+        }
+        return try {
+            JSONObject(payload)
+        } catch (_: JSONException) {
+            null
+        }
+    }
 }
 
-class ApiException(message: String) : RuntimeException(message)
+class ApiException(
+    message: String,
+    val statusCode: Int? = null
+) : RuntimeException(message)

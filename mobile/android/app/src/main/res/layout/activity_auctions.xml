@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/curator_background"
+    android:background="@color/atelier_background"
     android:orientation="vertical"
     android:paddingStart="18dp"
     android:paddingTop="12dp"
@@ -21,7 +21,7 @@
             android:layout_height="40dp"
             android:gravity="center_vertical"
             android:text="&lt;"
-            android:textColor="@color/curator_accent"
+            android:textColor="@color/atelier_accent"
             android:textSize="24sp" />
 
         <TextView
@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Catalogos"
-            android:textColor="@color/curator_ink"
+            android:textColor="@color/atelier_ink"
             android:textSize="22sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -42,8 +42,8 @@
         android:background="@drawable/bg_input"
         android:hint="Buscar catalogos o categorias"
         android:paddingHorizontal="16dp"
-        android:textColor="@color/curator_ink"
-        android:textColorHint="@color/curator_text_muted" />
+        android:textColor="@color/atelier_ink"
+        android:textColorHint="@color/atelier_text_muted" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -63,7 +63,7 @@
                 android:layout_height="wrap_content"
                 android:text="Una sala por categoria"
                 android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
+                android:textColor="@color/atelier_text_muted"
                 android:textSize="11sp" />
 
             <TextView
@@ -72,7 +72,7 @@
                 android:layout_marginTop="6dp"
                 android:fontFamily="serif"
                 android:text="Catalogos curados"
-                android:textColor="@color/curator_ink"
+                android:textColor="@color/atelier_ink"
                 android:textSize="28sp" />
         </LinearLayout>
 
@@ -81,7 +81,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Limpiar"
-            android:textColor="@color/curator_accent"
+            android:textColor="@color/atelier_accent"
             android:textSize="15sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -99,3 +99,4 @@
             android:orientation="vertical" />
     </ScrollView>
 </LinearLayout>
+

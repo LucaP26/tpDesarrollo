@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/atelier_background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="32dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/backButton"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
+                android:gravity="center"
+                android:text="&lt;"
+                android:textColor="@color/atelier_ink"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Poner pieza en subasta"
+                android:textColor="@color/atelier_ink"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="42dp"
+                android:layout_height="42dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_card_surface"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="serif"
+                android:text="Consigna tu pieza"
+                android:textColor="@color/atelier_ink"
+                android:textSize="28sp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:lineSpacingExtra="4dp"
+                android:text="Carga los datos del bien y al menos seis fotos para que el equipo de ATELIER lo revise y te contacte con una propuesta."
+                android:textColor="@color/atelier_text"
+                android:textSize="15sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="22dp"
+                android:text="Titulo de la pieza"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/titleInput"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:hint="Ej. Rolex Daytona 1988"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Descripcion"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/descriptionInput"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:gravity="top|start"
+                android:hint="Describe la pieza, estado, materiales y detalles importantes."
+                android:inputType="textCapSentences|textMultiLine"
+                android:padding="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Historia de la pieza"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/storyInput"
+                android:layout_width="match_parent"
+                android:layout_height="112dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:gravity="top|start"
+                android:hint="Cuenta su procedencia, coleccion o contexto."
+                android:inputType="textCapSentences|textMultiLine"
+                android:padding="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
+            <Button
+                android:id="@+id/selectPhotosButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/bg_secondary_button"
+                android:text="Agregar fotos del bien"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_accent"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/photoCountText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Necesitas al menos 6 fotos."
+                android:textColor="@color/atelier_text"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/selectedPhotosText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="4dp"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="13sp" />
+
+            <CheckBox
+                android:id="@+id/ownershipCheck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Declaro ser titular legitimo del bien."
+                android:textColor="@color/atelier_ink" />
+
+            <CheckBox
+                android:id="@+id/legalOriginCheck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Declaro que el bien tiene origen licito."
+                android:textColor="@color/atelier_ink" />
+
+            <Button
+                android:id="@+id/submitButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="22dp"
+                android:background="@drawable/bg_primary_button"
+                android:text="Enviar a evaluacion"
+                android:textAllCaps="true"
+                android:textColor="#412D00"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
+            android:text="Tus consignaciones"
+            android:textColor="@color/atelier_ink"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:id="@+id/consignmentsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/emptyConsignmentsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Todavia no enviaste piezas para evaluacion."
+            android:textColor="@color/atelier_text"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

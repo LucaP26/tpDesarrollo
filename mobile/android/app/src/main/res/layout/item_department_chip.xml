@@ -2,22 +2,32 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_marginEnd="14dp"
+    android:layout_marginEnd="22dp"
     android:gravity="center"
     android:orientation="vertical">
 
-    <View
+    <FrameLayout
         android:layout_width="74dp"
         android:layout_height="74dp"
-        android:background="@drawable/bg_department_circle" />
+        android:background="@drawable/bg_department_circle">
+
+        <TextView
+            android:id="@+id/departmentMonogram"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textColor="@color/atelier_accent"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/departmentLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:textAllCaps="true"
-        android:textColor="@color/curator_text"
-        android:textSize="11sp"
-        android:textStyle="bold" />
+        android:textColor="@color/atelier_text_muted"
+        android:textSize="10sp" />
 </LinearLayout>
+

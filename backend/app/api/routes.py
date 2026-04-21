@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, FastAPI, Form, HTTPException, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -26,6 +27,7 @@ from app.domain.schemas import (
     MessageResponse,
     MetricsResponse,
     NotificationResponse,
+    OnboardingRegistrationRequest,
     AuctionDetailResponse,
     AuctionSummaryResponse,
     PaymentMethodCreate,
@@ -33,6 +35,8 @@ from app.domain.schemas import (
     PaymentMethodUpdate,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
+    PasswordChangeRequest,
+    PasswordSetupRequest,
     ProfileAvatarUpdateRequest,
     ProfileUpdateRequest,
     PreRegisterRequest,
@@ -44,6 +48,7 @@ from app.services.container import ServiceContainer
 
 api_router = APIRouter()
 admin_router = APIRouter()
+public_router = APIRouter()
 security = HTTPBearer(auto_error=False)
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
@@ -61,6 +66,46 @@ def get_current_user(
     return container.auth.get_user_by_token(credentials.credentials)
 
 
+@public_router.get("/password-setup/open", response_class=HTMLResponse)
+def open_password_setup_link(request: Request) -> HTMLResponse:
+    token = request.query_params.get("token", "").strip()
+    email = request.query_params.get("email", "").strip().lower()
+    deep_link = f"atelier://set-password?{urlencode({'token': token, 'email': email})}"
+    html = f"""
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Abrir Atelier</title>
+        <script>
+          window.onload = function() {{
+            window.location.href = "{deep_link}";
+            setTimeout(function() {{
+              var fallback = document.getElementById("fallback");
+              if (fallback) fallback.style.display = "block";
+            }}, 1200);
+          }};
+        </script>
+      </head>
+      <body style="margin:0;padding:32px;background:#111111;color:#efe6db;font-family:Georgia,serif;">
+        <div style="max-width:560px;margin:0 auto;text-align:center;">
+          <div style="color:#cda75f;font-size:13px;letter-spacing:0.4em;">ATELIER</div>
+          <h1 style="margin:18px 0 12px 0;">Abriendo la app...</h1>
+          <p style="line-height:1.7;color:#d5cabc;">
+            Si Atelier no se abre automaticamente, toca el siguiente enlace para continuar con la creacion de tu contrasena.
+          </p>
+          <p id="fallback" style="display:none;margin-top:28px;">
+            <a href="{deep_link}" style="color:#cda75f;font-size:18px;font-weight:700;text-decoration:underline;">
+              Abrir Atelier y crear contrasena
+            </a>
+          </p>
+        </div>
+      </body>
+    </html>
+    """
+    return HTMLResponse(content=html)
+
+
 @api_router.get("/health")
 def health() -> dict:
     return {"status": "ok"}
@@ -71,12 +116,28 @@ def pre_register(payload: PreRegisterRequest, container: ServiceContainer = Depe
     return container.auth.pre_register(payload)
 
 
+@api_router.post("/auth/register-onboarding", response_model=MessageResponse)
+def register_onboarding(
+    payload: OnboardingRegistrationRequest,
+    container: ServiceContainer = Depends(get_container),
+) -> MessageResponse:
+    return container.auth.register_onboarding(payload)
+
+
 @api_router.post("/auth/complete-registration", response_model=AuthTokenResponse)
 def complete_registration(
     payload: CompleteRegistrationRequest,
     container: ServiceContainer = Depends(get_container),
 ) -> AuthTokenResponse:
     return container.auth.complete_registration(payload)
+
+
+@api_router.post("/auth/password-setup/complete", response_model=AuthTokenResponse)
+def complete_password_setup(
+    payload: PasswordSetupRequest,
+    container: ServiceContainer = Depends(get_container),
+) -> AuthTokenResponse:
+    return container.auth.complete_password_setup(payload)
 
 
 @api_router.post("/auth/login", response_model=AuthTokenResponse)
@@ -100,6 +161,15 @@ def confirm_password_reset(
     return container.auth.confirm_password_reset(payload)
 
 
+@api_router.post("/auth/password/change", response_model=MessageResponse)
+def change_password(
+    payload: PasswordChangeRequest,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageResponse:
+    return container.auth.change_password(current_user, payload)
+
+
 @api_router.get("/auth/profile", response_model=UserProfileResponse)
 def profile(current_user: AppUser = Depends(get_current_user), container: ServiceContainer = Depends(get_container)) -> UserProfileResponse:
     return container.auth.get_profile(current_user)
@@ -114,8 +184,26 @@ def update_profile_avatar(
     return container.auth.update_profile_avatar(current_user, payload)
 
 
+@api_router.post("/auth/profile/avatar", response_model=UserProfileResponse)
+def update_profile_avatar_post(
+    payload: ProfileAvatarUpdateRequest,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> UserProfileResponse:
+    return container.auth.update_profile_avatar(current_user, payload)
+
+
 @api_router.patch("/auth/profile", response_model=UserProfileResponse)
 def update_profile(
+    payload: ProfileUpdateRequest,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> UserProfileResponse:
+    return container.auth.update_profile(current_user, payload)
+
+
+@api_router.post("/auth/profile", response_model=UserProfileResponse)
+def update_profile_post(
     payload: ProfileUpdateRequest,
     current_user: AppUser = Depends(get_current_user),
     container: ServiceContainer = Depends(get_container),

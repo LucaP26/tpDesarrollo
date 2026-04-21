@@ -2,6 +2,7 @@
     <corners android:radius="999dp" />
     <stroke
         android:width="1dp"
-        android:color="@color/curator_accent" />
+        android:color="@color/atelier_accent" />
     <solid android:color="@android:color/transparent" />
 </shape>
+

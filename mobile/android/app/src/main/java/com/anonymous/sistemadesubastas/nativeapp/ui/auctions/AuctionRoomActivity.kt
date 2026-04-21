@@ -60,12 +60,12 @@ class AuctionRoomActivity : BaseActivity() {
     override fun shouldMonitorNetwork(): Boolean = true
 
     override fun onNetworkStatusChanged(status: NetworkStatus) {
-        val previousConnected = latestNetworkStatus.isConnected
+        val previousConnected = canUseCurrentNetwork(latestNetworkStatus)
         latestNetworkStatus = status
         renderNetworkBanner()
         updateVisibleBidControls()
 
-        if (receivedNetworkCallback && !previousConnected && status.isConnected) {
+        if (receivedNetworkCallback && !previousConnected && canUseCurrentNetwork(status)) {
             toast("Conexion recuperada. Actualizando sala...")
             loadAuction()
         }
@@ -79,9 +79,12 @@ class AuctionRoomActivity : BaseActivity() {
                 renderDetail(detail)
             },
             onError = { throwable ->
-                alert("No se pudo cargar la sala", throwable.message ?: "Intenta de nuevo.") {
-                    finish()
-                }
+                showErrorOrHandleSession(
+                    title = "No se pudo cargar la sala",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo.",
+                    onDismiss = { finish() }
+                )
             }
         )
     }
@@ -175,10 +178,10 @@ class AuctionRoomActivity : BaseActivity() {
     }
 
     private fun placeBid(cardBinding: ItemLotCardBinding, detail: AuctionDetail, lot: AuctionLot) {
-        if (!latestNetworkStatus.isConnected) {
+        if (!canUseCurrentNetwork(latestNetworkStatus)) {
             alert(
                 "Sin conexion",
-                "La red se perdio. Tu puja no se enviara hasta recuperar Wi-Fi o datos moviles."
+                "Tu puja necesita Wi-Fi o datos moviles autorizados para enviarse correctamente."
             )
             return
         }
@@ -202,20 +205,26 @@ class AuctionRoomActivity : BaseActivity() {
             onError = { throwable ->
                 cardBinding.bidButton.isEnabled = true
                 cardBinding.bidButton.text = "Pujar"
-                alert("No se pudo pujar", throwable.message ?: "Intenta de nuevo.")
+                showErrorOrHandleSession(
+                    title = "No se pudo pujar",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
             }
         )
     }
 
     private fun confirmLeaveAuction() {
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle("Abandonar sala")
             .setMessage("Si sales, se quitara tu ultima puja activa y podras entrar a otra subasta.")
             .setNegativeButton("Cancelar", null)
             .setPositiveButton("Abandonar") { _, _ ->
                 leaveAuction()
             }
-            .show()
+            .create()
+        styleDialogButtons(dialog)
+        dialog.show()
     }
 
     private fun leaveAuction() {
@@ -230,7 +239,11 @@ class AuctionRoomActivity : BaseActivity() {
                 finish()
             },
             onError = { throwable ->
-                alert("No se pudo abandonar", throwable.message ?: "Intenta de nuevo.")
+                showErrorOrHandleSession(
+                    title = "No se pudo abandonar",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
             }
         )
     }
@@ -247,7 +260,7 @@ class AuctionRoomActivity : BaseActivity() {
     }
 
     private fun renderNetworkBanner() {
-        binding.networkBanner.visibility = if (latestNetworkStatus.isConnected) View.GONE else View.VISIBLE
+        binding.networkBanner.visibility = if (canUseCurrentNetwork(latestNetworkStatus)) View.GONE else View.VISIBLE
     }
 
     private fun updateVisibleBidControls() {
@@ -274,7 +287,7 @@ class AuctionRoomActivity : BaseActivity() {
             return
         }
 
-        val isConnected = latestNetworkStatus.isConnected
+        val isConnected = canUseCurrentNetwork(latestNetworkStatus)
         bidInput.isEnabled = isConnected
         bidButton.isEnabled = isConnected
         bidButton.text = if (isConnected) "Pujar" else "Sin conexion"

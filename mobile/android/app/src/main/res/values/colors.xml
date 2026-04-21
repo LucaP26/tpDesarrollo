@@ -2,17 +2,19 @@
   <color name="splashscreen_background">#f6efe5</color>
   <color name="colorPrimary">#023c69</color>
   <color name="colorPrimaryDark">#f6efe5</color>
-  <color name="curator_background">#0E0E0E</color>
-  <color name="curator_surface">#131313</color>
-  <color name="curator_surface_soft">#1C1B1B</color>
-  <color name="curator_surface_muted">#201F1F</color>
-  <color name="curator_surface_high">#2A2A2A</color>
-  <color name="curator_ink">#F3EEE6</color>
-  <color name="curator_text">#D0C5B5</color>
-  <color name="curator_text_muted">#A89B88</color>
-  <color name="curator_accent">#E6C383</color>
-  <color name="curator_accent_deep">#C9A86A</color>
-  <color name="curator_success">#5DAE80</color>
-  <color name="curator_border">#264D463A</color>
-  <color name="curator_danger">#D78E77</color>
+  <color name="atelier_background">#0E0E0E</color>
+  <color name="atelier_surface">#131313</color>
+  <color name="atelier_surface_soft">#1C1B1B</color>
+  <color name="atelier_surface_muted">#201F1F</color>
+  <color name="atelier_surface_high">#2A2A2A</color>
+  <color name="atelier_ink">#F3EEE6</color>
+  <color name="atelier_text">#D0C5B5</color>
+  <color name="atelier_text_muted">#A89B88</color>
+  <color name="atelier_accent">#B88942</color>
+  <color name="atelier_accent_deep">#8D672F</color>
+  <color name="atelier_action">#5B3A12</color>
+  <color name="atelier_success">#5DAE80</color>
+  <color name="atelier_border">#264D463A</color>
+  <color name="atelier_danger">#D78E77</color>
 </resources>
+

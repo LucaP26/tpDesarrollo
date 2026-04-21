@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time
+from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.domain.enums import (
@@ -20,6 +21,9 @@ from app.domain.enums import (
 
 class BaseApiModel(BaseModel):
     pass
+
+
+GenderValue = Literal["femenino", "masculino", "otro"]
 
 
 class NotificationRecord(BaseApiModel):
@@ -140,6 +144,8 @@ class AppUser(BaseApiModel):
     document_number: str
     first_name: str
     last_name: str
+    gender: GenderValue = "otro"
+    birth_date: date | None = None
     legal_address: str
     country_code: int
     category: UserCategory
@@ -183,6 +189,21 @@ class PreRegisterRequest(BaseApiModel):
     document_back_image_url: str
 
 
+class OnboardingRegistrationRequest(BaseApiModel):
+    email: str
+    document_number: str
+    first_name: str
+    last_name: str
+    gender: GenderValue
+    birth_date: date
+    legal_address: str
+    country_code: int
+    roles: list[UserRole] = Field(default_factory=lambda: [UserRole.CLIENTE, UserRole.DUENIO])
+    document_front_image_url: str
+    document_back_image_url: str
+    payment_method: "PaymentMethodCreate"
+
+
 class RegistrationProgressResponse(BaseApiModel):
     user_id: int
     registration_stage: RegistrationStage
@@ -196,6 +217,12 @@ class MessageResponse(BaseApiModel):
 
 class CompleteRegistrationRequest(BaseApiModel):
     user_id: int
+    password: str
+
+
+class PasswordSetupRequest(BaseApiModel):
+    email: str
+    token: str
     password: str
 
 
@@ -214,6 +241,11 @@ class PasswordResetConfirmRequest(BaseApiModel):
     new_password: str
 
 
+class PasswordChangeRequest(BaseApiModel):
+    current_password: str
+    new_password: str
+
+
 class ProfileAvatarUpdateRequest(BaseApiModel):
     avatar_image_url: str
 
@@ -228,10 +260,13 @@ class ProfileUpdateRequest(BaseApiModel):
 class UserProfileResponse(BaseApiModel):
     id: int
     email: str
+    first_name: str
+    last_name: str
     full_name: str
     document_number: str
     legal_address: str
     country_code: int
+    gender: GenderValue = "otro"
     category: UserCategory
     approved: bool
     registration_stage: RegistrationStage

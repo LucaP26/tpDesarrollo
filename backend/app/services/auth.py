@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import date, timedelta
 
 from fastapi import HTTPException, status
 
@@ -12,12 +12,15 @@ from app.domain.schemas import (
     CompleteRegistrationRequest,
     LoginRequest,
     MessageResponse,
+    OnboardingRegistrationRequest,
     PaymentMethodCreate,
     PaymentMethodRecord,
     PaymentMethodResponse,
+    PasswordSetupRequest,
     ProfileAvatarUpdateRequest,
     ProfileUpdateRequest,
     PasswordResetTokenRecord,
+    PasswordChangeRequest,
     PasswordResetConfirmRequest,
     PasswordResetRequest,
     PreRegisterRequest,
@@ -42,16 +45,32 @@ class AuthService:
         return UserProfileResponse(
             id=user.id,
             email=user.email,
+            first_name=user.first_name,
+            last_name=user.last_name,
             full_name=f"{user.first_name} {user.last_name}",
             document_number=user.document_number,
             legal_address=user.legal_address,
             country_code=user.country_code,
+            gender=user.gender,
             category=user.category,
             approved=user.approved,
             registration_stage=user.registration_stage,
             roles=user.roles,
             avatar_image_url=user.avatar_image_url,
         )
+
+    def _validate_password_strength(self, password: str) -> None:
+        if (
+            len(password) < 6
+            or not any(character.islower() for character in password)
+            or not any(character.isupper() for character in password)
+            or not any(character.isdigit() for character in password)
+            or not any(not character.isalnum() for character in password)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La contrasena debe tener al menos 6 caracteres e incluir una minuscula, una mayuscula, un numero y un simbolo.",
+            )
 
     def _sync_category(self, user: AppUser) -> None:
         if promote_user_category(self.store, self.notifications, user):
@@ -68,8 +87,8 @@ class AuthService:
             cleaned[token_id] = token
         self.store.password_reset_tokens = cleaned
 
-    def _active_reset_token(self, user_id: int, code: str):
-        token_hash = hash_secret(code)
+    def _active_password_token(self, user_id: int, secret: str):
+        token_hash = hash_secret(secret)
         now = utc_now()
         for token in self.store.password_reset_tokens.values():
             if token.user_id != user_id:
@@ -80,8 +99,48 @@ class AuthService:
                 return token
         return None
 
+    def _find_user_by_email(self, email: str) -> AppUser | None:
+        normalized_email = email.strip().lower()
+        return next((item for item in self.store.users.values() if item.email == normalized_email), None)
+
+    def _issue_password_setup_token(self, user_id: int) -> str:
+        self._clear_stale_reset_tokens(user_id)
+        raw_token = generate_token()
+        now = utc_now()
+        token_id = self.store.next_id("password_reset_tokens")
+        self.store.password_reset_tokens[token_id] = PasswordResetTokenRecord(
+            id=token_id,
+            user_id=user_id,
+            token_hash=hash_secret(raw_token),
+            created_at=now,
+            expires_at=now + timedelta(hours=self.email.settings.password_setup_link_ttl_hours),
+            used_at=None,
+        )
+        return raw_token
+
+    def _build_payment_method(self, user: AppUser, payload: PaymentMethodCreate) -> PaymentMethodRecord:
+        return PaymentMethodRecord(
+            id=self.store.next_id("payments"),
+            user_id=user.id,
+            type=payload.type,
+            display_name=payload.display_name,
+            currency=payload.currency,
+            issuer_country=payload.issuer_country,
+            available_amount=payload.available_amount,
+            last_four=payload.last_four,
+            holder_first_name=payload.holder_first_name,
+            holder_last_name=payload.holder_last_name,
+            issuing_bank=payload.issuing_bank,
+            expiration_date=payload.expiration_date,
+        )
+
+    def _is_legal_adult(self, birth_date: date) -> bool:
+        today = utc_now().date()
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        return age >= 18
+
     def pre_register(self, payload: PreRegisterRequest) -> RegistrationProgressResponse:
-        existing = next((item for item in self.store.users.values() if item.email == payload.email), None)
+        existing = self._find_user_by_email(payload.email)
         if existing:
             if (
                 existing.registration_stage == RegistrationStage.PRE_REGISTRO
@@ -111,6 +170,8 @@ class AuthService:
             document_number=payload.document_number,
             first_name=payload.first_name,
             last_name=payload.last_name,
+            gender="otro",
+            birth_date=None,
             legal_address=payload.legal_address,
             country_code=payload.country_code,
             category=UserCategory.COMUN,
@@ -135,11 +196,82 @@ class AuthService:
             message="Pre-registro creado. Falta aprobacion de la empresa y definir la clave.",
         )
 
+    def register_onboarding(self, payload: OnboardingRegistrationRequest) -> MessageResponse:
+        normalized_email = payload.email.strip().lower()
+        if not self._is_legal_adult(payload.birth_date):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Solo las personas mayores de 18 anos pueden acceder al sitio.",
+            )
+        existing = self._find_user_by_email(normalized_email)
+        if existing and existing.password_hash:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El email ya esta registrado.")
+
+        if existing:
+            user = existing
+            user.email = normalized_email
+            user.document_number = payload.document_number
+            user.first_name = payload.first_name.strip()
+            user.last_name = payload.last_name.strip()
+            user.gender = payload.gender
+            user.birth_date = payload.birth_date
+            user.legal_address = payload.legal_address.strip()
+            user.country_code = payload.country_code
+            user.roles = payload.roles
+            user.document_front_image_url = payload.document_front_image_url
+            user.document_back_image_url = payload.document_back_image_url
+            user.registration_stage = RegistrationStage.PRE_REGISTRO
+            for payment_id in list(user.payment_method_ids):
+                self.store.payment_methods.pop(payment_id, None)
+            user.payment_method_ids.clear()
+        else:
+            user = AppUser(
+                id=self.store.next_id("users"),
+                email=normalized_email,
+                document_number=payload.document_number,
+                first_name=payload.first_name.strip(),
+                last_name=payload.last_name.strip(),
+                gender=payload.gender,
+                birth_date=payload.birth_date,
+                legal_address=payload.legal_address.strip(),
+                country_code=payload.country_code,
+                category=UserCategory.COMUN,
+                approved=False,
+                registration_stage=RegistrationStage.PRE_REGISTRO,
+                roles=payload.roles,
+                document_front_image_url=payload.document_front_image_url,
+                document_back_image_url=payload.document_back_image_url,
+            )
+            self.store.users[user.id] = user
+
+        payment = self._build_payment_method(user, payload.payment_method)
+        self.store.payment_methods[payment.id] = payment
+        user.payment_method_ids = [payment.id]
+
+        welcome_token = self._issue_password_setup_token(user.id)
+        self.notifications.create(
+            user.id,
+            "Solicitud recibida",
+            "Te enviamos un correo de bienvenida para que completes la creacion de tu contrasena personal.",
+            NotificationKind.INFO,
+        )
+        self.store.persist_all()
+        self.email.send_welcome_password_setup_email(
+            recipient=user.email,
+            full_name=f"{user.first_name} {user.last_name}".strip(),
+            gender=user.gender,
+            token=welcome_token,
+        )
+        return MessageResponse(
+            message="Te enviamos un correo de bienvenida para que crees tu contrasena y actives tu acceso a Atelier."
+        )
+
     def complete_registration(self, payload: CompleteRegistrationRequest) -> AuthTokenResponse:
         user = self.store.users.get(payload.user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
 
+        self._validate_password_strength(payload.password)
         user.password_hash = hash_password(payload.password)
         user.registration_stage = RegistrationStage.REGISTRO_COMPLETADO
         token = generate_token()
@@ -153,8 +285,37 @@ class AuthService:
         self.store.persist_all()
         return AuthTokenResponse(access_token=token, user=self._to_profile(user))
 
+    def complete_password_setup(self, payload: PasswordSetupRequest) -> AuthTokenResponse:
+        normalized_email = payload.email.strip().lower()
+        user = self._find_user_by_email(normalized_email)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No encontramos una cuenta con ese correo.")
+        self._validate_password_strength(payload.password)
+
+        self._clear_stale_reset_tokens()
+        token_record = self._active_password_token(user.id, payload.token.strip())
+        if not token_record:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El enlace para crear la contrasena es invalido o ya vencio.",
+            )
+
+        user.password_hash = hash_password(payload.password)
+        user.registration_stage = RegistrationStage.REGISTRO_COMPLETADO
+        token_record.used_at = utc_now()
+        session_token = generate_token()
+        self.store.tokens[session_token] = user.id
+        self.notifications.create(
+            user.id,
+            "Acceso activado",
+            "Tu contrasena personal fue creada correctamente. Ya puedes ingresar a Atelier.",
+            NotificationKind.OPERACION,
+        )
+        self.store.persist_all()
+        return AuthTokenResponse(access_token=session_token, user=self._to_profile(user))
+
     def login(self, payload: LoginRequest) -> AuthTokenResponse:
-        user = next((item for item in self.store.users.values() if item.email == payload.email), None)
+        user = self._find_user_by_email(payload.email)
         if not user or not verify_password(payload.password, user.password_hash):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales invalidas.")
 
@@ -186,6 +347,8 @@ class AuthService:
         normalized_email = payload.email.strip().lower()
         if not normalized_email:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El correo electronico es obligatorio.")
+        if "@" not in normalized_email:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mail invalido.")
 
         if not payload.first_name.strip() or not payload.last_name.strip():
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre y apellido son obligatorios.")
@@ -209,7 +372,7 @@ class AuthService:
 
     def request_password_reset(self, payload: PasswordResetRequest) -> MessageResponse:
         normalized_email = payload.email.strip().lower()
-        user = next((item for item in self.store.users.values() if item.email == normalized_email), None)
+        user = self._find_user_by_email(normalized_email)
         if not user or not user.password_hash:
             return MessageResponse(
                 message="Si existe una cuenta asociada a ese correo, te enviamos un codigo para recuperar la contrasena."
@@ -242,14 +405,10 @@ class AuthService:
         user = next((item for item in self.store.users.values() if item.email == normalized_email), None)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No encontramos una cuenta con ese correo.")
-        if len(payload.new_password) < 6:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="La contrasena nueva debe tener al menos 6 caracteres.",
-            )
+        self._validate_password_strength(payload.new_password)
 
         self._clear_stale_reset_tokens()
-        token = self._active_reset_token(user.id, payload.code.strip())
+        token = self._active_password_token(user.id, payload.code.strip())
         if not token:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -263,6 +422,31 @@ class AuthService:
             user.id,
             "Contrasena actualizada",
             "Tu contrasena fue restablecida correctamente.",
+            NotificationKind.OPERACION,
+        )
+        self.store.persist_all()
+        return MessageResponse(message="Tu contrasena fue actualizada correctamente.")
+
+    def change_password(self, user: AppUser, payload: PasswordChangeRequest) -> MessageResponse:
+        if not verify_password(payload.current_password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La contrasena actual es incorrecta.",
+            )
+
+        self._validate_password_strength(payload.new_password)
+
+        if verify_password(payload.new_password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="La nueva contrasena no puede ser igual a la actual.",
+            )
+
+        user.password_hash = hash_password(payload.new_password)
+        self.notifications.create(
+            user.id,
+            "Contrasena actualizada",
+            "Tu contrasena se actualizo correctamente desde la seccion de seguridad.",
             NotificationKind.OPERACION,
         )
         self.store.persist_all()
@@ -375,6 +559,7 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medio de pago no encontrado.")
 
         self.store.payment_methods.pop(payment_id, None)
+        user.payment_method_ids = [value for value in user.payment_method_ids if value != payment_id]
         self.notifications.create(
             user.id,
             "Medio de pago eliminado",

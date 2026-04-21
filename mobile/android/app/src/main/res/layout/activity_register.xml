@@ -2,380 +2,334 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/curator_background"
+    android:background="@color/atelier_background"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="22dp"
-        android:paddingTop="18dp"
-        android:paddingEnd="22dp"
-        android:paddingBottom="36dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/backButton"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:gravity="center"
-                android:text="←"
-                android:textColor="@color/curator_accent"
-                android:textSize="24sp" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Registro"
-                android:textColor="@color/curator_ink"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <View
-                android:layout_width="40dp"
-                android:layout_height="40dp" />
-        </LinearLayout>
+        android:paddingStart="28dp"
+        android:paddingTop="24dp"
+        android:paddingEnd="28dp"
+        android:paddingBottom="42dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:text="Crear cuenta en CURATOR"
-            android:textColor="@color/curator_ink"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:id="@+id/backButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:gravity="center"
+            android:text="&lt;"
+            android:textColor="@color/atelier_text"
+            android:textSize="18sp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
+            android:fontFamily="serif"
+            android:gravity="center"
+            android:letterSpacing="0.24"
+            android:text="ATELIER"
+            android:textColor="@color/atelier_accent"
+            android:textSize="28sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="34dp"
+            android:fontFamily="serif"
+            android:text="Crear tu\ncuenta"
+            android:textColor="@color/atelier_ink"
+            android:textSize="42sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
             android:lineSpacingExtra="4dp"
-            android:text="Completa tus datos, adjunta las fotos del DNI y deja cargado un medio de pago real para empezar a operar."
-            android:textColor="@color/curator_text"
+            android:text="Sumate a un circulo exclusivo de coleccionistas y conocedores."
+            android:textColor="@color/atelier_text"
             android:textSize="15sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Datos personales"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_accent"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="36dp"
             android:text="Nombre"
             android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="11sp" />
 
         <EditText
             android:id="@+id/firstNameInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="54dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Ej. Malena"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Ingresa tu nombre"
             android:inputType="textPersonName"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="28dp"
             android:text="Apellido"
             android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="11sp" />
 
         <EditText
             android:id="@+id/lastNameInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="54dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Ej. Garcia"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Ingresa tu apellido"
             android:inputType="textPersonName"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="28dp"
+            android:text="Genero"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/genderValue"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_editorial_field"
+            android:gravity="center_vertical"
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
             android:text="Correo electronico"
             android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="11sp" />
 
         <EditText
             android:id="@+id/emailInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="54dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="curador@curator.com"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="tu@email.com"
             android:inputType="textEmailAddress"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="28dp"
+            android:text="Fecha de nacimiento"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/birthDateValue"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_editorial_field"
+            android:gravity="center_vertical"
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
             android:text="Pais de origen"
             android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="11sp" />
 
         <TextView
             android:id="@+id/countryValue"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="54dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
+            android:background="@drawable/bg_editorial_field"
             android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textSize="16sp" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textSize="18sp" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Verificacion"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_accent"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:background="@drawable/bg_card_surface"
-            android:orientation="vertical"
-            android:padding="18dp">
-
-            <TextView
-                android:id="@+id/documentSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Debes cargar frente y dorso en PNG o JPG"
-                android:textColor="@color/curator_ink"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:lineSpacingExtra="3dp"
-                android:text="Pediremos acceso a tu galeria para seleccionar las dos imagenes del DNI."
-                android:textColor="@color/curator_text"
-                android:textSize="13sp" />
-
-            <Button
-                android:id="@+id/documentFrontButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="18dp"
-                android:background="@drawable/bg_secondary_button"
-                android:text="Cargar frente"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_accent"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/documentFrontStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Frente pendiente"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="13sp" />
-
-            <Button
-                android:id="@+id/documentBackButton"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_secondary_button"
-                android:text="Cargar dorso"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_accent"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/documentBackStatus"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Dorso pendiente"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="13sp" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Domicilio"
+            android:layout_marginTop="34dp"
+            android:text="Documento de identidad"
             android:textAllCaps="true"
-            android:textColor="@color/curator_accent"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="11sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:id="@+id/documentSummary"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:lineSpacingExtra="3dp"
+            android:text="Debes cargar frente y dorso del DNI en PNG o JPG"
+            android:textColor="@color/atelier_text"
+            android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/documentFrontButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_secondary_button"
+            android:text="Cargar frente del DNI"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_accent"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/documentFrontStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Frente pendiente"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/documentBackButton"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
             android:layout_marginTop="16dp"
-            android:text="Calle"
+            android:background="@drawable/bg_secondary_button"
+            android:text="Cargar dorso del DNI"
             android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_accent"
+            android:textSize="11sp" />
+
+        <TextView
+            android:id="@+id/documentBackStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Dorso pendiente"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="13sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="34dp"
+            android:text="Domicilio legal"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="11sp" />
 
         <EditText
             android:id="@+id/streetInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Avenida Libertador"
+            android:layout_height="54dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Calle"
             android:inputType="textPostalAddress"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Numero"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
-            android:textSize="11sp" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <EditText
             android:id="@+id/numberInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="1234"
+            android:layout_height="54dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Numero"
             android:inputType="number"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Ciudad"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
-            android:textSize="11sp" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <EditText
             android:id="@+id/cityInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Buenos Aires"
+            android:layout_height="54dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Ciudad"
             android:inputType="textPostalAddress"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Provincia / Region"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
-            android:textSize="11sp" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <EditText
             android:id="@+id/regionInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Buenos Aires"
+            android:layout_height="54dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Provincia o region"
             android:inputType="textPostalAddress"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Codigo postal"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
-            android:textSize="11sp" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <EditText
             android:id="@+id/postalCodeInput"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="C1001"
+            android:layout_height="54dp"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="Codigo postal"
             android:inputType="text"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="34dp"
             android:text="Medio de pago"
             android:textAllCaps="true"
-            android:textColor="@color/curator_accent"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Tipo"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
+            android:textColor="@color/atelier_text_muted"
             android:textSize="11sp" />
 
         <TextView
             android:id="@+id/paymentTypeValue"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
+            android:layout_height="54dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_editorial_field"
             android:gravity="center_vertical"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textSize="16sp" />
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textSize="18sp" />
 
         <LinearLayout
             android:id="@+id/currencyFieldGroup"
@@ -384,24 +338,15 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Moneda"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="11sp" />
-
-            <TextView
                 android:id="@+id/currencyValue"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
                 android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textSize="16sp" />
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textSize="18sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -411,24 +356,15 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Banco emisor"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="11sp" />
-
-            <TextView
                 android:id="@+id/bankValue"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
                 android:gravity="center_vertical"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textSize="16sp" />
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textSize="18sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -438,67 +374,53 @@
             android:orientation="vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Numero de tarjeta"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="11sp" />
+                android:id="@+id/cardBrandValue"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
+                android:gravity="center_vertical"
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textSize="18sp" />
 
             <EditText
                 android:id="@+id/cardNumberInput"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input"
-                android:hint="1234123412341234"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
+                android:hint="Numero de tarjeta"
                 android:inputType="number"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textColorHint="@color/curator_text_muted" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Codigo de seguridad"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="11sp" />
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_surface_high"
+                android:textSize="18sp" />
 
             <EditText
                 android:id="@+id/securityCodeInput"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input"
-                android:hint="123"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
+                android:hint="Codigo de seguridad"
                 android:inputType="numberPassword"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textColorHint="@color/curator_text_muted" />
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_surface_high"
+                android:textSize="18sp" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Fecha de vencimiento"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="11sp" />
-
-            <EditText
                 android:id="@+id/expirationDateInput"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input"
-                android:hint="MM/AA"
-                android:inputType="number"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textColorHint="@color/curator_text_muted" />
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
+                android:gravity="center_vertical"
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_surface_high"
+                android:textSize="18sp" />
         </LinearLayout>
 
         <LinearLayout
@@ -507,87 +429,27 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Monto del cheque"
-                android:textAllCaps="true"
-                android:textColor="@color/curator_text_muted"
-                android:textSize="11sp" />
-
             <EditText
                 android:id="@+id/checkAmountInput"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_input"
-                android:hint="150000"
+                android:layout_height="54dp"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_editorial_field"
+                android:hint="Monto del cheque"
                 android:inputType="number"
-                android:paddingHorizontal="16dp"
-                android:textColor="@color/curator_ink"
-                android:textColorHint="@color/curator_text_muted" />
+                android:paddingBottom="14dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_surface_high"
+                android:textSize="18sp" />
         </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Acceso"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_accent"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Contrasena"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
-            android:textSize="11sp" />
-
-        <EditText
-            android:id="@+id/passwordInput"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Minimo 6 caracteres"
-            android:inputType="textPassword"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Confirmar contrasena"
-            android:textAllCaps="true"
-            android:textColor="@color/curator_text_muted"
-            android:textSize="11sp" />
-
-        <EditText
-            android:id="@+id/confirmPasswordInput"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/bg_input"
-            android:hint="Repite la contrasena"
-            android:inputType="textPassword"
-            android:paddingHorizontal="16dp"
-            android:textColor="@color/curator_ink"
-            android:textColorHint="@color/curator_text_muted" />
 
         <Button
             android:id="@+id/submitButton"
             android:layout_width="match_parent"
             android:layout_height="58dp"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="40dp"
             android:background="@drawable/bg_primary_button"
-            android:text="Crear cuenta"
+            android:text="Continuar"
             android:textAllCaps="true"
             android:textColor="#412D00"
             android:textSize="12sp" />
@@ -595,11 +457,11 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="16dp"
             android:gravity="center"
-            android:lineSpacingExtra="3dp"
-            android:text="Al registrarte, el medio de pago quedara pendiente de revision administrativa antes de habilitar las pujas."
-            android:textColor="@color/curator_text_muted"
+            android:text="Si todo esta correcto, te enviaremos un correo de bienvenida para que generes tu contrasena personal."
+            android:textColor="@color/atelier_text"
             android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>
+

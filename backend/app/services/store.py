@@ -4,6 +4,7 @@ import asyncio
 import json
 from collections import defaultdict
 from contextlib import contextmanager
+from datetime import date
 from typing import Iterator
 
 from sqlalchemy import delete, select
@@ -175,6 +176,8 @@ class SqlServerStore(StoreBase):
                     document_number=row.document_number,
                     first_name=row.first_name,
                     last_name=row.last_name,
+                    gender=row.gender or "otro",
+                    birth_date=date.fromisoformat(row.birth_date) if row.birth_date else None,
                     legal_address=row.legal_address,
                     country_code=row.country_code,
                     category=UserCategory(row.category),
@@ -344,6 +347,8 @@ class SqlServerStore(StoreBase):
                         document_number=user.document_number,
                         first_name=user.first_name,
                         last_name=user.last_name,
+                        gender=user.gender,
+                        birth_date=user.birth_date.isoformat() if user.birth_date is not None else None,
                         legal_address=user.legal_address,
                         country_code=user.country_code,
                         category=user.category.value,

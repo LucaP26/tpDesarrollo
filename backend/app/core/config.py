@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     smtp_use_starttls: bool = True
     smtp_use_ssl: bool = False
     password_reset_code_ttl_minutes: int = 15
+    password_setup_link_ttl_hours: int = 72
+    mobile_password_setup_link_base: str = "atelier://set-password"
+    password_setup_email_link_base: str = "http://10.0.2.2:8000/password-setup/open"
 
     model_config = SettingsConfigDict(env_prefix="SUBASTAS_", env_file=".env")
 

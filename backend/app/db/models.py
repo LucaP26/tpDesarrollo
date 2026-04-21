@@ -18,6 +18,8 @@ class AppUserRow(Base):
     document_number: Mapped[str] = mapped_column(String(20), nullable=False)
     first_name: Mapped[str] = mapped_column(String(150), nullable=False)
     last_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    gender: Mapped[str] = mapped_column(String(20), nullable=False)
+    birth_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
     legal_address: Mapped[str] = mapped_column(String(350), nullable=False)
     country_code: Mapped[int] = mapped_column(Integer, nullable=False)
     category: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -25,8 +27,8 @@ class AppUserRow(Base):
     registration_stage: Mapped[str] = mapped_column(String(40), nullable=False)
     roles_json: Mapped[str] = mapped_column(Text, nullable=False)
     password_hash: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    document_front_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    document_back_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    document_front_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    document_back_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 

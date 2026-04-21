@@ -35,6 +35,7 @@ def create_engine_for_database(settings: Settings, database_name: str | None = N
         _build_sqlalchemy_url(settings, target_name),
         future=True,
         pool_pre_ping=True,
+        use_insertmanyvalues=False,
     )
 
 

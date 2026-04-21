@@ -2,7 +2,6 @@ package com.anonymous.sistemadesubastas.nativeapp.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import com.anonymous.sistemadesubastas.databinding.ActivityLoginBinding
 import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuthRepository
@@ -18,21 +17,12 @@ class LoginActivity : BaseActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (sessionManager.isLoggedIn()) {
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
-            return
-        }
-
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
         binding.emailInput.setText("p@gmail.com")
         binding.passwordInput.setText("Platino123!")
 
-        binding.networkStatusText.setOnClickListener {
-            requestNetworkConsent(force = true)
-        }
         binding.loginButton.setOnClickListener { submitLogin() }
         binding.forgotButton.setOnClickListener {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
@@ -42,14 +32,11 @@ class LoginActivity : BaseActivity() {
         }
 
         updateNetworkStatusUi()
-        if (!sessionManager.hasNetworkConsent()) {
-            binding.root.post {
-                requestNetworkConsent()
-            }
-        }
     }
 
     override fun shouldMonitorNetwork(): Boolean = true
+
+    override fun shouldRequestMobileDataConsent(): Boolean = false
 
     override fun onNetworkStatusChanged(status: NetworkStatus) {
         latestNetworkStatus = status
@@ -68,14 +55,10 @@ class LoginActivity : BaseActivity() {
             alert("Contrasena requerida", "Ingresa tu contrasena para iniciar sesion.")
             return
         }
-        if (!sessionManager.hasNetworkConsent()) {
-            requestNetworkConsent(force = true)
-            return
-        }
-        if (!latestNetworkStatus.isConnected) {
+        if (!canUseCurrentNetwork(latestNetworkStatus)) {
             alert(
                 "Sin conexion",
-                "Necesitas red activa, ya sea Wi-Fi o datos moviles, para iniciar sesion."
+                "Necesitas una conexion activa para iniciar sesion."
             )
             return
         }
@@ -112,42 +95,9 @@ class LoginActivity : BaseActivity() {
         }
     }
 
-    private fun requestNetworkConsent(force: Boolean = false) {
-        if (!force && sessionManager.hasNetworkConsent()) {
-            updateNetworkStatusUi()
-            return
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle("Acceso a la red")
-            .setMessage(
-                "CURATOR necesita acceder a la red de tu telefono, ya sea Wi-Fi o datos moviles, para iniciar sesion, cargar salas y mantener las pujas sincronizadas."
-            )
-            .setCancelable(false)
-            .setNegativeButton("No permitir") { dialog, _ ->
-                dialog.dismiss()
-                sessionManager.setNetworkConsent(false)
-                closeApplication()
-            }
-            .setPositiveButton("Permitir") { dialog, _ ->
-                dialog.dismiss()
-                sessionManager.setNetworkConsent(true)
-                updateNetworkStatusUi()
-            }
-            .show()
-    }
-
     private fun updateNetworkStatusUi() {
-        val consentGranted = sessionManager.hasNetworkConsent()
-        val statusMessage = when {
-            !consentGranted -> "Debes permitir acceso a la red para continuar."
-            latestNetworkStatus.isWifi -> "Red activa por Wi-Fi."
-            latestNetworkStatus.isMobileData -> "Red activa por datos moviles."
-            latestNetworkStatus.isConnected -> "Red activa."
-            else -> "Sin conexion. Verifica Wi-Fi o datos moviles."
-        }
-
-        binding.networkStatusText.text = statusMessage
-        binding.loginButton.isEnabled = consentGranted && latestNetworkStatus.isConnected
+        val canLogin = canUseCurrentNetwork(latestNetworkStatus)
+        binding.loginButton.isEnabled = canLogin
+        binding.loginButton.alpha = if (canLogin) 1f else 0.6f
     }
 }

@@ -4,20 +4,36 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 data class UserProfile(
+    val id: Int,
     val email: String,
-    val fullName: String,
+    val firstName: String,
+    val lastName: String,
     val legalAddress: String,
     val category: String,
     val avatarImageUrl: String?
 ) {
+    val fullName: String
+        get() = listOf(firstName, lastName).filter { it.isNotBlank() }.joinToString(" ").ifBlank { email }
+
     companion object {
-        fun fromJson(json: JSONObject): UserProfile = UserProfile(
-            email = json.optString("email"),
-            fullName = json.optString("full_name"),
-            legalAddress = json.optString("legal_address"),
-            category = json.optString("category", "comun"),
-            avatarImageUrl = json.optString("avatar_image_url").takeIf { it.isNotBlank() }
-        )
+        fun fromJson(json: JSONObject): UserProfile {
+            val rawFirstName = json.optString("first_name")
+            val rawLastName = json.optString("last_name")
+            val nameParts = NameParts.from(
+                firstName = rawFirstName,
+                lastName = rawLastName,
+                fullName = json.optString("full_name"),
+            )
+            return UserProfile(
+                id = json.optInt("id"),
+                email = json.optString("email"),
+                firstName = nameParts.firstName,
+                lastName = nameParts.lastName,
+                legalAddress = json.optString("legal_address"),
+                category = json.optString("category", "comun"),
+                avatarImageUrl = json.optString("avatar_image_url").takeIf { it.isNotBlank() }
+            )
+        }
     }
 }
 
@@ -182,20 +198,58 @@ data class LeaveAuctionResult(
 }
 
 data class PaymentMethod(
+    val id: Int,
+    val type: String,
     val displayName: String,
     val currency: String,
     val status: String,
     val issuingBank: String?,
-    val lastFour: String?
+    val lastFour: String?,
+    val holderFirstName: String?,
+    val holderLastName: String?,
+    val expirationDate: String?,
+    val availableAmount: Double?
 ) {
     companion object {
         fun fromJson(json: JSONObject): PaymentMethod = PaymentMethod(
+            id = json.optInt("id"),
+            type = json.optString("type"),
             displayName = json.optString("display_name"),
             currency = json.optString("currency"),
             status = json.optString("status"),
             issuingBank = json.optString("issuing_bank").takeIf { it.isNotBlank() },
-            lastFour = json.optString("last_four").takeIf { it.isNotBlank() }
+            lastFour = json.optString("last_four").takeIf { it.isNotBlank() },
+            holderFirstName = json.optString("holder_first_name").takeIf { it.isNotBlank() },
+            holderLastName = json.optString("holder_last_name").takeIf { it.isNotBlank() },
+            expirationDate = json.optString("expiration_date").takeIf { it.isNotBlank() },
+            availableAmount = json.optDouble("available_amount").takeIf {
+                !it.isNaN() && (it != 0.0 || json.has("available_amount"))
+            }
         )
+    }
+}
+
+private data class NameParts(
+    val firstName: String,
+    val lastName: String,
+) {
+    companion object {
+        fun from(firstName: String, lastName: String, fullName: String): NameParts {
+            if (firstName.isNotBlank() || lastName.isNotBlank()) {
+                return NameParts(firstName = firstName, lastName = lastName)
+            }
+            val tokens = fullName.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+            if (tokens.isEmpty()) {
+                return NameParts(firstName = "", lastName = "")
+            }
+            if (tokens.size == 1) {
+                return NameParts(firstName = tokens.first(), lastName = "")
+            }
+            return NameParts(
+                firstName = tokens.first(),
+                lastName = tokens.drop(1).joinToString(" "),
+            )
+        }
     }
 }
 
@@ -209,6 +263,29 @@ data class Metrics(
             auctionsJoined = json.optInt("auctions_joined"),
             auctionsWon = json.optInt("auctions_won"),
             activeBids = json.optInt("active_bids")
+        )
+    }
+}
+
+data class Consignment(
+    val id: Int,
+    val title: String,
+    val description: String,
+    val status: String,
+    val rejectionReason: String?,
+    val proposedBasePrice: Double?,
+    val photos: List<String>
+) {
+    companion object {
+        fun fromJson(json: JSONObject): Consignment = Consignment(
+            id = json.optInt("id"),
+            title = json.optString("title"),
+            description = json.optString("description"),
+            status = json.optString("status"),
+            rejectionReason = json.optString("rejection_reason").takeIf { it.isNotBlank() },
+            proposedBasePrice = json.optDouble("proposed_base_price")
+                .takeIf { !it.isNaN() && (it != 0.0 || json.has("proposed_base_price")) },
+            photos = json.optJSONArray("photos").toStringList()
         )
     }
 }

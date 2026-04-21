@@ -39,4 +39,13 @@ object Formatters {
         val parts = listOf(location, date(scheduledAt), auctioneerName).filter { it.isNotBlank() }
         return parts.joinToString(" - ")
     }
+
+    fun consignmentStatus(status: String): String = when (status.lowercase(Locale.getDefault())) {
+        "borrador" -> "Borrador"
+        "en_revision" -> "En revision"
+        "aceptada" -> "Aceptada"
+        "rechazada" -> "Rechazada"
+        "devuelta" -> "Devuelta"
+        else -> "Enviada"
+    }
 }

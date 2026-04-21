@@ -39,7 +39,33 @@
       android:windowSoftInputMode="adjustResize" />
 
     <activity
+      android:name=".nativeapp.ui.auth.RegistrationVerificationActivity"
+      android:exported="false"
+      android:screenOrientation="portrait" />
+
+    <activity
+      android:name=".nativeapp.ui.auth.SetPasswordActivity"
+      android:exported="true"
+      android:screenOrientation="portrait"
+      android:windowSoftInputMode="adjustResize">
+      <intent-filter>
+        <action android:name="android.intent.action.VIEW" />
+        <category android:name="android.intent.category.DEFAULT" />
+        <category android:name="android.intent.category.BROWSABLE" />
+        <data
+          android:scheme="atelier"
+          android:host="set-password" />
+      </intent-filter>
+    </activity>
+
+    <activity
       android:name=".nativeapp.ui.auth.ForgotPasswordActivity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:windowSoftInputMode="adjustResize" />
+
+    <activity
+      android:name=".nativeapp.ui.auth.ChangePasswordActivity"
       android:exported="false"
       android:screenOrientation="portrait"
       android:windowSoftInputMode="adjustResize" />
@@ -64,5 +90,17 @@
       android:name=".nativeapp.ui.profile.ProfileActivity"
       android:exported="false"
       android:screenOrientation="portrait" />
+
+    <activity
+      android:name=".nativeapp.ui.profile.PaymentMethodFormActivity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:windowSoftInputMode="adjustResize" />
+
+    <activity
+      android:name=".nativeapp.ui.profile.ConsignmentActivity"
+      android:exported="false"
+      android:screenOrientation="portrait"
+      android:windowSoftInputMode="adjustResize" />
   </application>
 </manifest>

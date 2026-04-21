@@ -6,13 +6,14 @@ import android.view.MotionEvent
 import com.anonymous.sistemadesubastas.databinding.ActivitySplashBinding
 import com.anonymous.sistemadesubastas.nativeapp.ui.auth.LoginActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
-import com.anonymous.sistemadesubastas.nativeapp.ui.home.HomeActivity
 import kotlin.math.abs
 
 class SplashActivity : BaseActivity() {
     private lateinit var binding: ActivitySplashBinding
     private var startX = 0f
     private var startY = 0f
+    private var hasNavigated = false
+    private val autoAdvance = Runnable { openNextScreen() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,6 +23,8 @@ class SplashActivity : BaseActivity() {
         binding.enterHotspot.setOnClickListener {
             openNextScreen()
         }
+
+        binding.rootSplash.postDelayed(autoAdvance, 1_000L)
 
         binding.rootSplash.setOnTouchListener { _, event ->
             when (event.actionMasked) {
@@ -47,13 +50,17 @@ class SplashActivity : BaseActivity() {
         }
     }
 
+    override fun onDestroy() {
+        binding.rootSplash.removeCallbacks(autoAdvance)
+        super.onDestroy()
+    }
+
     private fun openNextScreen() {
-        val target = if (sessionManager.isLoggedIn()) {
-            HomeActivity::class.java
-        } else {
-            LoginActivity::class.java
+        if (hasNavigated) {
+            return
         }
-        startActivity(Intent(this, target))
+        hasNavigated = true
+        startActivity(Intent(this, LoginActivity::class.java))
         finish()
     }
 }
