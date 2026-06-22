@@ -13,7 +13,9 @@ import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuctionReposito
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuthRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.auctions.AuctionRoomActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.auctions.AuctionsActivity
+import com.anonymous.sistemadesubastas.nativeapp.ui.auctions.WatchlistActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
+import com.anonymous.sistemadesubastas.nativeapp.ui.common.Formatters
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.RemoteImageLoader
 import com.anonymous.sistemadesubastas.nativeapp.ui.profile.ProfileActivity
 
@@ -81,7 +83,7 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun bindActions() {
-        binding.topSearchButton.setOnClickListener { openDiscover() }
+        binding.topSearchButton.setOnClickListener { openNotifications() }
         binding.topProfileButton.setOnClickListener { openProfile() }
         binding.heroPrimaryButton.setOnClickListener { openDiscover() }
         binding.viewAllButton.setOnClickListener { openDiscover() }
@@ -89,7 +91,7 @@ class HomeActivity : BaseActivity() {
 
         binding.footerHomeButton.setOnClickListener { /* Already here. */ }
         binding.footerDiscoverButton.setOnClickListener { openDiscover() }
-        binding.footerWatchlistButton.setOnClickListener { openWatchlistPlaceholder() }
+        binding.footerWatchlistButton.setOnClickListener { openWatchlist() }
         binding.footerBidsButton.setOnClickListener { openActiveBids() }
     }
 
@@ -127,10 +129,30 @@ class HomeActivity : BaseActivity() {
         startActivity(Intent(this, ProfileActivity::class.java))
     }
 
-    private fun openWatchlistPlaceholder() {
-        alert(
-            "Lista de seguimiento en preparacion",
-            "Tu lista de seguimiento personalizada estara disponible pronto. Mientras tanto puedes descubrir catalogos o entrar a tus pujas activas."
+    private fun openWatchlist() {
+        startActivity(Intent(this, WatchlistActivity::class.java))
+    }
+
+    private fun openNotifications() {
+        AppExecutors.ioThenMain(
+            task = { auctionRepository.notifications() },
+            onSuccess = { notifications ->
+                if (notifications.isEmpty()) {
+                    alert("Notificaciones", "No tenes notificaciones nuevas por el momento.")
+                } else {
+                    val message = notifications.take(5).joinToString("\n\n") { notification ->
+                        "${notification.title}\n${notification.message}\n${Formatters.date(notification.createdAt)}"
+                    }
+                    alert("Notificaciones", message)
+                }
+            },
+            onError = { throwable ->
+                showErrorOrHandleSession(
+                    title = "No pudimos cargar notificaciones",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
+            }
         )
     }
 

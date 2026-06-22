@@ -63,6 +63,7 @@ class AdminService:
             category=auction.category,
             currency=auction.currency,
             state=auction.state,
+            auctioneer_name=auction.auctioneer_name,
             location=auction.location,
             can_view_catalog=True,
             view_block_reason=None,

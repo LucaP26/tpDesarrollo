@@ -3,6 +3,7 @@ package com.anonymous.sistemadesubastas.nativeapp.data.repository
 import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionDetail
 import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionSummary
 import com.anonymous.sistemadesubastas.nativeapp.data.model.ActiveAuction
+import com.anonymous.sistemadesubastas.nativeapp.data.model.AppNotification
 import com.anonymous.sistemadesubastas.nativeapp.data.model.JoinAuctionResult
 import com.anonymous.sistemadesubastas.nativeapp.data.model.LeaveAuctionResult
 import com.anonymous.sistemadesubastas.nativeapp.data.network.ApiClient
@@ -12,6 +13,28 @@ import org.json.JSONObject
 class AuctionRepository(private val apiClient: ApiClient) {
     fun listAuctions(): List<AuctionSummary> {
         return parseAuctionArray(apiClient.getArray("/subastas"))
+    }
+
+    fun watchlist(): List<AuctionSummary> {
+        return parseAuctionArray(apiClient.getArray("/watchlist"))
+    }
+
+    fun addToWatchlist(auctionId: Int) {
+        apiClient.post("/watchlist/$auctionId", JSONObject())
+    }
+
+    fun removeFromWatchlist(auctionId: Int) {
+        apiClient.delete("/watchlist/$auctionId")
+    }
+
+    fun notifications(): List<AppNotification> {
+        val array = apiClient.getArray("/notificaciones")
+        val notifications = mutableListOf<AppNotification>()
+        for (index in 0 until array.length()) {
+            val item = array.optJSONObject(index) ?: continue
+            notifications += AppNotification.fromJson(item)
+        }
+        return notifications
     }
 
     fun activeAuction(): ActiveAuction? {

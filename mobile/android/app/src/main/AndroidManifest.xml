@@ -87,6 +87,11 @@
       android:windowSoftInputMode="adjustResize" />
 
     <activity
+      android:name=".nativeapp.ui.auctions.WatchlistActivity"
+      android:exported="false"
+      android:screenOrientation="portrait" />
+
+    <activity
       android:name=".nativeapp.ui.profile.ProfileActivity"
       android:exported="false"
       android:screenOrientation="portrait" />

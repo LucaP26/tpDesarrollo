@@ -252,6 +252,32 @@ def list_auctions(current_user: AppUser = Depends(get_current_user), container: 
     return container.auctions.list_auctions(current_user)
 
 
+@api_router.get("/watchlist", response_model=list[AuctionSummaryResponse])
+def list_watchlist(
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> list[AuctionSummaryResponse]:
+    return container.auctions.list_watchlist(current_user)
+
+
+@api_router.post("/watchlist/{auction_id}", response_model=MessageResponse)
+def add_to_watchlist(
+    auction_id: int,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageResponse:
+    return container.auctions.add_to_watchlist(current_user, auction_id)
+
+
+@api_router.delete("/watchlist/{auction_id}", response_model=MessageResponse)
+def remove_from_watchlist(
+    auction_id: int,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageResponse:
+    return container.auctions.remove_from_watchlist(current_user, auction_id)
+
+
 @api_router.get("/subastas/activa", response_model=ActiveAuctionResponse | None)
 def get_active_auction(
     current_user: AppUser = Depends(get_current_user),

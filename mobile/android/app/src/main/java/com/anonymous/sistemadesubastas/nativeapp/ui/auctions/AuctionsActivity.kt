@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import com.anonymous.sistemadesubastas.databinding.ActivityAuctionsBinding
@@ -12,6 +13,7 @@ import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
 import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionSummary
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuctionRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
+import com.anonymous.sistemadesubastas.nativeapp.ui.common.FooterTab
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.Formatters
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.RemoteImageLoader
 
@@ -29,9 +31,9 @@ class AuctionsActivity : BaseActivity() {
 
         binding = ActivityAuctionsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        bindFooterNavigation(binding.footerNav, FooterTab.DISCOVER)
 
         binding.backButton.setOnClickListener { finish() }
-        binding.clearButton.setOnClickListener { binding.searchInput.setText("") }
         binding.searchInput.addTextChangedListener(
             object : TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
@@ -74,12 +76,25 @@ class AuctionsActivity : BaseActivity() {
         if (normalized.isBlank()) {
             return allAuctions
         }
+        val tokens = searchTokens(normalized)
         return allAuctions.filter { summary ->
-            summary.title.lowercase().contains(normalized) ||
-                summary.category.lowercase().contains(normalized) ||
-                summary.previewLotTitle.orEmpty().lowercase().contains(normalized) ||
-                summary.auctioneerName.lowercase().contains(normalized)
+            val terms = buildList {
+                add(summary.title)
+                add(summary.category)
+                add(summary.previewLotTitle.orEmpty())
+                add(summary.auctioneerName)
+                addAll(summary.searchableTerms)
+            }.joinToString(" ").lowercase()
+            tokens.any { token -> terms.contains(token) }
         }
+    }
+
+    private fun searchTokens(query: String): Set<String> {
+        val tokens = mutableSetOf(query)
+        if (query in setOf("watch", "watches")) {
+            tokens += listOf("watch", "watches", "reloj", "relojes", "timepiece", "timepieces")
+        }
+        return tokens
     }
 
     private fun renderAuctions(auctions: List<AuctionSummary>) {
@@ -106,16 +121,29 @@ class AuctionsActivity : BaseActivity() {
             titleText.text = auction.title
             metaText.text = Formatters.auctionMeta(auction.location, auction.scheduledAt, auction.auctioneerName)
             descriptionText.text = if (auction.canViewCatalog) {
-                "Sala con ${auction.totalLots} lotes. Se exhibe un lote por vez y la subasta avanza cuando se adjudica."
+                if (auction.state == STATE_SCHEDULED) {
+                    "Sala programada con ${auction.totalLots} lotes. Podes ver el catalogo, pero las pujas se habilitaran al iniciar."
+                } else {
+                    "Sala con ${auction.totalLots} lotes. Se exhibe un lote por vez y la subasta avanza cuando se adjudica."
+                }
             } else {
                 auction.viewBlockReason ?: "Catalogo restringido para tu categoria."
             }
-            priceText.text = Formatters.money(auction.currency, auction.bestOffer ?: auction.previewBasePrice)
-            actionButton.text = if (auction.canViewCatalog) {
-                "Ver catalogo"
+            priceText.text = if (auction.priceAvailable) {
+                Formatters.money(auction.currency, auction.bestOffer ?: auction.previewBasePrice)
             } else {
-                "Categoria ${Formatters.category(auction.category)}"
+                "Precio disponible al iniciar"
             }
+            actionButton.text = "Entrar"
+            wishlistButton.visibility = View.VISIBLE
+            wishlistButton.alpha = if (auction.state == STATE_SCHEDULED && auction.canViewCatalog) 1f else 0.45f
+            wishlistButton.text = if (auction.inWatchlist) "♥" else "♡"
+            wishlistButton.contentDescription = if (auction.inWatchlist) {
+                "Quitar de Watchlist"
+            } else {
+                "Agregar a Watchlist"
+            }
+            wishlistButton.setOnClickListener { toggleWatchlist(auction) }
             RemoteImageLoader.load(auctionImage, auction.previewImageUrl)
 
             val openAction = { openAuctionCard(auction) }
@@ -130,7 +158,11 @@ class AuctionsActivity : BaseActivity() {
                 auction.viewBlockReason ?: "Tu categoria todavia no puede ver esta sala."
             )
         } else {
-            joinAndOpen(auction)
+            if (auction.state == STATE_SCHEDULED) {
+                openAuctionRoom(auction)
+            } else {
+                joinAndOpen(auction)
+            }
         }
     }
 
@@ -139,10 +171,7 @@ class AuctionsActivity : BaseActivity() {
             task = { auctionRepository.join(auction.id) },
             onSuccess = { result ->
                 if (result.connected) {
-                    startActivity(
-                        Intent(this, AuctionRoomActivity::class.java)
-                            .putExtra(AuctionRoomActivity.EXTRA_AUCTION_ID, auction.id)
-                    )
+                    openAuctionRoom(auction)
                 } else {
                     alert("No se pudo ingresar", result.blockReason ?: "No fue posible entrar a la sala.")
                 }
@@ -157,8 +186,59 @@ class AuctionsActivity : BaseActivity() {
         )
     }
 
+    private fun toggleWatchlist(auction: AuctionSummary) {
+        if (!auction.canViewCatalog) {
+            alert(
+                "Catalogo restringido",
+                auction.viewBlockReason ?: "Tu categoria todavia no puede ver esta sala."
+            )
+            return
+        }
+        if (auction.state != STATE_SCHEDULED) {
+            alert(
+                "Watchlist no disponible",
+                "Solo podes guardar subastas programadas en tu Watchlist."
+            )
+            return
+        }
+
+        AppExecutors.ioThenMain(
+            task = {
+                if (auction.inWatchlist) {
+                    auctionRepository.removeFromWatchlist(auction.id)
+                    false
+                } else {
+                    auctionRepository.addToWatchlist(auction.id)
+                    true
+                }
+            },
+            onSuccess = { isSaved ->
+                allAuctions = allAuctions.map { item ->
+                    if (item.id == auction.id) item.copy(inWatchlist = isSaved) else item
+                }
+                toast(if (isSaved) "Agregada a Watchlist" else "Eliminada de Watchlist")
+                renderAuctions(filterAuctions(binding.searchInput.text?.toString().orEmpty()))
+            },
+            onError = { throwable ->
+                showErrorOrHandleSession(
+                    title = "No se pudo actualizar Watchlist",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
+            }
+        )
+    }
+
+    private fun openAuctionRoom(auction: AuctionSummary) {
+        startActivity(
+            Intent(this, AuctionRoomActivity::class.java)
+                .putExtra(AuctionRoomActivity.EXTRA_AUCTION_ID, auction.id)
+        )
+    }
+
     companion object {
         const val EXTRA_FILTER = "extra_filter"
+        private const val STATE_SCHEDULED = "programada"
     }
 }
 

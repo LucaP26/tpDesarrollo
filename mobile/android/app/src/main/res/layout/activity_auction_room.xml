@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/atelier_background"
-    android:fillViewport="true">
+    android:background="@color/atelier_background">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="108dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -147,5 +153,10 @@
             android:layout_marginTop="14dp"
             android:orientation="vertical" />
     </LinearLayout>
-</ScrollView>
+    </ScrollView>
+
+    <include
+        android:id="@+id/footerNav"
+        layout="@layout/view_footer_nav" />
+</FrameLayout>
 

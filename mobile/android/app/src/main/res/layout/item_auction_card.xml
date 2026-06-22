@@ -21,14 +21,31 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <TextView
-            android:id="@+id/categoryText"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textAllCaps="true"
-            android:textColor="@color/atelier_accent"
-            android:textSize="11sp"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/categoryText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_accent"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/wishlistButton"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:gravity="center"
+                android:text="♡"
+                android:textColor="@color/atelier_accent"
+                android:textSize="27sp" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/titleText"
@@ -79,7 +96,7 @@
                 android:background="@drawable/bg_primary_button"
                 android:minWidth="132dp"
                 android:text="Ver catalogo"
-                android:textAllCaps="true"
+                android:textAllCaps="false"
                 android:textColor="#412D00"
                 android:textSize="11sp" />
         </LinearLayout>

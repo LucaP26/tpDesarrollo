@@ -17,14 +17,14 @@
             android:paddingStart="22dp"
             android:paddingEnd="22dp">
 
-            <TextView
+            <ImageView
                 android:id="@+id/topSearchButton"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:gravity="center"
-                android:text="&#8981;"
-                android:textColor="@color/atelier_accent"
-                android:textSize="24sp" />
+                android:adjustViewBounds="true"
+                android:padding="7dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_home_bell" />
 
             <TextView
                 android:layout_width="0dp"

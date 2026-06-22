@@ -78,6 +78,20 @@
             android:textColor="@color/atelier_ink"
             android:textSize="14sp" />
 
+        <TextView
+            android:id="@+id/timerText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_chip_surface"
+            android:gravity="center"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="10dp"
+            android:textColor="@color/atelier_accent"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <EditText
             android:id="@+id/bidInput"
             android:layout_width="match_parent"

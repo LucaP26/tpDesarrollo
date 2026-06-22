@@ -23,6 +23,7 @@ from app.db.models import (
     AppPenaltyRow,
     AppPurchaseRow,
     AppUserRow,
+    AppWatchlistRow,
 )
 from app.db.sqlserver import ensure_database_ready
 from app.domain.enums import (
@@ -49,6 +50,7 @@ from app.domain.schemas import (
     PasswordResetTokenRecord,
     PaymentMethodRecord,
     PurchaseRecord,
+    WatchlistRecord,
 )
 
 
@@ -63,6 +65,7 @@ class StoreBase:
         self.lots: dict[int, AuctionLotRecord] = {}
         self.bids: dict[int, BidRecord] = {}
         self.notifications: dict[int, NotificationRecord] = {}
+        self.watchlist: dict[tuple[int, int], WatchlistRecord] = {}
         self.consignments: dict[int, ConsignmentRecord] = {}
         self.purchases: dict[int, PurchaseRecord] = {}
         self.penalties: dict[int, PenaltyRecord] = {}
@@ -162,6 +165,7 @@ class SqlServerStore(StoreBase):
         self.lots = {}
         self.bids = {}
         self.notifications = {}
+        self.watchlist = {}
         self.consignments = {}
         self.purchases = {}
         self.penalties = {}
@@ -238,6 +242,8 @@ class SqlServerStore(StoreBase):
                     image_urls=json.loads(row.image_urls_json),
                     current_bid=float(row.current_bid) if row.current_bid is not None else None,
                     current_bidder_id=row.current_bidder_id,
+                    bidding_started_at=row.bidding_started_at,
+                    bid_deadline_at=row.bid_deadline_at,
                     sold=row.sold,
                     sold_to_company=row.sold_to_company,
                 )
@@ -261,6 +267,12 @@ class SqlServerStore(StoreBase):
                     kind=NotificationKind(row.kind),
                     created_at=row.created_at,
                     read=row.read,
+                )
+            for row in session.scalars(select(AppWatchlistRow)).all():
+                self.watchlist[(row.user_id, row.auction_id)] = WatchlistRecord(
+                    user_id=row.user_id,
+                    auction_id=row.auction_id,
+                    created_at=row.created_at,
                 )
             for row in session.scalars(select(AppConsignmentRow)).all():
                 self.consignments[row.id] = ConsignmentRecord(
@@ -330,6 +342,7 @@ class SqlServerStore(StoreBase):
                 AppPasswordResetTokenRow,
                 AppPurchaseRow,
                 AppNotificationRow,
+                AppWatchlistRow,
                 AppBidRow,
                 AppConsignmentRow,
                 AppLotRow,
@@ -424,6 +437,8 @@ class SqlServerStore(StoreBase):
                         image_urls_json=json.dumps(lot.image_urls),
                         current_bid=lot.current_bid,
                         current_bidder_id=lot.current_bidder_id,
+                        bidding_started_at=lot.bidding_started_at,
+                        bid_deadline_at=lot.bid_deadline_at,
                         sold=lot.sold,
                         sold_to_company=lot.sold_to_company,
                     )
@@ -459,6 +474,17 @@ class SqlServerStore(StoreBase):
                         read=item.read,
                     )
                     for item in self.notifications.values()
+                ]
+            )
+            session.flush()
+            session.add_all(
+                [
+                    AppWatchlistRow(
+                        user_id=item.user_id,
+                        auction_id=item.auction_id,
+                        created_at=item.created_at,
+                    )
+                    for item in self.watchlist.values()
                 ]
             )
             session.flush()

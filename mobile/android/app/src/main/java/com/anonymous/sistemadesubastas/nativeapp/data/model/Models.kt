@@ -53,6 +53,7 @@ data class AuctionSummary(
     val id: Int,
     val title: String,
     val scheduledAt: String,
+    val state: String,
     val category: String,
     val currency: String,
     val location: String,
@@ -64,13 +65,17 @@ data class AuctionSummary(
     val previewLotTitle: String?,
     val previewImageUrl: String?,
     val previewBasePrice: Double?,
-    val totalLots: Int
+    val priceAvailable: Boolean,
+    val totalLots: Int,
+    val searchableTerms: List<String>,
+    val inWatchlist: Boolean
 ) {
     companion object {
         fun fromJson(json: JSONObject): AuctionSummary = AuctionSummary(
             id = json.optInt("id"),
             title = json.optString("title"),
             scheduledAt = json.optString("scheduled_at"),
+            state = json.optString("state"),
             category = json.optString("category"),
             currency = json.optString("currency"),
             location = json.optString("location"),
@@ -78,11 +83,34 @@ data class AuctionSummary(
             canViewCatalog = json.optBoolean("can_view_catalog"),
             canBid = json.optBoolean("can_bid"),
             viewBlockReason = json.optString("view_block_reason").takeIf { it.isNotBlank() },
-            bestOffer = json.optDouble("best_offer").takeIf { !it.isNaN() && it != 0.0 || json.has("best_offer") },
+            bestOffer = json.optionalDouble("best_offer"),
             previewLotTitle = json.optString("preview_lot_title").takeIf { it.isNotBlank() },
             previewImageUrl = json.optString("preview_image_url").takeIf { it.isNotBlank() },
-            previewBasePrice = json.optDouble("preview_base_price").takeIf { !it.isNaN() && (it != 0.0 || json.has("preview_base_price")) },
-            totalLots = json.optInt("total_lots")
+            previewBasePrice = json.optionalDouble("preview_base_price"),
+            priceAvailable = json.optBoolean("price_available", true),
+            totalLots = json.optInt("total_lots"),
+            searchableTerms = json.optJSONArray("searchable_terms").toStringList(),
+            inWatchlist = json.optBoolean("in_watchlist", false)
+        )
+    }
+}
+
+data class AppNotification(
+    val id: Int,
+    val title: String,
+    val message: String,
+    val kind: String,
+    val createdAt: String,
+    val read: Boolean
+) {
+    companion object {
+        fun fromJson(json: JSONObject): AppNotification = AppNotification(
+            id = json.optInt("id"),
+            title = json.optString("title"),
+            message = json.optString("message"),
+            kind = json.optString("kind"),
+            createdAt = json.optString("created_at"),
+            read = json.optBoolean("read")
         )
     }
 }
@@ -94,7 +122,9 @@ data class AuctionLot(
     val description: String,
     val imageUrls: List<String>,
     val basePrice: Double,
+    val priceAvailable: Boolean,
     val currentBid: Double?,
+    val bidSecondsRemaining: Int?,
     val minBid: Double,
     val maxBid: Double?,
     val canBid: Boolean,
@@ -110,7 +140,13 @@ data class AuctionLot(
             description = json.optString("description"),
             imageUrls = json.optJSONArray("image_urls").toStringList(),
             basePrice = json.optDouble("base_price"),
-            currentBid = json.optDouble("current_bid").takeIf { !it.isNaN() && (it != 0.0 || json.has("current_bid")) },
+            priceAvailable = json.optBoolean("price_available", true),
+            currentBid = json.optionalDouble("current_bid"),
+            bidSecondsRemaining = if (json.has("bid_seconds_remaining") && !json.isNull("bid_seconds_remaining")) {
+                json.optInt("bid_seconds_remaining")
+            } else {
+                null
+            },
             minBid = json.optDouble("min_bid"),
             maxBid = json.optDouble("max_bid").takeIf { !it.isNaN() && (it != 0.0 || json.has("max_bid")) },
             canBid = json.optBoolean("can_bid"),
@@ -125,12 +161,14 @@ data class AuctionDetail(
     val id: Int,
     val title: String,
     val scheduledAt: String,
+    val state: String,
     val category: String,
     val currency: String,
     val location: String,
     val auctioneerName: String,
     val canBid: Boolean,
     val blockReason: String?,
+    val priceAvailable: Boolean,
     val currentLot: AuctionLot?,
     val upcomingLots: List<AuctionLot>,
     val completedLots: List<AuctionLot>,
@@ -141,12 +179,14 @@ data class AuctionDetail(
             id = json.optInt("id"),
             title = json.optString("title"),
             scheduledAt = json.optString("scheduled_at"),
+            state = json.optString("state"),
             category = json.optString("category"),
             currency = json.optString("currency"),
             location = json.optString("location"),
             auctioneerName = json.optString("auctioneer_name"),
             canBid = json.optBoolean("can_bid"),
             blockReason = json.optString("block_reason").takeIf { it.isNotBlank() },
+            priceAvailable = json.optBoolean("price_available", true),
             currentLot = json.optJSONObject("current_lot")?.let(AuctionLot::fromJson),
             upcomingLots = json.optJSONArray("upcoming_lots").toObjectList(AuctionLot::fromJson),
             completedLots = json.optJSONArray("completed_lots").toObjectList(AuctionLot::fromJson),
@@ -182,7 +222,7 @@ data class ActiveAuction(
             category = json.optString("category"),
             currency = json.optString("currency"),
             currentLotTitle = json.optString("current_lot_title").takeIf { it.isNotBlank() },
-            currentPrice = json.optDouble("current_price").takeIf { !it.isNaN() && (it != 0.0 || json.has("current_price")) }
+            currentPrice = json.optionalDouble("current_price")
         )
     }
 }
@@ -222,9 +262,7 @@ data class PaymentMethod(
             holderFirstName = json.optString("holder_first_name").takeIf { it.isNotBlank() },
             holderLastName = json.optString("holder_last_name").takeIf { it.isNotBlank() },
             expirationDate = json.optString("expiration_date").takeIf { it.isNotBlank() },
-            availableAmount = json.optDouble("available_amount").takeIf {
-                !it.isNaN() && (it != 0.0 || json.has("available_amount"))
-            }
+            availableAmount = json.optionalDouble("available_amount")
         )
     }
 }
@@ -283,11 +321,17 @@ data class Consignment(
             description = json.optString("description"),
             status = json.optString("status"),
             rejectionReason = json.optString("rejection_reason").takeIf { it.isNotBlank() },
-            proposedBasePrice = json.optDouble("proposed_base_price")
-                .takeIf { !it.isNaN() && (it != 0.0 || json.has("proposed_base_price")) },
+            proposedBasePrice = json.optionalDouble("proposed_base_price"),
             photos = json.optJSONArray("photos").toStringList()
         )
     }
+}
+
+private fun JSONObject.optionalDouble(key: String): Double? {
+    if (!has(key) || isNull(key)) {
+        return null
+    }
+    return optDouble(key).takeIf { it.isFinite() }
 }
 
 private fun JSONArray?.toStringList(): List<String> {

@@ -36,6 +36,12 @@ class NotificationRecord(BaseApiModel):
     read: bool = False
 
 
+class WatchlistRecord(BaseApiModel):
+    user_id: int
+    auction_id: int
+    created_at: datetime
+
+
 class PenaltyRecord(BaseApiModel):
     id: int
     user_id: int
@@ -98,6 +104,8 @@ class AuctionLotRecord(BaseApiModel):
     image_urls: list[str] = Field(default_factory=list)
     current_bid: float | None = None
     current_bidder_id: int | None = None
+    bidding_started_at: datetime | None = None
+    bid_deadline_at: datetime | None = None
     bid_ids: list[int] = Field(default_factory=list)
     sold: bool = False
     sold_to_company: bool = False
@@ -330,8 +338,11 @@ class AuctionSummaryResponse(BaseApiModel):
     preview_lot_title: str | None = None
     preview_image_url: str | None = None
     preview_base_price: float | None = None
+    price_available: bool = True
     total_lots: int = 0
     remaining_lots: int = 0
+    searchable_terms: list[str] = Field(default_factory=list)
+    in_watchlist: bool = False
 
 
 class AuctionLotView(BaseApiModel):
@@ -343,9 +354,13 @@ class AuctionLotView(BaseApiModel):
     artist: str | None = None
     image_urls: list[str]
     base_price: float
+    price_available: bool = True
     commission_rate: float
     current_bid: float | None = None
     current_bidder_id: int | None = None
+    bidding_started_at: datetime | None = None
+    bid_deadline_at: datetime | None = None
+    bid_seconds_remaining: int | None = None
     min_bid: float
     max_bid: float | None = None
     can_bid: bool
@@ -372,6 +387,7 @@ class AuctionDetailResponse(BaseApiModel):
     preview_lot_title: str | None = None
     preview_image_url: str | None = None
     preview_base_price: float | None = None
+    price_available: bool = True
     total_lots: int = 0
     remaining_lots: int = 0
     current_lot: AuctionLotView | None = None

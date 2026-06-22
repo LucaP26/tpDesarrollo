@@ -2,6 +2,7 @@ package com.anonymous.sistemadesubastas.nativeapp.ui.auctions
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -14,11 +15,13 @@ import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionDetail
 import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionLot
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuctionRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
+import com.anonymous.sistemadesubastas.nativeapp.ui.common.FooterTab
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.Formatters
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.RemoteImageLoader
 import com.anonymous.sistemadesubastas.nativeapp.ui.home.HomeActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.profile.ProfileActivity
 import com.anonymous.sistemadesubastas.nativeapp.system.NetworkStatus
+import java.util.Locale
 
 class AuctionRoomActivity : BaseActivity() {
     private lateinit var binding: ActivityAuctionRoomBinding
@@ -26,6 +29,7 @@ class AuctionRoomActivity : BaseActivity() {
     private val auctionId: Int by lazy { intent.getIntExtra(EXTRA_AUCTION_ID, -1) }
     private var latestNetworkStatus: NetworkStatus = NetworkStatus.disconnected()
     private var receivedNetworkCallback = false
+    private var lotCountdown: CountDownTimer? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +44,7 @@ class AuctionRoomActivity : BaseActivity() {
 
         binding = ActivityAuctionRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        bindFooterNavigation(binding.footerNav, FooterTab.BIDS)
 
         binding.backButton.setOnClickListener {
             startActivity(Intent(this, HomeActivity::class.java))
@@ -90,9 +95,13 @@ class AuctionRoomActivity : BaseActivity() {
     }
 
     private fun renderDetail(detail: AuctionDetail) {
+        lotCountdown?.cancel()
+        lotCountdown = null
+
         binding.categoryText.text = Formatters.categoryUpper(detail.category)
         binding.auctionTitle.text = detail.title
         binding.auctionMeta.text = Formatters.auctionMeta(detail.location, detail.scheduledAt, detail.auctioneerName)
+        binding.leaveButton.visibility = if (detail.state == STATE_SCHEDULED) View.GONE else View.VISIBLE
         binding.lotsContainer.removeAllViews()
 
         val lots = if (detail.lots.isNotEmpty()) {
@@ -116,6 +125,11 @@ class AuctionRoomActivity : BaseActivity() {
             bindLotCard(cardBinding, detail, lot)
 
             when {
+                detail.state == STATE_SCHEDULED -> {
+                    cardBinding.statusBadge.text = "Programado"
+                    hideBidSection(cardBinding)
+                }
+
                 isCurrent -> {
                     cardBinding.statusBadge.text = "En vivo"
                     configureBidSection(cardBinding, detail, lot)
@@ -145,12 +159,18 @@ class AuctionRoomActivity : BaseActivity() {
         cardBinding.pieceNumberText.text = lot.pieceNumber
         cardBinding.lotTitleText.text = lot.title
         cardBinding.lotDescriptionText.text = lot.description
-        cardBinding.priceText.text = Formatters.money(detail.currency, lot.currentBid ?: lot.basePrice)
-        cardBinding.currentBidText.text = buildBidLine(detail, lot)
+        if (detail.state == STATE_SCHEDULED || !lot.priceAvailable) {
+            cardBinding.priceText.text = "Precio disponible al iniciar"
+            cardBinding.currentBidText.text = "Las pujas se habilitaran cuando la sala este disponible."
+        } else {
+            cardBinding.priceText.text = Formatters.money(detail.currency, lot.currentBid ?: lot.basePrice)
+            cardBinding.currentBidText.text = buildBidLine(detail, lot)
+        }
         RemoteImageLoader.load(cardBinding.lotImage, lot.imageUrls.firstOrNull())
     }
 
     private fun configureBidSection(cardBinding: ItemLotCardBinding, detail: AuctionDetail, lot: AuctionLot) {
+        configureCountdown(cardBinding, lot)
         if (detail.canBid && lot.canBid) {
             cardBinding.bidButton.tag = TAG_BID_ACTION
             cardBinding.bidInput.visibility = View.VISIBLE
@@ -173,8 +193,41 @@ class AuctionRoomActivity : BaseActivity() {
     }
 
     private fun hideBidSection(cardBinding: ItemLotCardBinding) {
+        cardBinding.timerText.visibility = View.GONE
         cardBinding.bidInput.visibility = View.GONE
         cardBinding.bidButton.visibility = View.GONE
+    }
+
+    private fun configureCountdown(cardBinding: ItemLotCardBinding, lot: AuctionLot) {
+        val remaining = lot.bidSecondsRemaining
+        if (remaining == null) {
+            cardBinding.timerText.visibility = View.GONE
+            return
+        }
+
+        cardBinding.timerText.visibility = View.VISIBLE
+        renderCountdown(cardBinding, remaining)
+        lotCountdown = object : CountDownTimer((remaining.coerceAtLeast(0) * 1000L), 1000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                val seconds = ((millisUntilFinished + 999L) / 1000L).toInt()
+                renderCountdown(cardBinding, seconds)
+            }
+
+            override fun onFinish() {
+                cardBinding.timerText.text = "Tiempo agotado. Actualizando lote..."
+                loadAuction()
+            }
+        }.start()
+    }
+
+    private fun renderCountdown(cardBinding: ItemLotCardBinding, seconds: Int) {
+        val clamped = seconds.coerceAtLeast(0)
+        cardBinding.timerText.text = String.format(
+            Locale.ROOT,
+            "Tiempo restante para este lote: %02d:%02d",
+            clamped / 60,
+            clamped % 60
+        )
     }
 
     private fun placeBid(cardBinding: ItemLotCardBinding, detail: AuctionDetail, lot: AuctionLot) {
@@ -295,7 +348,14 @@ class AuctionRoomActivity : BaseActivity() {
 
     companion object {
         const val EXTRA_AUCTION_ID = "extra_auction_id"
+        private const val STATE_SCHEDULED = "programada"
         private const val TAG_BID_ACTION = "bid_action"
         private const val TAG_REASON_ACTION = "reason_action"
+    }
+
+    override fun onDestroy() {
+        lotCountdown?.cancel()
+        lotCountdown = null
+        super.onDestroy()
     }
 }

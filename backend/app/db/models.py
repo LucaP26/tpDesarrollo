@@ -97,6 +97,8 @@ class AppLotRow(Base):
     image_urls_json: Mapped[str] = mapped_column(Text, nullable=False)
     current_bid: Mapped[float | None] = mapped_column(Float, nullable=True)
     current_bidder_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bidding_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    bid_deadline_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     sold: Mapped[bool] = mapped_column(Boolean, nullable=False)
     sold_to_company: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
@@ -124,6 +126,14 @@ class AppNotificationRow(Base):
     kind: Mapped[str] = mapped_column(String(30), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     read: Mapped[bool] = mapped_column(Boolean, nullable=False)
+
+
+class AppWatchlistRow(Base):
+    __tablename__ = "app_watchlist"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("app_users.id"), primary_key=True)
+    auction_id: Mapped[int] = mapped_column(ForeignKey("app_auctions.id"), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
 class AppConsignmentRow(Base):

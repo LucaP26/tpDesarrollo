@@ -33,21 +33,19 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="serif"
-            android:text="Catalogos"
+            android:text="Watchlist"
             android:textColor="@color/atelier_ink"
             android:textSize="28sp" />
     </LinearLayout>
 
-    <EditText
-        android:id="@+id/searchInput"
+    <TextView
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="18dp"
-        android:background="@drawable/bg_input"
-        android:hint="Buscar catalogos o categorias"
-        android:paddingHorizontal="16dp"
-        android:textColor="@color/atelier_ink"
-        android:textColorHint="@color/atelier_text_muted" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:lineSpacingExtra="4dp"
+        android:text="Subastas programadas que guardaste para seguir de cerca."
+        android:textColor="@color/atelier_text"
+        android:textSize="15sp" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -56,7 +54,7 @@
         android:layout_weight="1">
 
         <LinearLayout
-            android:id="@+id/auctionsContainer"
+            android:id="@+id/watchlistContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical" />
@@ -67,4 +65,3 @@
         android:id="@+id/footerNav"
         layout="@layout/view_footer_nav" />
 </FrameLayout>
-

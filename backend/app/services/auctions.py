@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
+from math import ceil
 
 from app.core.time import utc_now
 from fastapi import HTTPException, status
@@ -27,7 +28,9 @@ from app.domain.schemas import (
     BidResponse,
     JoinAuctionResponse,
     LeaveAuctionResponse,
+    MessageResponse,
     PurchaseRecord,
+    WatchlistRecord,
 )
 from app.services.notifications import NotificationService
 from app.services.realtime import RealtimeManager
@@ -36,6 +39,8 @@ from app.services.user_categories import promote_user_category
 
 
 class AuctionService:
+    BID_WINDOW_SECONDS = 60
+
     def __init__(
         self,
         store: StoreBase,
@@ -48,6 +53,15 @@ class AuctionService:
 
     def _scheduled_at(self, auction: AuctionRecord) -> datetime:
         return datetime.combine(auction.scheduled_date, auction.scheduled_time)
+
+    def _activate_if_due(self, auction: AuctionRecord) -> bool:
+        if auction.state == AuctionState.PROGRAMADA and self._scheduled_at(auction) <= utc_now():
+            auction.state = AuctionState.ABIERTA
+            return True
+        return False
+
+    def _price_available(self, auction: AuctionRecord) -> bool:
+        return auction.state != AuctionState.PROGRAMADA
 
     def _sync_category(self, user: AppUser) -> None:
         if promote_user_category(self.store, self.notifications, user):
@@ -71,10 +85,45 @@ class AuctionService:
                 f"Tu categoria actual es {self._category_label(user.category)} y esta subasta requiere "
                 f"categoria {self._category_label(auction.category)}. Necesitas una categoria igual o superior para ver el catalogo."
             )
+        return None
+
+    def _active_connection_block(self, user: AppUser, auction: AuctionRecord) -> str | None:
         active_auction = self.store.active_connections_by_user.get(user.id)
         if active_auction and active_auction != auction.id:
             return "No podes estar conectado a mas de una subasta al mismo tiempo."
         return None
+
+    def _searchable_terms(
+        self,
+        auction: AuctionRecord,
+        lots: list[AuctionLotRecord],
+        include_lots: bool,
+    ) -> list[str]:
+        terms = {
+            auction.title,
+            auction.category.value,
+            self._category_label(auction.category),
+            auction.auctioneer_name,
+            auction.location,
+        }
+        if include_lots:
+            for lot in lots:
+                terms.update(
+                    value
+                    for value in [
+                        lot.piece_number,
+                        lot.title,
+                        lot.description,
+                        lot.story,
+                        lot.artist,
+                    ]
+                    if value
+                )
+            combined = " ".join(terms).lower()
+            watch_markers = ["reloj", "timepiece", "omega", "cartier", "rolex", "patek", "audemars"]
+            if any(marker in combined for marker in watch_markers):
+                terms.update(["watch", "watches", "reloj", "relojes", "timepiece", "timepieces"])
+        return sorted(terms)
 
     def _ordered_lots(self, auction: AuctionRecord) -> list[AuctionLotRecord]:
         return [self.store.lots[lot_id] for lot_id in auction.lot_ids if lot_id in self.store.lots]
@@ -84,6 +133,46 @@ class AuctionService:
             if not lot.sold:
                 return lot
         return None
+
+    def _seconds_remaining(self, lot: AuctionLotRecord) -> int | None:
+        if lot.bid_deadline_at is None or lot.sold:
+            return None
+        return max(0, ceil((lot.bid_deadline_at - utc_now()).total_seconds()))
+
+    def _start_lot_window(self, lot: AuctionLotRecord, now: datetime) -> None:
+        lot.bidding_started_at = now
+        lot.bid_deadline_at = now + timedelta(seconds=self.BID_WINDOW_SECONDS)
+
+    def _sync_auction_clock(self, auction: AuctionRecord) -> bool:
+        if self._activate_if_due(auction):
+            return True
+        if auction.state != AuctionState.ABIERTA:
+            return False
+
+        changed = False
+        now = utc_now()
+        current_lot = self._current_lot_record(auction)
+        if current_lot is None:
+            auction.state = AuctionState.CERRADA
+            return True
+
+        if current_lot.bid_deadline_at is None:
+            self._start_lot_window(current_lot, now)
+            return True
+
+        if current_lot.bid_deadline_at > now:
+            return changed
+
+        self._close_single_lot(auction, current_lot)
+        changed = True
+
+        next_lot = self._current_lot_record(auction)
+        if next_lot is None:
+            auction.state = AuctionState.CERRADA
+            return changed
+
+        self._start_lot_window(next_lot, utc_now())
+        return changed
 
     def _preview_lot_record(self, auction: AuctionRecord) -> AuctionLotRecord | None:
         lots = self._ordered_lots(auction)
@@ -105,6 +194,11 @@ class AuctionService:
         view_block = self._can_view(user, auction)
         if view_block:
             return view_block
+        if auction.state == AuctionState.PROGRAMADA:
+            return "Esta subasta esta programada. Las pujas y los precios base se habilitaran cuando la sala este disponible."
+        active_block = self._active_connection_block(user, auction)
+        if active_block:
+            return active_block
         matching = self._matching_verified_payments(user, auction.currency)
         if not matching:
             return "Necesitas al menos un medio de pago verificado en la moneda de la subasta."
@@ -168,9 +262,10 @@ class AuctionService:
     def _lot_view(self, user: AppUser, auction: AuctionRecord, lot: AuctionLotRecord) -> AuctionLotView:
         block_reason = self._bid_block_reason(user, auction)
         current_lot = self._current_lot_record(auction)
-        if current_lot and current_lot.id != lot.id and not lot.sold:
+        if auction.state == AuctionState.ABIERTA and current_lot and current_lot.id != lot.id and not lot.sold:
             block_reason = "Solo podes pujar por el lote que esta actualmente en exhibicion."
-        min_bid, max_bid = self._compute_bid_range(auction, lot)
+        price_available = self._price_available(auction)
+        min_bid, max_bid = self._compute_bid_range(auction, lot) if price_available else (0.0, None)
         return AuctionLotView(
             id=lot.id,
             piece_number=lot.piece_number,
@@ -179,10 +274,14 @@ class AuctionService:
             story=lot.story,
             artist=lot.artist,
             image_urls=lot.image_urls,
-            base_price=lot.base_price,
+            base_price=lot.base_price if price_available else 0.0,
+            price_available=price_available,
             commission_rate=lot.commission_rate,
-            current_bid=lot.current_bid,
-            current_bidder_id=lot.current_bidder_id,
+            current_bid=lot.current_bid if price_available else None,
+            current_bidder_id=lot.current_bidder_id if price_available else None,
+            bidding_started_at=lot.bidding_started_at,
+            bid_deadline_at=lot.bid_deadline_at,
+            bid_seconds_remaining=self._seconds_remaining(lot),
             min_bid=min_bid,
             max_bid=max_bid,
             can_bid=block_reason is None,
@@ -195,12 +294,14 @@ class AuctionService:
         self._sync_category(user)
         summaries: list[AuctionSummaryResponse] = []
         for auction in sorted(self.store.auctions.values(), key=self._scheduled_at):
+            changed = self._activate_if_due(auction)
             lots = self._ordered_lots(auction)
             current_lot = self._current_lot_record(auction)
             preview_lot = self._preview_lot_record(auction)
             remaining_lots = len([lot for lot in lots if not lot.sold])
             view_block_reason = self._can_view(user, auction)
             block_reason = self._bid_block_reason(user, auction)
+            price_available = self._price_available(auction)
             summaries.append(
                 AuctionSummaryResponse(
                     id=auction.id,
@@ -216,28 +317,75 @@ class AuctionService:
                     can_bid=block_reason is None,
                     block_reason=block_reason,
                     current_lot_title=current_lot.title if current_lot else None,
-                    best_offer=current_lot.current_bid if current_lot else None,
+                    best_offer=current_lot.current_bid if price_available and current_lot else None,
                     preview_lot_title=preview_lot.title if preview_lot else None,
                     preview_image_url=preview_lot.image_urls[0] if preview_lot and preview_lot.image_urls else None,
-                    preview_base_price=preview_lot.base_price if preview_lot else None,
+                    preview_base_price=preview_lot.base_price if price_available and preview_lot else None,
+                    price_available=price_available,
                     total_lots=len(lots),
                     remaining_lots=remaining_lots,
+                    searchable_terms=self._searchable_terms(auction, lots, view_block_reason is None),
+                    in_watchlist=(user.id, auction.id) in self.store.watchlist,
                 )
             )
+            if changed:
+                self.store.persist_all()
         return summaries
+
+    def list_watchlist(self, user: AppUser) -> list[AuctionSummaryResponse]:
+        summaries_by_id = {summary.id: summary for summary in self.list_auctions(user)}
+        rows = [
+            row
+            for row in self.store.watchlist.values()
+            if row.user_id == user.id and row.auction_id in summaries_by_id
+        ]
+        rows.sort(key=lambda item: item.created_at, reverse=True)
+        return [summaries_by_id[row.auction_id] for row in rows]
+
+    def add_to_watchlist(self, user: AppUser, auction_id: int) -> MessageResponse:
+        self._sync_category(user)
+        auction = self.store.auctions.get(auction_id)
+        if not auction:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subasta no encontrada.")
+        if self._activate_if_due(auction):
+            self.store.persist_all()
+        if auction.state != AuctionState.PROGRAMADA:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Solo podes guardar subastas programadas en Watchlist.")
+        view_block_reason = self._can_view(user, auction)
+        if view_block_reason:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=view_block_reason)
+
+        key = (user.id, auction.id)
+        if key not in self.store.watchlist:
+            self.store.watchlist[key] = WatchlistRecord(
+                user_id=user.id,
+                auction_id=auction.id,
+                created_at=utc_now(),
+            )
+            self.store.persist_all()
+        return MessageResponse(message="Subasta agregada a Watchlist.")
+
+    def remove_from_watchlist(self, user: AppUser, auction_id: int) -> MessageResponse:
+        key = (user.id, auction_id)
+        self.store.watchlist.pop(key, None)
+        self.store.persist_all()
+        return MessageResponse(message="Subasta eliminada de Watchlist.")
 
     def get_auction(self, user: AppUser, auction_id: int) -> AuctionDetailResponse:
         self._sync_category(user)
         auction = self.store.auctions.get(auction_id)
         if not auction:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subasta no encontrada.")
+        if self._sync_auction_clock(auction):
+            self.store.persist_all()
         view_block_reason = self._can_view(user, auction)
         if view_block_reason:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=view_block_reason)
         block_reason = self._bid_block_reason(user, auction)
         lots = [self._lot_view(user, auction, lot) for lot in self._ordered_lots(auction)]
-        current_lot = next((lot for lot in lots if not lot.sold), None)
-        upcoming_lots = [lot for lot in lots if current_lot and lot.id != current_lot.id and not lot.sold]
+        price_available = self._price_available(auction)
+        current_lot = next((lot for lot in lots if not lot.sold), None) if auction.state == AuctionState.ABIERTA else None
+        upcoming_lots = [lot for lot in lots if not lot.sold] if current_lot is None else [lot for lot in lots if lot.id != current_lot.id and not lot.sold]
         completed_lots = [lot for lot in lots if lot.sold]
         preview_lot = self._preview_lot_record(auction)
         return AuctionDetailResponse(
@@ -258,10 +406,11 @@ class AuctionService:
             completed_lots=completed_lots,
             lots=lots,
             current_lot_title=current_lot.title if current_lot else None,
-            best_offer=current_lot.current_bid if current_lot else None,
+            best_offer=current_lot.current_bid if price_available and current_lot else None,
             preview_lot_title=preview_lot.title if preview_lot else None,
             preview_image_url=preview_lot.image_urls[0] if preview_lot and preview_lot.image_urls else None,
-            preview_base_price=preview_lot.base_price if preview_lot else None,
+            preview_base_price=preview_lot.base_price if price_available and preview_lot else None,
+            price_available=price_available,
             total_lots=len(lots),
             remaining_lots=len(upcoming_lots) + (1 if current_lot else 0),
         )
@@ -271,7 +420,12 @@ class AuctionService:
         auction = self.store.auctions.get(auction_id)
         if not auction:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subasta no encontrada.")
+        self._sync_auction_clock(auction)
         block_reason = self._can_view(user, auction)
+        if block_reason is None and auction.state == AuctionState.PROGRAMADA:
+            block_reason = "Esta subasta esta programada. Podes ver el catalogo, pero no participar hasta que la sala este disponible."
+        if block_reason is None:
+            block_reason = self._active_connection_block(user, auction)
         if block_reason:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=block_reason)
         self.store.active_connections_by_user[user.id] = auction.id
@@ -297,6 +451,12 @@ class AuctionService:
         auction = self.store.auctions.get(auction_id)
         if not auction or auction.state != AuctionState.ABIERTA:
             self.store.active_connections_by_user.pop(user.id, None)
+            return None
+        if self._sync_auction_clock(auction):
+            self.store.persist_all()
+        if auction.state != AuctionState.ABIERTA:
+            self.store.active_connections_by_user.pop(user.id, None)
+            self.store.persist_all()
             return None
 
         current_lot = self._current_lot_record(auction)
@@ -396,6 +556,13 @@ class AuctionService:
         lot = self.store.lots.get(lot_id)
         if not auction or not lot or lot.auction_id != auction_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lote no encontrado.")
+        if self._sync_auction_clock(auction):
+            self.store.persist_all()
+        if auction.state == AuctionState.PROGRAMADA:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Esta subasta esta programada. Las pujas se habilitaran cuando la sala este disponible.",
+            )
         if auction.state != AuctionState.ABIERTA or lot.sold:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La subasta ya no recibe pujas.")
         current_lot = self._current_lot_record(auction)
@@ -412,6 +579,12 @@ class AuctionService:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=bid_block)
 
         async with self.store.lock_for_auction(auction_id):
+            if self._sync_auction_clock(auction):
+                self.store.persist_all()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El tiempo del lote vencio. La sala avanzo al siguiente lote.",
+                )
             payment = self._pick_payment(user, auction, payload.payment_method_id)
             min_bid, max_bid = self._compute_bid_range(auction, lot)
             if payload.amount < min_bid:
@@ -448,6 +621,9 @@ class AuctionService:
             lot.bid_ids.append(bid.id)
             lot.current_bid = bid.amount
             lot.current_bidder_id = user.id
+            if lot.bidding_started_at is None:
+                lot.bidding_started_at = bid.created_at
+            lot.bid_deadline_at = bid.created_at + timedelta(seconds=self.BID_WINDOW_SECONDS)
 
             if previous_best_user and previous_best_user != user.id:
                 self.notifications.create(
@@ -475,6 +651,8 @@ class AuctionService:
                     "user_id": user.id,
                     "min_bid": next_min_bid,
                     "max_bid": next_max_bid,
+                    "bid_deadline_at": lot.bid_deadline_at.isoformat(),
+                    "bid_seconds_remaining": self._seconds_remaining(lot),
                     "timestamp": bid.created_at.isoformat(),
                 },
             )
@@ -494,7 +672,14 @@ class AuctionService:
 
     def _close_single_lot(self, auction: AuctionRecord, lot: AuctionLotRecord) -> dict:
         if lot.current_bidder_id is not None and lot.current_bid is not None:
-            winning_bid = self.store.bids[lot.bid_ids[-1]] if lot.bid_ids else None
+            winning_bids = [
+                self.store.bids[bid_id]
+                for bid_id in lot.bid_ids
+                if bid_id in self.store.bids
+                and self.store.bids[bid_id].user_id == lot.current_bidder_id
+                and self.store.bids[bid_id].amount == lot.current_bid
+            ]
+            winning_bid = max(winning_bids, key=lambda bid: bid.created_at) if winning_bids else None
             purchase = PurchaseRecord(
                 id=self.store.next_id("purchases"),
                 auction_id=auction.id,
@@ -511,6 +696,7 @@ class AuctionService:
             )
             self.store.purchases[purchase.id] = purchase
             lot.sold = True
+            lot.bid_deadline_at = None
             winner = self.store.users[lot.current_bidder_id]
             winner.won_purchase_ids.append(purchase.id)
             if winning_bid:
@@ -530,6 +716,7 @@ class AuctionService:
             return {"sold_to_company": False, "purchase_id": purchase.id}
 
         lot.sold = True
+        lot.bid_deadline_at = None
         lot.sold_to_company = True
         return {"sold_to_company": True, "purchase_id": None}
 
@@ -546,6 +733,8 @@ class AuctionService:
         next_lot = self._current_lot_record(auction)
         if next_lot is None:
             auction.state = AuctionState.CERRADA
+        else:
+            self._start_lot_window(next_lot, utc_now())
 
         self.store.persist_all()
         return {

@@ -8,7 +8,7 @@ import java.util.Locale
 
 object Formatters {
     fun money(currencyCode: String, amount: Double?): String {
-        val value = amount ?: 0.0
+        val value = amount?.takeIf { it.isFinite() } ?: 0.0
         val formatter = NumberFormat.getCurrencyInstance(Locale("es", "AR"))
         formatter.maximumFractionDigits = 0
         formatter.currency = Currency.getInstance(currencyCode)

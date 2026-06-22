@@ -20,6 +20,7 @@ class UserCategory(StrEnum):
 
 
 class AuctionState(StrEnum):
+    PROGRAMADA = "programada"
     ABIERTA = "abierta"
     CERRADA = "cerrada"
 
