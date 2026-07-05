@@ -134,6 +134,91 @@
                 android:textColor="@color/atelier_ink"
                 android:textColorHint="@color/atelier_text_muted" />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Cantidad de articulos"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/itemCountInput"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:hint="1"
+                android:inputType="number"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Coleccion"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/collectionNameInput"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:hint="Opcional, si envias varias piezas"
+                android:paddingHorizontal="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Cuenta de liquidacion"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/payoutAccountInput"
+                android:layout_width="match_parent"
+                android:layout_height="72dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:gravity="top|start"
+                android:hint="CBU, alias, IBAN o cuenta a la vista declarada"
+                android:inputType="textCapSentences|textMultiLine"
+                android:padding="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Evidencia de origen"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_text_muted"
+                android:textSize="10sp" />
+
+            <EditText
+                android:id="@+id/lawfulOriginEvidenceInput"
+                android:layout_width="match_parent"
+                android:layout_height="96dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_input"
+                android:gravity="top|start"
+                android:hint="Facturas, certificados, links o notas. Opcional salvo requerimiento."
+                android:inputType="textCapSentences|textMultiLine"
+                android:padding="16dp"
+                android:textColor="@color/atelier_ink"
+                android:textColorHint="@color/atelier_text_muted" />
+
             <Button
                 android:id="@+id/selectPhotosButton"
                 android:layout_width="match_parent"
@@ -177,6 +262,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="Declaro que el bien tiene origen licito."
+                android:textColor="@color/atelier_ink" />
+
+            <CheckBox
+                android:id="@+id/returnChargeCheck"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Acepto que, si la empresa no acepta el bien enviado, la devolucion sera con cargo a mi cuenta."
                 android:textColor="@color/atelier_ink" />
 
             <Button

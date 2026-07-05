@@ -167,10 +167,7 @@ class ProfileActivity : BaseActivity() {
             startActivity(Intent(this, ChangePasswordActivity::class.java))
         }
         binding.supportRow.setOnClickListener {
-            alert(
-                "Soporte ATELIER",
-                "Las oficinas no estan disponibles en este momento, intente de nuevo mas tarde."
-            )
+            startActivity(Intent(this, MessagesActivity::class.java))
         }
 
         binding.footerHomeButton.setOnClickListener { openHome() }

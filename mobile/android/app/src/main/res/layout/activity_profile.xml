@@ -498,7 +498,7 @@
                     <ImageView
                         android:layout_width="20dp"
                         android:layout_height="20dp"
-                        android:src="@android:drawable/ic_menu_help"
+                        android:src="@android:drawable/ic_dialog_email"
                         android:tint="@color/atelier_text" />
 
                     <TextView
@@ -506,7 +506,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
                         android:layout_weight="1"
-                        android:text="Soporte"
+                        android:text="Mensajes"
                         android:textColor="@color/atelier_ink"
                         android:textSize="17sp" />
 

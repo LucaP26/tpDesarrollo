@@ -19,12 +19,15 @@ from app.domain.schemas import (
     BidResponse,
     CompleteRegistrationRequest,
     ConsignmentCreate,
+    ConsignmentProposalDecisionRequest,
     ConsignmentResponse,
+    CorrespondenceMessageCreate,
     HistoryEntryResponse,
     JoinAuctionResponse,
     LeaveAuctionResponse,
     LoginRequest,
     MessageResponse,
+    MessageThreadResponse,
     MetricsResponse,
     NotificationResponse,
     OnboardingRegistrationRequest,
@@ -328,6 +331,33 @@ def list_notifications(
     return container.notifications.list_for_user(current_user.id)
 
 
+@api_router.get("/mensajes", response_model=list[MessageThreadResponse])
+def list_message_threads(
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> list[MessageThreadResponse]:
+    return container.messages.list_for_user(current_user)
+
+
+@api_router.get("/mensajes/{thread_id}", response_model=MessageThreadResponse)
+def get_message_thread(
+    thread_id: int,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageThreadResponse:
+    return container.messages.get_for_user(current_user, thread_id)
+
+
+@api_router.post("/mensajes/{thread_id}", response_model=MessageThreadResponse)
+def reply_message_thread(
+    thread_id: int,
+    payload: CorrespondenceMessageCreate,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageThreadResponse:
+    return container.messages.reply_as_user(current_user, thread_id, payload.body)
+
+
 @api_router.get("/metricas/personal", response_model=MetricsResponse)
 def personal_metrics(
     current_user: AppUser = Depends(get_current_user),
@@ -361,9 +391,38 @@ def create_consignment(
     return container.consignments.create(current_user, payload)
 
 
+@api_router.post("/consignaciones/{consignment_id}/propuesta", response_model=ConsignmentResponse)
+def decide_consignment_proposal(
+    consignment_id: int,
+    payload: ConsignmentProposalDecisionRequest,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> ConsignmentResponse:
+    return container.consignments.decide_proposal(
+        current_user,
+        consignment_id,
+        payload.accept,
+        payload.payout_account,
+    )
+
+
 @api_router.get("/admin/dashboard")
 def admin_dashboard_api(container: ServiceContainer = Depends(get_container)):
     return container.admin.dashboard()
+
+
+@api_router.get("/admin/mensajes", response_model=list[MessageThreadResponse])
+def admin_list_message_threads(container: ServiceContainer = Depends(get_container)) -> list[MessageThreadResponse]:
+    return container.messages.list_for_admin()
+
+
+@api_router.post("/admin/mensajes/{thread_id}", response_model=MessageThreadResponse)
+def admin_reply_message_thread(
+    thread_id: int,
+    payload: CorrespondenceMessageCreate,
+    container: ServiceContainer = Depends(get_container),
+) -> MessageThreadResponse:
+    return container.messages.reply_as_company(thread_id, payload.body)
 
 
 @api_router.post("/admin/clientes/{user_id}/approve", response_model=UserProfileResponse)
@@ -443,26 +502,48 @@ def admin_dashboard_verify_payment(payment_id: int, container: ServiceContainer 
 def admin_dashboard_review_consignment(
     consignment_id: int,
     approve: bool = Form(False),
+    request_inspection: bool = Form(False),
     rejection_reason: str = Form(""),
     proposed_base_price: float | None = Form(None),
     commission_rate: float | None = Form(None),
     assigned_auction_id: int | None = Form(None),
     storage_location: str | None = Form(None),
     insurance_policy: str | None = Form(None),
+    inspection_address: str | None = Form(None),
+    return_shipping_cost: float | None = Form(None),
+    return_shipping_note: str = Form(""),
+    origin_doubt_reported: bool = Form(False),
+    origin_doubt_notes: str = Form(""),
     container: ServiceContainer = Depends(get_container),
 ):
     container.admin.review_consignment(
         consignment_id,
         AdminConsignmentReviewRequest(
             approve=approve,
+            request_inspection=request_inspection,
             rejection_reason=rejection_reason or None,
             proposed_base_price=proposed_base_price,
             commission_rate=commission_rate,
             assigned_auction_id=assigned_auction_id,
             storage_location=storage_location,
             insurance_policy=insurance_policy,
+            inspection_address=inspection_address,
+            return_shipping_cost=return_shipping_cost,
+            return_shipping_note=return_shipping_note or None,
+            origin_doubt_reported=origin_doubt_reported,
+            origin_doubt_notes=origin_doubt_notes or None,
         ),
     )
+    return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@admin_router.post("/messages/{thread_id}/reply")
+def admin_dashboard_reply_message(
+    thread_id: int,
+    body: str = Form(""),
+    container: ServiceContainer = Depends(get_container),
+):
+    container.messages.reply_as_company(thread_id, body)
     return RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 

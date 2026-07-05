@@ -114,14 +114,44 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.message-thread {
+  display: grid;
+  gap: 12px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+}
+
+.message-line {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-strong);
+}
+
+.message-line.empresa {
+  border-left: 3px solid var(--accent);
+}
+
+.message-reply {
+  display: grid;
+  gap: 10px;
+}
+
 .consignment-grid {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.checkbox-line {
+  color: var(--muted);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 input,
 select,
+textarea,
 button {
   border-radius: 14px;
   border: 1px solid var(--border);

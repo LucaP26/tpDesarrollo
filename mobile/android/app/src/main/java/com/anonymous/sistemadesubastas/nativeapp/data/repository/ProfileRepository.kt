@@ -1,6 +1,7 @@
 package com.anonymous.sistemadesubastas.nativeapp.data.repository
 
 import com.anonymous.sistemadesubastas.nativeapp.data.model.Consignment
+import com.anonymous.sistemadesubastas.nativeapp.data.model.MessageThread
 import com.anonymous.sistemadesubastas.nativeapp.data.model.Metrics
 import com.anonymous.sistemadesubastas.nativeapp.data.model.PaymentMethod
 import com.anonymous.sistemadesubastas.nativeapp.data.model.UserProfile
@@ -50,6 +51,25 @@ class ProfileRepository(private val apiClient: ApiClient) {
         return Consignment.fromJson(apiClient.post("/consignaciones", payload))
     }
 
+    fun messageThreads(): List<MessageThread> = parseMessageThreadArray(apiClient.getArray("/mensajes"))
+
+    fun messageThread(threadId: Int): MessageThread = MessageThread.fromJson(apiClient.get("/mensajes/$threadId"))
+
+    fun sendMessage(threadId: Int, body: String): MessageThread {
+        val payload = JSONObject()
+            .put("body", body)
+        return MessageThread.fromJson(apiClient.post("/mensajes/$threadId", payload))
+    }
+
+    fun decideConsignmentProposal(consignmentId: Int, accept: Boolean, payoutAccount: String?): Consignment {
+        val payload = JSONObject()
+            .put("accept", accept)
+        if (!payoutAccount.isNullOrBlank()) {
+            payload.put("payout_account", payoutAccount)
+        }
+        return Consignment.fromJson(apiClient.post("/consignaciones/$consignmentId/propuesta", payload))
+    }
+
     private fun parsePaymentArray(array: JSONArray): List<PaymentMethod> {
         val values = mutableListOf<PaymentMethod>()
         for (index in 0 until array.length()) {
@@ -64,6 +84,15 @@ class ProfileRepository(private val apiClient: ApiClient) {
         for (index in 0 until array.length()) {
             val item = array.optJSONObject(index) ?: continue
             values += Consignment.fromJson(item)
+        }
+        return values
+    }
+
+    private fun parseMessageThreadArray(array: JSONArray): List<MessageThread> {
+        val values = mutableListOf<MessageThread>()
+        for (index in 0 until array.length()) {
+            val item = array.optJSONObject(index) ?: continue
+            values += MessageThread.fromJson(item)
         }
         return values
     }

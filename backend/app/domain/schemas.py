@@ -36,6 +36,25 @@ class NotificationRecord(BaseApiModel):
     read: bool = False
 
 
+class MessageThreadRecord(BaseApiModel):
+    id: int
+    owner_user_id: int
+    consignment_id: int | None = None
+    subject: str
+    status: str = "abierto"
+    created_at: datetime
+    updated_at: datetime
+
+
+class CorrespondenceMessageRecord(BaseApiModel):
+    id: int
+    thread_id: int
+    sender_type: str
+    sender_user_id: int | None = None
+    body: str
+    created_at: datetime
+
+
 class WatchlistRecord(BaseApiModel):
     user_id: int
     auction_id: int
@@ -136,6 +155,11 @@ class ConsignmentRecord(BaseApiModel):
     photos: list[str] = Field(default_factory=list)
     declared_ownership: bool
     declared_legal_origin: bool
+    declared_return_charge_agreement: bool = False
+    lawful_origin_evidence: list[str] = Field(default_factory=list)
+    item_count: int = 1
+    collection_name: str | None = None
+    payout_account: str | None = None
     status: ConsignmentStatus
     created_at: datetime
     rejection_reason: str | None = None
@@ -144,6 +168,12 @@ class ConsignmentRecord(BaseApiModel):
     assigned_auction_id: int | None = None
     storage_location: str | None = None
     insurance_policy: str | None = None
+    inspection_address: str | None = None
+    return_shipping_cost: float | None = None
+    return_shipping_note: str | None = None
+    origin_doubt_reported: bool = False
+    origin_doubt_notes: str | None = None
+    authority_reported_at: datetime | None = None
 
 
 class AppUser(BaseApiModel):
@@ -454,6 +484,30 @@ class NotificationResponse(BaseApiModel):
     read: bool
 
 
+class CorrespondenceMessageCreate(BaseApiModel):
+    body: str
+
+
+class CorrespondenceMessageResponse(BaseApiModel):
+    id: int
+    thread_id: int
+    sender_type: str
+    sender_user_id: int | None = None
+    body: str
+    created_at: datetime
+
+
+class MessageThreadResponse(BaseApiModel):
+    id: int
+    consignment_id: int | None = None
+    subject: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    last_message: CorrespondenceMessageResponse | None = None
+    messages: list[CorrespondenceMessageResponse] = Field(default_factory=list)
+
+
 class MetricsResponse(BaseApiModel):
     auctions_joined: int
     auctions_won: int
@@ -477,19 +531,39 @@ class ConsignmentCreate(BaseApiModel):
     photos: list[str]
     declared_ownership: bool
     declared_legal_origin: bool
+    declared_return_charge_agreement: bool
+    lawful_origin_evidence: list[str] = Field(default_factory=list)
+    item_count: int = 1
+    collection_name: str | None = None
+    payout_account: str | None = None
 
 
 class ConsignmentResponse(BaseApiModel):
     id: int
     title: str
     description: str
+    story: str | None = None
     status: ConsignmentStatus
+    declared_ownership: bool = False
+    declared_legal_origin: bool = False
+    declared_return_charge_agreement: bool = False
+    lawful_origin_evidence: list[str] = Field(default_factory=list)
+    created_at: datetime | None = None
     rejection_reason: str | None = None
     proposed_base_price: float | None = None
     commission_rate: float | None = None
     assigned_auction_id: int | None = None
     storage_location: str | None = None
     insurance_policy: str | None = None
+    inspection_address: str | None = None
+    return_shipping_cost: float | None = None
+    return_shipping_note: str | None = None
+    origin_doubt_reported: bool = False
+    origin_doubt_notes: str | None = None
+    authority_reported_at: datetime | None = None
+    item_count: int = 1
+    collection_name: str | None = None
+    payout_account: str | None = None
     photos: list[str]
 
 
@@ -498,13 +572,24 @@ class AdminUserApprovalRequest(BaseApiModel):
 
 
 class AdminConsignmentReviewRequest(BaseApiModel):
-    approve: bool
+    approve: bool | None = None
+    request_inspection: bool = False
     rejection_reason: str | None = None
     proposed_base_price: float | None = None
     commission_rate: float | None = None
     assigned_auction_id: int | None = None
     storage_location: str | None = None
     insurance_policy: str | None = None
+    inspection_address: str | None = None
+    return_shipping_cost: float | None = None
+    return_shipping_note: str | None = None
+    origin_doubt_reported: bool = False
+    origin_doubt_notes: str | None = None
+
+
+class ConsignmentProposalDecisionRequest(BaseApiModel):
+    accept: bool
+    payout_account: str | None = None
 
 
 class AdminAuctionLotCreate(BaseApiModel):
@@ -539,4 +624,5 @@ class AdminDashboardResponse(BaseApiModel):
     pending_users: list[UserProfileResponse]
     pending_payments: list[PaymentMethodResponse]
     pending_consignments: list[ConsignmentResponse]
+    message_threads: list[MessageThreadResponse] = Field(default_factory=list)
     auctions: list[AuctionSummaryResponse]

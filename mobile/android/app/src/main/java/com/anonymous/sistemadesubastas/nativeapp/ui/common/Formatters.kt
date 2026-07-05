@@ -42,7 +42,9 @@ object Formatters {
 
     fun consignmentStatus(status: String): String = when (status.lowercase(Locale.getDefault())) {
         "borrador" -> "Borrador"
+        "enviada" -> "Enviada"
         "en_revision" -> "En revision"
+        "pendiente_confirmacion" -> "Pendiente de confirmacion"
         "aceptada" -> "Aceptada"
         "rechazada" -> "Rechazada"
         "devuelta" -> "Devuelta"

@@ -14,6 +14,7 @@ from app.domain.schemas import (
     AuctionLotRecord,
     AuctionRecord,
     AuctionSummaryResponse,
+    ConsignmentRecord,
     ConsignmentResponse,
     PaymentMethodResponse,
     UserProfileResponse,
@@ -78,6 +79,63 @@ class AdminService:
             remaining_lots=len([lot for lot in lots if not lot.sold]),
         )
 
+    def _consignment_response(self, item: ConsignmentRecord) -> ConsignmentResponse:
+        return ConsignmentResponse(
+            id=item.id,
+            title=item.title,
+            description=item.description,
+            story=item.story,
+            status=item.status,
+            declared_ownership=item.declared_ownership,
+            declared_legal_origin=item.declared_legal_origin,
+            declared_return_charge_agreement=item.declared_return_charge_agreement,
+            lawful_origin_evidence=item.lawful_origin_evidence,
+            created_at=item.created_at,
+            rejection_reason=item.rejection_reason,
+            proposed_base_price=item.proposed_base_price,
+            commission_rate=item.commission_rate,
+            assigned_auction_id=item.assigned_auction_id,
+            storage_location=item.storage_location,
+            insurance_policy=item.insurance_policy,
+            inspection_address=item.inspection_address,
+            return_shipping_cost=item.return_shipping_cost,
+            return_shipping_note=item.return_shipping_note,
+            origin_doubt_reported=item.origin_doubt_reported,
+            origin_doubt_notes=item.origin_doubt_notes,
+            authority_reported_at=item.authority_reported_at,
+            item_count=item.item_count,
+            collection_name=item.collection_name,
+            payout_account=item.payout_account,
+            photos=item.photos,
+        )
+
+    def _apply_consignment_review_details(
+        self,
+        consignment: ConsignmentRecord,
+        payload: AdminConsignmentReviewRequest,
+    ) -> None:
+        if payload.return_shipping_cost is not None and payload.return_shipping_cost < 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El costo de devolucion no puede ser negativo.")
+
+        consignment.inspection_address = (
+            payload.inspection_address.strip()
+            if payload.inspection_address and payload.inspection_address.strip()
+            else consignment.inspection_address
+        )
+        if payload.return_shipping_cost is not None:
+            consignment.return_shipping_cost = payload.return_shipping_cost
+        consignment.return_shipping_note = (
+            payload.return_shipping_note.strip()
+            if payload.return_shipping_note and payload.return_shipping_note.strip()
+            else consignment.return_shipping_note
+        )
+        if payload.origin_doubt_notes and payload.origin_doubt_notes.strip():
+            consignment.origin_doubt_notes = payload.origin_doubt_notes.strip()
+        if payload.origin_doubt_reported:
+            consignment.origin_doubt_reported = True
+            if consignment.authority_reported_at is None:
+                consignment.authority_reported_at = utc_now()
+
     def dashboard(self) -> AdminDashboardResponse:
         pending_users = [self._user_profile(user) for user in self.store.users.values() if not user.approved]
         pending_payments = [
@@ -99,28 +157,26 @@ class AdminService:
             if payment.status == PaymentStatus.PENDIENTE
         ]
         pending_consignments = [
-            ConsignmentResponse(
-                id=item.id,
-                title=item.title,
-                description=item.description,
-                status=item.status,
-                rejection_reason=item.rejection_reason,
-                proposed_base_price=item.proposed_base_price,
-                commission_rate=item.commission_rate,
-                assigned_auction_id=item.assigned_auction_id,
-                storage_location=item.storage_location,
-                insurance_policy=item.insurance_policy,
-                photos=item.photos,
-            )
+            self._consignment_response(item)
             for item in self.store.consignments.values()
-            if item.status in {ConsignmentStatus.ENVIADA, ConsignmentStatus.EN_REVISION}
+            if item.status in {
+                ConsignmentStatus.ENVIADA,
+                ConsignmentStatus.EN_REVISION,
+                ConsignmentStatus.PENDIENTE_CONFIRMACION,
+            }
         ]
         return AdminDashboardResponse(
             pending_users=pending_users,
             pending_payments=pending_payments,
             pending_consignments=pending_consignments,
+            message_threads=self.store_message_threads(),
             auctions=[self._auction_summary(auction) for auction in sorted(self.store.auctions.values(), key=lambda item: (item.scheduled_date, item.scheduled_time))],
         )
+
+    def store_message_threads(self):
+        from app.services.messages import MessageService
+
+        return MessageService(self.store).list_for_admin()
 
     def approve_user(self, user_id: int, _category) -> UserProfileResponse:
         user = self.store.users.get(user_id)
@@ -169,18 +225,49 @@ class AdminService:
         consignment = self.store.consignments.get(consignment_id)
         if not consignment:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Consignacion no encontrada.")
-        if payload.approve:
-            consignment.status = ConsignmentStatus.ACEPTADA
+
+        self._apply_consignment_review_details(consignment, payload)
+
+        if payload.request_inspection:
+            if not consignment.inspection_address:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes indicar la direccion de inspeccion.")
+            consignment.status = ConsignmentStatus.EN_REVISION
+            message = (
+                "La empresa esta interesada en revisar el bien. Envialo a la direccion indicada; "
+                "si no es aceptado, la devolucion sera con cargo al usuario."
+            )
+        elif payload.approve is True:
+            if payload.proposed_base_price is None or payload.proposed_base_price <= 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes informar un valor base valido.")
+            if payload.commission_rate is None or payload.commission_rate < 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes informar una comision valida.")
+            if payload.assigned_auction_id is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes asignar una subasta futura.")
+            if payload.assigned_auction_id not in self.store.auctions:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La subasta asignada no existe.")
+
+            auction = self.store.auctions[payload.assigned_auction_id]
+            consignment.status = ConsignmentStatus.PENDIENTE_CONFIRMACION
+            consignment.rejection_reason = None
             consignment.proposed_base_price = payload.proposed_base_price
             consignment.commission_rate = payload.commission_rate
             consignment.assigned_auction_id = payload.assigned_auction_id
             consignment.storage_location = payload.storage_location
             consignment.insurance_policy = payload.insurance_policy
-            message = "Tu bien fue aceptado y ya tiene propuesta comercial."
-        else:
+            message = (
+                "La empresa acepto el bien sujeto a tu confirmacion de precio base, comision y gastos. "
+                f"Subasta asignada: {auction.title}, {auction.scheduled_date.isoformat()} "
+                f"{auction.scheduled_time.strftime('%H:%M')}, {auction.location}."
+            )
+        elif payload.approve is False:
             consignment.status = ConsignmentStatus.RECHAZADA
             consignment.rejection_reason = payload.rejection_reason or "La empresa no avanzo con la pieza."
+            if not consignment.return_shipping_note:
+                consignment.return_shipping_note = "El bien sera devuelto con gastos a cargo del usuario."
             message = consignment.rejection_reason
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes solicitar inspeccion, aprobar o rechazar la consignacion.")
+
         self.notifications.create(
             consignment.owner_user_id,
             "Revision de consignacion",
@@ -188,19 +275,7 @@ class AdminService:
             NotificationKind.INFO,
         )
         self.store.persist_all()
-        return ConsignmentResponse(
-            id=consignment.id,
-            title=consignment.title,
-            description=consignment.description,
-            status=consignment.status,
-            rejection_reason=consignment.rejection_reason,
-            proposed_base_price=consignment.proposed_base_price,
-            commission_rate=consignment.commission_rate,
-            assigned_auction_id=consignment.assigned_auction_id,
-            storage_location=consignment.storage_location,
-            insurance_policy=consignment.insurance_policy,
-            photos=consignment.photos,
-        )
+        return self._consignment_response(consignment)
 
     def create_auction(self, payload: AdminAuctionCreateRequest) -> AuctionRecord:
         auction = AuctionRecord(

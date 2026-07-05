@@ -6,9 +6,12 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.text.InputType
 import android.util.Base64
 import android.view.View
+import android.widget.EditText
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.anonymous.sistemadesubastas.databinding.ActivityConsignmentBinding
 import com.anonymous.sistemadesubastas.databinding.ItemConsignmentCardBinding
@@ -108,6 +111,10 @@ class ConsignmentActivity : BaseActivity() {
             itemBinding.statusText.text = Formatters.consignmentStatus(consignment.status)
             itemBinding.descriptionText.text = consignment.description
             itemBinding.metaText.text = buildMeta(consignment)
+            val canDecideProposal = consignment.status.equals(STATUS_PENDING_CONFIRMATION, ignoreCase = true)
+            itemBinding.proposalActions.visibility = if (canDecideProposal) View.VISIBLE else View.GONE
+            itemBinding.acceptProposalButton.setOnClickListener { decideProposal(consignment, accept = true) }
+            itemBinding.rejectProposalButton.setOnClickListener { decideProposal(consignment, accept = false) }
             binding.consignmentsContainer.addView(itemBinding.root)
         }
     }
@@ -115,9 +122,69 @@ class ConsignmentActivity : BaseActivity() {
     private fun buildMeta(consignment: Consignment): String {
         val parts = mutableListOf<String>()
         parts += "${consignment.photos.size} fotos"
+        if (consignment.itemCount > 1) {
+            parts += "${consignment.itemCount} articulos"
+        }
+        consignment.collectionName?.let { parts += "Coleccion $it" }
+        consignment.inspectionAddress?.let { parts += "Enviar a inspeccion: $it" }
         consignment.proposedBasePrice?.let { parts += "Base propuesta ${Formatters.money("USD", it)}" }
+        consignment.commissionRate?.let { parts += "Comision $it" }
+        consignment.returnShippingCost?.let { parts += "Devolucion ${Formatters.money("USD", it)}" }
+        consignment.returnShippingNote?.let { parts += it }
         consignment.rejectionReason?.takeIf { it.isNotBlank() }?.let { parts += it }
         return parts.joinToString(" - ")
+    }
+
+    private fun decideProposal(consignment: Consignment, accept: Boolean) {
+        if (accept && consignment.payoutAccount.isNullOrBlank()) {
+            promptPayoutAccount(consignment)
+            return
+        }
+        submitProposalDecision(consignment.id, accept, consignment.payoutAccount)
+    }
+
+    private fun promptPayoutAccount(consignment: Consignment) {
+        val input = EditText(this).apply {
+            hint = "CBU, alias, IBAN o cuenta a la vista"
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            minLines = 2
+            setText(consignment.payoutAccount.orEmpty())
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Cuenta de liquidacion")
+            .setMessage("Para aceptar la propuesta, declara la cuenta donde se liquidara el resultado de la subasta.")
+            .setView(input)
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("Aceptar") { _, _ ->
+                val payoutAccount = input.text?.toString().orEmpty().trim()
+                if (payoutAccount.isBlank()) {
+                    alert("Cuenta requerida", "Debes declarar una cuenta antes de aceptar la propuesta.")
+                    return@setPositiveButton
+                }
+                submitProposalDecision(consignment.id, accept = true, payoutAccount = payoutAccount)
+            }
+            .show()
+        styleDialogButtons(dialog)
+    }
+
+    private fun submitProposalDecision(consignmentId: Int, accept: Boolean, payoutAccount: String?) {
+        setLoading(true)
+        AppExecutors.ioThenMain(
+            task = { profileRepository.decideConsignmentProposal(consignmentId, accept, payoutAccount) },
+            onSuccess = {
+                setLoading(false)
+                toast(if (accept) "Propuesta aceptada" else "Propuesta rechazada")
+                loadConsignments()
+            },
+            onError = { throwable ->
+                setLoading(false)
+                showErrorOrHandleSession(
+                    title = "No se pudo responder la propuesta",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
+            }
+        )
     }
 
     private fun beginPhotoSelection() {
@@ -150,6 +217,14 @@ class ConsignmentActivity : BaseActivity() {
         val title = binding.titleInput.text?.toString().orEmpty().trim()
         val description = binding.descriptionInput.text?.toString().orEmpty().trim()
         val story = binding.storyInput.text?.toString().orEmpty().trim()
+        val itemCountText = binding.itemCountInput.text?.toString().orEmpty().trim()
+        val itemCount = itemCountText.toIntOrNull() ?: 1
+        val collectionName = binding.collectionNameInput.text?.toString().orEmpty().trim()
+        val payoutAccount = binding.payoutAccountInput.text?.toString().orEmpty().trim()
+        val lawfulOriginEvidence = binding.lawfulOriginEvidenceInput.text?.toString().orEmpty()
+            .split(',', '\n')
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
 
         if (title.isBlank()) {
             alert("Titulo requerido", "Ingresa un titulo para la pieza.")
@@ -163,8 +238,15 @@ class ConsignmentActivity : BaseActivity() {
             alert("Fotos insuficientes", "Debes cargar al menos 6 fotos del bien.")
             return
         }
-        if (!binding.ownershipCheck.isChecked || !binding.legalOriginCheck.isChecked) {
-            alert("Declaraciones requeridas", "Debes declarar titularidad y origen licito para continuar.")
+        if (itemCount < 1) {
+            alert("Cantidad invalida", "La cantidad de articulos debe ser al menos 1.")
+            return
+        }
+        if (!binding.ownershipCheck.isChecked || !binding.legalOriginCheck.isChecked || !binding.returnChargeCheck.isChecked) {
+            alert(
+                "Declaraciones requeridas",
+                "Debes declarar titularidad, origen licito y aceptacion de devolucion con cargo para continuar.",
+            )
             return
         }
 
@@ -175,6 +257,16 @@ class ConsignmentActivity : BaseActivity() {
             .put("photos", JSONArray(selectedPhotos.map { it.dataUrl }))
             .put("declared_ownership", true)
             .put("declared_legal_origin", true)
+            .put("declared_return_charge_agreement", true)
+            .put("lawful_origin_evidence", JSONArray(lawfulOriginEvidence))
+            .put("item_count", itemCount)
+
+        if (collectionName.isNotBlank()) {
+            payload.put("collection_name", collectionName)
+        }
+        if (payoutAccount.isNotBlank()) {
+            payload.put("payout_account", payoutAccount)
+        }
 
         setLoading(true)
         AppExecutors.ioThenMain(
@@ -200,8 +292,13 @@ class ConsignmentActivity : BaseActivity() {
         binding.titleInput.text?.clear()
         binding.descriptionInput.text?.clear()
         binding.storyInput.text?.clear()
+        binding.itemCountInput.text?.clear()
+        binding.collectionNameInput.text?.clear()
+        binding.payoutAccountInput.text?.clear()
+        binding.lawfulOriginEvidenceInput.text?.clear()
         binding.ownershipCheck.isChecked = false
         binding.legalOriginCheck.isChecked = false
+        binding.returnChargeCheck.isChecked = false
         selectedPhotos.clear()
         renderSelectedPhotos()
     }
@@ -272,5 +369,6 @@ class ConsignmentActivity : BaseActivity() {
 
     companion object {
         private const val MAX_PHOTO_SIZE_BYTES = 5L * 1024L * 1024L
+        private const val STATUS_PENDING_CONFIRMATION = "pendiente_confirmacion"
     }
 }

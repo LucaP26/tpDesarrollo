@@ -51,4 +51,37 @@
         android:layout_marginTop="10dp"
         android:textColor="@color/atelier_text_muted"
         android:textSize="13sp" />
+
+    <LinearLayout
+        android:id="@+id/proposalActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/acceptProposalButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_primary_button"
+            android:text="Aceptar"
+            android:textAllCaps="true"
+            android:textColor="#412D00"
+            android:textSize="11sp" />
+
+        <Button
+            android:id="@+id/rejectProposalButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_secondary_button"
+            android:text="No aceptar"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_accent"
+            android:textSize="11sp" />
+    </LinearLayout>
 </LinearLayout>

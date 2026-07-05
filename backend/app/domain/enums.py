@@ -53,6 +53,7 @@ class ConsignmentStatus(StrEnum):
     BORRADOR = "borrador"
     ENVIADA = "enviada"
     EN_REVISION = "en_revision"
+    PENDIENTE_CONFIRMACION = "pendiente_confirmacion"
     ACEPTADA = "aceptada"
     RECHAZADA = "rechazada"
     DEVUELTA = "devuelta"

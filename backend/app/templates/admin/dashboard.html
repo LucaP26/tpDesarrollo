@@ -69,6 +69,16 @@
           <div class="stack">
             <strong>{{ item.title }}</strong>
             <p>{{ item.description }}</p>
+            <p>Estado: {{ item.status.value }} - Articulos: {{ item.item_count }}</p>
+            {% if item.collection_name %}
+            <p>Coleccion: {{ item.collection_name }}</p>
+            {% endif %}
+            {% if item.payout_account %}
+            <p>Cuenta declarada: {{ item.payout_account }}</p>
+            {% endif %}
+            {% if item.inspection_address %}
+            <p>Inspeccion: {{ item.inspection_address }}</p>
+            {% endif %}
           </div>
           <div class="consignment-grid">
             <input name="proposed_base_price" type="number" step="0.01" placeholder="Precio base" />
@@ -76,15 +86,53 @@
             <input name="assigned_auction_id" type="number" placeholder="ID subasta" />
             <input name="storage_location" type="text" placeholder="Deposito / ubicacion" />
             <input name="insurance_policy" type="text" placeholder="Poliza de seguro" />
+            <input name="inspection_address" type="text" placeholder="Direccion de inspeccion" />
+            <input name="return_shipping_cost" type="number" step="0.01" placeholder="Costo devolucion" />
+            <input name="return_shipping_note" type="text" placeholder="Nota de devolucion" />
+            <input name="origin_doubt_notes" type="text" placeholder="Notas sobre origen" />
             <input name="rejection_reason" type="text" placeholder="Motivo de rechazo" />
           </div>
+          <label class="checkbox-line">
+            <input name="origin_doubt_reported" type="checkbox" value="true" />
+            Avisar a autoridades por dudas sobre el origen
+          </label>
           <div class="actions">
-            <button type="submit" name="approve" value="true">Aceptar</button>
-            <button type="submit" name="approve" value="">Rechazar</button>
+            <button type="submit" name="request_inspection" value="true">Pedir inspeccion</button>
+            <button type="submit" name="approve" value="true">Enviar propuesta</button>
+            <button type="submit" name="approve" value="false">Rechazar</button>
           </div>
         </form>
         {% else %}
         <p class="empty">No hay consignaciones pendientes.</p>
+        {% endfor %}
+      </section>
+
+      <section class="card">
+        <header class="card-header">
+          <h2>Mensajes</h2>
+          <span>{{ dashboard.message_threads|length }}</span>
+        </header>
+        {% for thread in dashboard.message_threads %}
+        <article class="message-thread">
+          <div class="stack">
+            <strong>{{ thread.subject }}</strong>
+            {% if thread.consignment_id %}
+            <p>Consignacion #{{ thread.consignment_id }}</p>
+            {% endif %}
+            {% for message in thread.messages %}
+            <p class="message-line {{ message.sender_type }}">
+              <b>{{ "Empresa" if message.sender_type == "empresa" else "Usuario" }}:</b>
+              {{ message.body }}
+            </p>
+            {% endfor %}
+          </div>
+          <form class="message-reply" method="post" action="/admin/messages/{{ thread.id }}/reply">
+            <textarea name="body" rows="3" placeholder="Responder al usuario"></textarea>
+            <button type="submit">Enviar respuesta</button>
+          </form>
+        </article>
+        {% else %}
+        <p class="empty">No hay conversaciones abiertas.</p>
         {% endfor %}
       </section>
 

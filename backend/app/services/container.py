@@ -4,6 +4,7 @@ from app.services.auctions import AuctionService
 from app.services.auth import AuthService
 from app.services.consignments import ConsignmentService
 from app.services.email import EmailService
+from app.services.messages import MessageService
 from app.services.metrics import MetricsService
 from app.services.notifications import NotificationService
 from app.services.realtime import RealtimeManager
@@ -15,9 +16,10 @@ class ServiceContainer:
         self.store = SqlServerStore(settings)
         self.email = EmailService(settings)
         self.notifications = NotificationService(self.store)
+        self.messages = MessageService(self.store)
         self.realtime = RealtimeManager()
         self.auth = AuthService(self.store, self.notifications, self.email)
         self.auctions = AuctionService(self.store, self.notifications, self.realtime)
-        self.consignments = ConsignmentService(self.store, self.notifications)
+        self.consignments = ConsignmentService(self.store, self.notifications, self.messages)
         self.metrics = MetricsService(self.store)
         self.admin = AdminService(self.store, self.auctions, self.notifications)

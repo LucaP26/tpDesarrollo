@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from math import ceil
 
 from app.core.time import utc_now
+from app.domain.constants import COMPANY_CLIENT_ID
 from fastapi import HTTPException, status
 
 from app.domain.enums import (
@@ -718,7 +719,28 @@ class AuctionService:
         lot.sold = True
         lot.bid_deadline_at = None
         lot.sold_to_company = True
-        return {"sold_to_company": True, "purchase_id": None}
+        purchase = PurchaseRecord(
+            id=self.store.next_id("purchases"),
+            auction_id=auction.id,
+            lot_id=lot.id,
+            buyer_user_id=COMPANY_CLIENT_ID,
+            owner_user_id=lot.owner_user_id,
+            hammer_price=lot.base_price,
+            commission_amount=0.0,
+            shipping_amount=0.0,
+            total_amount=lot.base_price,
+            currency=auction.currency,
+            payment_method_id=None,
+            created_at=utc_now(),
+        )
+        self.store.purchases[purchase.id] = purchase
+        self.notifications.create(
+            lot.owner_user_id,
+            "Lote comprado por la empresa",
+            f"Tu lote {lot.piece_number} no recibio pujas y la empresa lo compro por el valor base de {lot.base_price} {auction.currency.value}.",
+            NotificationKind.INFO,
+        )
+        return {"sold_to_company": True, "purchase_id": purchase.id}
 
     def close_current_lot(self, auction_id: int) -> dict:
         auction = self.store.auctions.get(auction_id)

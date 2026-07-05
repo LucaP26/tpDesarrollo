@@ -115,6 +115,48 @@ data class AppNotification(
     }
 }
 
+data class CorrespondenceMessage(
+    val id: Int,
+    val threadId: Int,
+    val senderType: String,
+    val senderUserId: Int?,
+    val body: String,
+    val createdAt: String
+) {
+    companion object {
+        fun fromJson(json: JSONObject): CorrespondenceMessage = CorrespondenceMessage(
+            id = json.optInt("id"),
+            threadId = json.optInt("thread_id"),
+            senderType = json.optString("sender_type"),
+            senderUserId = json.optionalInt("sender_user_id"),
+            body = json.optString("body"),
+            createdAt = json.optString("created_at")
+        )
+    }
+}
+
+data class MessageThread(
+    val id: Int,
+    val consignmentId: Int?,
+    val subject: String,
+    val status: String,
+    val updatedAt: String,
+    val lastMessage: CorrespondenceMessage?,
+    val messages: List<CorrespondenceMessage>
+) {
+    companion object {
+        fun fromJson(json: JSONObject): MessageThread = MessageThread(
+            id = json.optInt("id"),
+            consignmentId = json.optionalInt("consignment_id"),
+            subject = json.optString("subject"),
+            status = json.optString("status"),
+            updatedAt = json.optString("updated_at"),
+            lastMessage = json.optJSONObject("last_message")?.let { CorrespondenceMessage.fromJson(it) },
+            messages = json.optJSONArray("messages").toMessageList()
+        )
+    }
+}
+
 data class AuctionLot(
     val id: Int,
     val pieceNumber: String,
@@ -312,6 +354,14 @@ data class Consignment(
     val status: String,
     val rejectionReason: String?,
     val proposedBasePrice: Double?,
+    val commissionRate: Double?,
+    val assignedAuctionId: Int?,
+    val inspectionAddress: String?,
+    val returnShippingCost: Double?,
+    val returnShippingNote: String?,
+    val itemCount: Int,
+    val collectionName: String?,
+    val payoutAccount: String?,
     val photos: List<String>
 ) {
     companion object {
@@ -322,6 +372,14 @@ data class Consignment(
             status = json.optString("status"),
             rejectionReason = json.optString("rejection_reason").takeIf { it.isNotBlank() },
             proposedBasePrice = json.optionalDouble("proposed_base_price"),
+            commissionRate = json.optionalDouble("commission_rate"),
+            assignedAuctionId = json.optionalInt("assigned_auction_id"),
+            inspectionAddress = json.optString("inspection_address").takeIf { it.isNotBlank() },
+            returnShippingCost = json.optionalDouble("return_shipping_cost"),
+            returnShippingNote = json.optString("return_shipping_note").takeIf { it.isNotBlank() },
+            itemCount = json.optInt("item_count", 1),
+            collectionName = json.optString("collection_name").takeIf { it.isNotBlank() },
+            payoutAccount = json.optString("payout_account").takeIf { it.isNotBlank() },
             photos = json.optJSONArray("photos").toStringList()
         )
     }
@@ -334,6 +392,13 @@ private fun JSONObject.optionalDouble(key: String): Double? {
     return optDouble(key).takeIf { it.isFinite() }
 }
 
+private fun JSONObject.optionalInt(key: String): Int? {
+    if (!has(key) || isNull(key)) {
+        return null
+    }
+    return optInt(key)
+}
+
 private fun JSONArray?.toStringList(): List<String> {
     if (this == null) return emptyList()
     val values = mutableListOf<String>()
@@ -342,6 +407,16 @@ private fun JSONArray?.toStringList(): List<String> {
         if (value.isNotBlank()) {
             values += value
         }
+    }
+    return values
+}
+
+private fun JSONArray?.toMessageList(): List<CorrespondenceMessage> {
+    if (this == null) return emptyList()
+    val values = mutableListOf<CorrespondenceMessage>()
+    for (index in 0 until length()) {
+        val value = optJSONObject(index) ?: continue
+        values += CorrespondenceMessage.fromJson(value)
     }
     return values
 }
