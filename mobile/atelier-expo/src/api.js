@@ -127,6 +127,12 @@ export const api = {
       token,
     }),
   notifications: (token) => apiRequest('/notificaciones', { token }),
+  markNotificationRead: (token, notificationId) =>
+    apiRequest(`/notificaciones/${notificationId}/leida`, {
+      method: 'POST',
+      token,
+      body: {},
+    }),
   paymentMethods: (token) => apiRequest('/payment-methods', { token }),
   deletePaymentMethod: (token, paymentId) =>
     apiRequest(`/payment-methods/${paymentId}`, {

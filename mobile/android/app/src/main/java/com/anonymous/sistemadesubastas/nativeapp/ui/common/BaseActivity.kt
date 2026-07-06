@@ -2,6 +2,8 @@ package com.anonymous.sistemadesubastas.nativeapp.ui.common
 
 import android.content.Intent
 import android.graphics.Typeface
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.util.TypedValue
 import android.view.View
@@ -13,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.anonymous.sistemadesubastas.R
 import com.anonymous.sistemadesubastas.databinding.ViewFooterNavBinding
 import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
+import com.anonymous.sistemadesubastas.nativeapp.data.model.AppNotification
 import com.anonymous.sistemadesubastas.nativeapp.data.model.UserProfile
 import com.anonymous.sistemadesubastas.nativeapp.data.network.ApiClient
 import com.anonymous.sistemadesubastas.nativeapp.data.network.ApiException
@@ -38,6 +41,18 @@ abstract class BaseActivity : AppCompatActivity() {
     private var wifiStableSinceMs: Long? = null
     private var hasQualifiedWifiSession: Boolean = false
     private var pendingWifiLossConfirmation: Boolean = false
+    private val notificationHandler = Handler(Looper.getMainLooper())
+    private var notificationPolling = false
+    private var notificationFetchInFlight = false
+    private var notificationAlertShowing = false
+    private val notificationPollRunnable = object : Runnable {
+        override fun run() {
+            pollNotifications()
+            if (notificationPolling) {
+                notificationHandler.postDelayed(this, NOTIFICATION_POLL_INTERVAL_MS)
+            }
+        }
+    }
 
     protected fun toast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -254,6 +269,7 @@ abstract class BaseActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        startNotificationPolling()
         if (shouldMonitorNetwork()) {
             networkResource.startMonitoring { status ->
                 runOnUiThread {
@@ -318,6 +334,7 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
+        stopNotificationPolling()
         if (shouldMonitorNetwork()) {
             networkResource.stopMonitoring()
         }
@@ -364,8 +381,86 @@ abstract class BaseActivity : AppCompatActivity() {
             message.contains("falta token de acceso", ignoreCase = true)
     }
 
+    private fun startNotificationPolling() {
+        val userId = sessionManager.userSnapshot()?.id
+        if (!sessionManager.isLoggedIn() || userId == null) {
+            return
+        }
+        if (notificationSeenUserId != userId) {
+            seenNotificationIds.clear()
+            notificationBaselineReady = false
+            notificationSeenUserId = userId
+        }
+        if (notificationPolling) {
+            return
+        }
+        notificationPolling = true
+        notificationHandler.post(notificationPollRunnable)
+    }
+
+    private fun stopNotificationPolling() {
+        notificationPolling = false
+        notificationHandler.removeCallbacks(notificationPollRunnable)
+    }
+
+    private fun pollNotifications() {
+        if (notificationFetchInFlight || !sessionManager.isLoggedIn()) {
+            return
+        }
+        notificationFetchInFlight = true
+        AppExecutors.ioThenMain(
+            task = { AuctionRepository(apiClient).notifications() },
+            onSuccess = { notifications ->
+                notificationFetchInFlight = false
+                handleIncomingNotifications(notifications)
+            },
+            onError = {
+                notificationFetchInFlight = false
+            }
+        )
+    }
+
+    private fun handleIncomingNotifications(notifications: List<AppNotification>) {
+        val userId = sessionManager.userSnapshot()?.id ?: return
+        if (notificationSeenUserId != userId) {
+            seenNotificationIds.clear()
+            notificationBaselineReady = false
+            notificationSeenUserId = userId
+        }
+
+        if (!notificationBaselineReady) {
+            seenNotificationIds += notifications.filter { it.read }.map { it.id }
+            notificationBaselineReady = true
+        }
+
+        val incoming = notifications
+            .sortedBy { it.id }
+            .firstOrNull { it.id !in seenNotificationIds }
+        if (incoming == null || notificationAlertShowing) {
+            return
+        }
+
+        seenNotificationIds += incoming.id
+        notificationAlertShowing = true
+        alert(
+            incoming.title.ifBlank { "Notificacion" },
+            incoming.message.ifBlank { "Tenes una nueva notificacion." }
+        ) {
+            AppExecutors.ioThenMain(
+                task = { AuctionRepository(apiClient).markNotificationRead(incoming.id) },
+                onSuccess = {},
+                onError = {}
+            )
+            notificationAlertShowing = false
+        }
+    }
+
     private companion object {
         const val WIFI_SESSION_QUALIFY_MS = 5_000L
+        const val NOTIFICATION_POLL_INTERVAL_MS = 3_500L
+        val seenNotificationIds = mutableSetOf<Int>()
+        var notificationBaselineReady = false
+        var notificationSeenUserId: Int? = null
     }
 }
 

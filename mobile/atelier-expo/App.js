@@ -44,7 +44,9 @@ export default function App() {
   const [auth, setAuth] = useState({ token: null, user: null });
   const route = stack[stack.length - 1];
   const seenMessageIdsRef = useRef(new Set());
+  const seenNotificationIdsRef = useRef(new Set());
   const messageWatcherReadyRef = useRef(false);
+  const notificationWatcherReadyRef = useRef(false);
   const alertOpenRef = useRef(false);
 
   useEffect(() => {
@@ -88,7 +90,9 @@ export default function App() {
 
   useEffect(() => {
     seenMessageIdsRef.current = new Set();
+    seenNotificationIdsRef.current = new Set();
     messageWatcherReadyRef.current = false;
+    notificationWatcherReadyRef.current = false;
     alertOpenRef.current = false;
   }, [auth.token, auth.user?.id]);
 
@@ -165,6 +169,68 @@ export default function App() {
       clearInterval(interval);
     };
   }, [auth.token, auth.user?.id, route.name, route.params?.threadId]);
+
+  useEffect(() => {
+    if (!auth.token || !auth.user?.id) {
+      return undefined;
+    }
+
+    let active = true;
+    async function pollNotifications() {
+      try {
+        const notifications = (await api.notifications(auth.token)) || [];
+        if (!active) {
+          return;
+        }
+        const seen = seenNotificationIdsRef.current;
+        const rows = notifications.filter((item) => item?.id);
+        let incoming = null;
+
+        if (!notificationWatcherReadyRef.current) {
+          notificationWatcherReadyRef.current = true;
+          rows
+            .filter((item) => item.read)
+            .forEach((item) => seen.add(item.id));
+          incoming = rows
+            .filter((item) => !item.read && !seen.has(item.id))
+            .sort((a, b) => a.id - b.id)[0];
+        } else {
+          incoming = rows
+            .filter((item) => !seen.has(item.id))
+            .sort((a, b) => a.id - b.id)[0];
+        }
+
+        if (!incoming || alertOpenRef.current) {
+          return;
+        }
+
+        seen.add(incoming.id);
+        alertOpenRef.current = true;
+        Alert.alert(
+          incoming.title || 'Notificacion',
+          incoming.message || 'Tenes una nueva notificacion.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                api.markNotificationRead(auth.token, incoming.id).catch(() => {});
+                alertOpenRef.current = false;
+              },
+            },
+          ]
+        );
+      } catch {
+        // Notification popups should not interrupt normal app usage.
+      }
+    }
+
+    pollNotifications();
+    const interval = setInterval(pollNotifications, 3500);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [auth.token, auth.user?.id]);
 
   const commonProps = {
     auth,
@@ -783,12 +849,6 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
       Alert.alert('Medio de pago requerido', `Selecciona un medio de pago verificado en ${detail.currency}.`);
       return;
     }
-    const selectedPayment = paymentMethods.find((payment) => payment.id === selectedPaymentId);
-    if (selectedPayment && bidAmount > Number(selectedPayment.available_amount || 0)) {
-      Alert.alert('Error', 'Tu método de pago no tiene fondos suficientes.');
-      return;
-    }
-
     setSubmitting(true);
     try {
       const joined = await joinIfNeeded();
@@ -800,10 +860,6 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
       await load();
       Alert.alert('Puja confirmada', 'Tu oferta fue registrada correctamente.');
     } catch (error) {
-      if (String(error.message || '').toLowerCase().includes('fondos')) {
-        Alert.alert('Error', 'Tu método de pago no tiene fondos suficientes.');
-        return;
-      }
       Alert.alert('No pudimos registrar la puja', error.message);
     } finally {
       setSubmitting(false);

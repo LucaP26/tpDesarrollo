@@ -41,6 +41,10 @@ class AuctionRepository(private val apiClient: ApiClient) {
         return notifications
     }
 
+    fun markNotificationRead(notificationId: Int) {
+        apiClient.post("/notificaciones/$notificationId/leida", JSONObject())
+    }
+
     fun activeAuction(): ActiveAuction? {
         return apiClient.getNullable("/subastas/activa")?.let(ActiveAuction::fromJson)
     }

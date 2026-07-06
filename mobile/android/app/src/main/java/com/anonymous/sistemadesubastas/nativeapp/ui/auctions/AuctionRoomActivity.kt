@@ -330,12 +330,6 @@ class AuctionRoomActivity : BaseActivity() {
             alert("Medio de pago requerido", "Selecciona un medio de pago verificado en ${detail.currency} para esta puja.")
             return
         }
-        val selectedPayment = paymentMethods.firstOrNull { it.id == paymentMethodId }
-        if (selectedPayment?.availableAmount != null && amount > selectedPayment.availableAmount) {
-            alert("Error", "Tu método de pago no tiene fondos suficientes.")
-            return
-        }
-
         cardBinding.bidButton.isEnabled = false
         cardBinding.bidButton.text = "Enviando..."
 
@@ -354,15 +348,11 @@ class AuctionRoomActivity : BaseActivity() {
             onError = { throwable ->
                 cardBinding.bidButton.isEnabled = true
                 cardBinding.bidButton.text = "Pujar"
-                if (throwable.message?.contains("fondos", ignoreCase = true) == true) {
-                    alert("Error", "Tu método de pago no tiene fondos suficientes.")
-                } else {
-                    showErrorOrHandleSession(
-                        title = "No se pudo pujar",
-                        throwable = throwable,
-                        fallbackMessage = "Intenta de nuevo."
-                    )
-                }
+                showErrorOrHandleSession(
+                    title = "No se pudo pujar",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
             }
         )
     }

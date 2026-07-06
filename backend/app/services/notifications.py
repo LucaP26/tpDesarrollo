@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.core.time import utc_now
 from app.domain.enums import NotificationKind
-from app.domain.schemas import NotificationRecord, NotificationResponse
+from app.domain.schemas import MessageResponse, NotificationRecord, NotificationResponse
 from app.services.store import StoreBase
 
 
@@ -42,3 +42,11 @@ class NotificationService:
             )
             for item in rows
         ]
+
+    def mark_read(self, user_id: int, notification_id: int) -> MessageResponse | None:
+        notification = self.store.notifications.get(notification_id)
+        if not notification or notification.user_id != user_id:
+            return None
+        notification.read = True
+        self.store.persist_all()
+        return MessageResponse(message="Notificacion marcada como leida.")

@@ -341,6 +341,18 @@ def list_notifications(
     return container.notifications.list_for_user(current_user.id)
 
 
+@api_router.post("/notificaciones/{notification_id}/leida", response_model=MessageResponse)
+def mark_notification_read(
+    notification_id: int,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageResponse:
+    response = container.notifications.mark_read(current_user.id, notification_id)
+    if response is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notificacion no encontrada.")
+    return response
+
+
 @api_router.get("/mensajes", response_model=list[MessageThreadResponse])
 def list_message_threads(
     current_user: AppUser = Depends(get_current_user),
