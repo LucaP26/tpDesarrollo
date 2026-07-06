@@ -10,9 +10,13 @@ import android.text.InputType
 import android.util.Base64
 import android.view.View
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.anonymous.sistemadesubastas.R
 import com.anonymous.sistemadesubastas.databinding.ActivityConsignmentBinding
 import com.anonymous.sistemadesubastas.databinding.ItemConsignmentCardBinding
 import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
@@ -20,6 +24,7 @@ import com.anonymous.sistemadesubastas.nativeapp.data.model.Consignment
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.ProfileRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.Formatters
+import com.anonymous.sistemadesubastas.nativeapp.ui.common.RemoteImageLoader
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -87,9 +92,21 @@ class ConsignmentActivity : BaseActivity() {
 
     private fun loadConsignments() {
         AppExecutors.ioThenMain(
-            task = { profileRepository.consignments() },
-            onSuccess = { consignments ->
-                renderConsignments(consignments)
+            task = {
+                ConsignmentPayload(
+                    userConsignments = profileRepository.consignments(),
+                    adminConsignments = if (isConsignmentAdmin()) {
+                        profileRepository.adminPendingConsignments().filter {
+                            it.status.equals("enviada", ignoreCase = true) ||
+                                it.status.equals("en_revision", ignoreCase = true)
+                        }
+                    } else {
+                        emptyList()
+                    }
+                )
+            },
+            onSuccess = { payload ->
+                renderConsignments(payload)
             },
             onError = { throwable ->
                 showErrorOrHandleSession(
@@ -101,11 +118,21 @@ class ConsignmentActivity : BaseActivity() {
         )
     }
 
-    private fun renderConsignments(consignments: List<Consignment>) {
+    private fun renderConsignments(payload: ConsignmentPayload) {
         binding.consignmentsContainer.removeAllViews()
-        binding.emptyConsignmentsText.visibility = if (consignments.isEmpty()) View.VISIBLE else View.GONE
+        val hasAdminItems = payload.adminConsignments.isNotEmpty()
+        binding.emptyConsignmentsText.visibility = if (payload.userConsignments.isEmpty() && !hasAdminItems) View.VISIBLE else View.GONE
 
-        consignments.forEach { consignment ->
+        if (isConsignmentAdmin()) {
+            addSectionLabel("Solicitudes para revisar")
+            if (payload.adminConsignments.isEmpty()) {
+                addInfoText("No hay solicitudes pendientes.")
+            } else {
+                payload.adminConsignments.forEach(::addAdminConsignmentCard)
+            }
+        }
+
+        payload.userConsignments.forEach { consignment ->
             val itemBinding = ItemConsignmentCardBinding.inflate(layoutInflater, binding.consignmentsContainer, false)
             itemBinding.titleText.text = consignment.title
             itemBinding.statusText.text = Formatters.consignmentStatus(consignment.status)
@@ -119,6 +146,73 @@ class ConsignmentActivity : BaseActivity() {
             itemBinding.rejectProposalButton.setOnClickListener { decideProposal(consignment, accept = false) }
             binding.consignmentsContainer.addView(itemBinding.root)
         }
+    }
+
+    private fun addSectionLabel(text: String) {
+        val label = TextView(this).apply {
+            this.text = text
+            setTextColor(ContextCompat.getColor(this@ConsignmentActivity, R.color.atelier_accent))
+            textSize = 12f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setPadding(0, 12.dp(), 0, 10.dp())
+        }
+        binding.consignmentsContainer.addView(label)
+    }
+
+    private fun addInfoText(text: String) {
+        val label = TextView(this).apply {
+            this.text = text
+            setTextColor(ContextCompat.getColor(this@ConsignmentActivity, R.color.atelier_text))
+            textSize = 14f
+            setPadding(0, 0, 0, 12.dp())
+        }
+        binding.consignmentsContainer.addView(label)
+    }
+
+    private fun addAdminConsignmentCard(consignment: Consignment) {
+        val itemBinding = ItemConsignmentCardBinding.inflate(layoutInflater, binding.consignmentsContainer, false)
+        itemBinding.titleText.text = consignment.title
+        itemBinding.statusText.text = "Solicitud"
+        itemBinding.descriptionText.text = consignment.description
+        itemBinding.metaText.text = buildAdminMeta(consignment)
+        itemBinding.insuranceButton.visibility = View.GONE
+        itemBinding.proposalActions.visibility = View.VISIBLE
+        itemBinding.acceptProposalButton.text = "Aceptar item"
+        itemBinding.rejectProposalButton.text = "Rechazar"
+        itemBinding.acceptProposalButton.setOnClickListener { reviewAdminConsignment(consignment, accept = true) }
+        itemBinding.rejectProposalButton.setOnClickListener { reviewAdminConsignment(consignment, accept = false) }
+        addPhotoStrip(itemBinding.root, consignment.photos)
+        binding.consignmentsContainer.addView(itemBinding.root)
+    }
+
+    private fun addPhotoStrip(container: LinearLayout, photos: List<String>) {
+        if (photos.isEmpty()) {
+            return
+        }
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = 12.dp()
+                bottomMargin = 2.dp()
+            }
+        }
+        photos.take(3).forEachIndexed { index, photo ->
+            val imageView = ImageView(this).apply {
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                setBackgroundColor(ContextCompat.getColor(this@ConsignmentActivity, R.color.atelier_surface_soft))
+                layoutParams = LinearLayout.LayoutParams(0, 92.dp(), 1f).apply {
+                    if (index > 0) {
+                        marginStart = 8.dp()
+                    }
+                }
+            }
+            RemoteImageLoader.load(imageView, photo)
+            row.addView(imageView)
+        }
+        container.addView(row, 3)
     }
 
     private fun buildMeta(consignment: Consignment): String {
@@ -146,6 +240,18 @@ class ConsignmentActivity : BaseActivity() {
         consignment.returnShippingNote?.let { parts += it }
         consignment.rejectionReason?.takeIf { it.isNotBlank() }?.let { parts += it }
         return parts.joinToString(" - ")
+    }
+
+    private fun buildAdminMeta(consignment: Consignment): String {
+        val parts = mutableListOf<String>()
+        consignment.story?.let { parts += "Historia: $it" }
+        parts += "Cantidad: ${consignment.itemCount}"
+        parts += "Fotos: ${consignment.photos.size}"
+        parts += "Coleccion: ${consignment.collectionName ?: "No aplica"}"
+        parts += "Cuenta de liquidacion: ${consignment.payoutAccount ?: "No declarada aun"}"
+        parts += "Evidencia: ${consignment.lawfulOriginEvidence.joinToString().ifBlank { "Sin evidencia adicional declarada." }}"
+        consignment.inspectionAddress?.let { parts += "Direccion de revision: $it" }
+        return parts.joinToString("\n")
     }
 
     private fun showInsuranceDetails(consignment: Consignment) {
@@ -205,6 +311,33 @@ class ConsignmentActivity : BaseActivity() {
                 setLoading(false)
                 showErrorOrHandleSession(
                     title = "No se pudo responder la propuesta",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
+            }
+        )
+    }
+
+    private fun reviewAdminConsignment(consignment: Consignment, accept: Boolean) {
+        setLoading(true)
+        AppExecutors.ioThenMain(
+            task = { profileRepository.reviewConsignment(consignment.id, accept) },
+            onSuccess = {
+                setLoading(false)
+                alert(
+                    if (accept) "Item aceptado" else "Item rechazado",
+                    if (accept) {
+                        "Se abrio el chat con el duenio para confirmar fecha, hora, lugar, valor base y comisiones."
+                    } else {
+                        "El duenio recibio la notificacion de rechazo y la fecha de retorno al punto de retiro."
+                    }
+                )
+                loadConsignments()
+            },
+            onError = { throwable ->
+                setLoading(false)
+                showErrorOrHandleSession(
+                    title = "No se pudo revisar la solicitud",
                     throwable = throwable,
                     fallbackMessage = "Intenta de nuevo."
                 )
@@ -298,7 +431,10 @@ class ConsignmentActivity : BaseActivity() {
             task = { profileRepository.createConsignment(payload) },
             onSuccess = {
                 setLoading(false)
-                toast("Pieza enviada a evaluacion")
+                alert(
+                    "Pieza enviada",
+                    "Debes dejar el item en la direccion Av. Santa Fe 3858 dentro de los proximos 3 dias habiles para su revision."
+                )
                 clearForm()
                 loadConsignments()
             },
@@ -392,8 +528,20 @@ class ConsignmentActivity : BaseActivity() {
         val sizeBytes: Long?
     )
 
+    private data class ConsignmentPayload(
+        val userConsignments: List<Consignment>,
+        val adminConsignments: List<Consignment>,
+    )
+
     companion object {
         private const val MAX_PHOTO_SIZE_BYTES = 5L * 1024L * 1024L
         private const val STATUS_PENDING_CONFIRMATION = "pendiente_confirmacion"
+        private const val CONSIGNMENT_ADMIN_EMAIL = "m@gmail.com"
     }
+
+    private fun isConsignmentAdmin(): Boolean {
+        return sessionManager.userSnapshot()?.email?.trim()?.lowercase() == CONSIGNMENT_ADMIN_EMAIL
+    }
+
+    private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
 }

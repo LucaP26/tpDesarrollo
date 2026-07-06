@@ -25,6 +25,16 @@ object Formatters {
         }
     }
 
+    fun dateTime(value: String): String {
+        return try {
+            val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
+            val date = parser.parse(value) ?: Date()
+            SimpleDateFormat("d MMM HH:mm", Locale("es", "AR")).format(date)
+        } catch (_: Throwable) {
+            value.ifBlank { "Sin fecha" }
+        }
+    }
+
     fun category(category: String): String = when (category.lowercase(Locale.getDefault())) {
         "platino" -> "Platino"
         "oro" -> "Oro"

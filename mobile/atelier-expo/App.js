@@ -43,6 +43,9 @@ export default function App() {
   const [stack, setStack] = useState([{ name: 'splash', params: {} }]);
   const [auth, setAuth] = useState({ token: null, user: null });
   const route = stack[stack.length - 1];
+  const seenMessageIdsRef = useRef(new Set());
+  const messageWatcherReadyRef = useRef(false);
+  const alertOpenRef = useRef(false);
 
   useEffect(() => {
     function openPasswordSetup(url) {
@@ -83,6 +86,86 @@ export default function App() {
     replace(map[tab] || 'home');
   }
 
+  useEffect(() => {
+    seenMessageIdsRef.current = new Set();
+    messageWatcherReadyRef.current = false;
+    alertOpenRef.current = false;
+  }, [auth.token, auth.user?.id]);
+
+  useEffect(() => {
+    if (!auth.token || !auth.user?.id) {
+      return undefined;
+    }
+
+    let active = true;
+    async function pollMessages() {
+      try {
+        const threads = (await api.messageThreads(auth.token)) || [];
+        if (!active) {
+          return;
+        }
+        const seen = seenMessageIdsRef.current;
+        const lastMessages = threads
+          .map((thread) => ({ thread, message: thread.last_message }))
+          .filter((entry) => entry.message?.id);
+
+        if (!messageWatcherReadyRef.current) {
+          lastMessages.forEach(({ message }) => seen.add(message.id));
+          messageWatcherReadyRef.current = true;
+          return;
+        }
+
+        const incoming = lastMessages.find(({ thread, message }) => {
+          if (seen.has(message.id)) {
+            return false;
+          }
+          if (message.sender_user_id === auth.user.id) {
+            return false;
+          }
+          if (route.name === 'shippingChat' && route.params?.threadId === thread.id) {
+            return false;
+          }
+          return true;
+        });
+        lastMessages.forEach(({ message }) => seen.add(message.id));
+
+        if (!incoming || alertOpenRef.current) {
+          return;
+        }
+        alertOpenRef.current = true;
+        Alert.alert(
+          'Tenes un mensaje',
+          incoming.message.body || incoming.thread.subject || 'Nuevo mensaje recibido.',
+          [
+            {
+              text: 'Cerrar',
+              style: 'cancel',
+              onPress: () => {
+                alertOpenRef.current = false;
+              },
+            },
+            {
+              text: 'Abrir chat',
+              onPress: () => {
+                alertOpenRef.current = false;
+                navigate('shippingChat', { threadId: incoming.thread.id, thread: incoming.thread });
+              },
+            },
+          ]
+        );
+      } catch {
+        // Message alerts are opportunistic; normal screens still surface hard failures.
+      }
+    }
+
+    pollMessages();
+    const interval = setInterval(pollMessages, 3500);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [auth.token, auth.user?.id, route.name, route.params?.threadId]);
+
   const commonProps = {
     auth,
     setAuth,
@@ -107,6 +190,8 @@ export default function App() {
       {route.name === 'auctionRoom' && <AuctionRoomScreen {...commonProps} auctionId={route.params.auctionId} />}
       {route.name === 'publicAuctionRoom' && <AuctionRoomScreen {...commonProps} auctionId={route.params.auctionId} publicMode />}
       {route.name === 'profile' && <ProfileScreen {...commonProps} />}
+      {route.name === 'wonItemDetail' && <WonItemDetailScreen {...commonProps} item={route.params.item} />}
+      {route.name === 'shippingChat' && <ShippingChatScreen {...commonProps} threadId={route.params.threadId} initialThread={route.params.thread} />}
       {route.name === 'consignments' && <ConsignmentScreen {...commonProps} />}
     </>
   );
@@ -534,8 +619,12 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [liveSeconds, setLiveSeconds] = useState(null);
   const socketRef = useRef(null);
   const liveJoinAttemptedRef = useRef(false);
+  const expiryRefreshRef = useRef({ lotId: null, at: 0 });
+  const knownWonLotsRef = useRef(new Set());
+  const initializedWonLotsRef = useRef(false);
 
   async function load() {
     try {
@@ -565,6 +654,12 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
   }, [auth.token, auctionId, publicMode]);
 
   useEffect(() => {
+    knownWonLotsRef.current = new Set();
+    initializedWonLotsRef.current = false;
+    expiryRefreshRef.current = { lotId: null, at: 0 };
+  }, [auctionId, auth.user?.id]);
+
+  useEffect(() => {
     if (publicMode || !detail || detail.state !== 'abierta') {
       closeRealtimeSocket(socketRef);
       return;
@@ -588,6 +683,53 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
         // Users without access can still inspect the catalog without joining the live room.
       });
   }, [auth.token, auctionId, detail?.id, detail?.state, detail?.connected, publicMode]);
+
+  useEffect(() => {
+    const lot = detail?.current_lot;
+    if (!lot || detail?.state !== 'abierta') {
+      setLiveSeconds(null);
+      return undefined;
+    }
+
+    function tick() {
+      const next = liveRemainingSeconds(lot);
+      setLiveSeconds(next);
+      if (next === 0) {
+        const now = Date.now();
+        const lastRefresh = expiryRefreshRef.current;
+        if (lastRefresh.lotId !== lot.id || now - lastRefresh.at > 3000) {
+          expiryRefreshRef.current = { lotId: lot.id, at: now };
+          load();
+        }
+      }
+    }
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [detail?.current_lot?.id, detail?.current_lot?.bid_deadline_at, detail?.current_lot?.bid_seconds_remaining, detail?.state]);
+
+  useEffect(() => {
+    if (publicMode || !detail || !auth.user?.id) {
+      return;
+    }
+    const wonLots = wonLotsFromDetail(detail, auth.user.id);
+    if (!initializedWonLotsRef.current) {
+      wonLots.forEach((lot) => knownWonLotsRef.current.add(lot.id));
+      initializedWonLotsRef.current = true;
+      return;
+    }
+    wonLots.forEach((lot) => {
+      if (knownWonLotsRef.current.has(lot.id)) {
+        return;
+      }
+      knownWonLotsRef.current.add(lot.id);
+      Alert.alert(
+        'Ganaste el item',
+        `Ganaste ${lot.title} por ${money(lot.current_bid || lot.base_price, detail.currency)}. Ya aparece en Perfil, en Articulos ganados.`
+      );
+    });
+  }, [detail, auth.user?.id, publicMode]);
 
   async function joinIfNeeded() {
     if (publicMode) {
@@ -641,6 +783,11 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
       Alert.alert('Medio de pago requerido', `Selecciona un medio de pago verificado en ${detail.currency}.`);
       return;
     }
+    const selectedPayment = paymentMethods.find((payment) => payment.id === selectedPaymentId);
+    if (selectedPayment && bidAmount > Number(selectedPayment.available_amount || 0)) {
+      Alert.alert('Error', 'Tu método de pago no tiene fondos suficientes.');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -653,6 +800,10 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
       await load();
       Alert.alert('Puja confirmada', 'Tu oferta fue registrada correctamente.');
     } catch (error) {
+      if (String(error.message || '').toLowerCase().includes('fondos')) {
+        Alert.alert('Error', 'Tu método de pago no tiene fondos suficientes.');
+        return;
+      }
       Alert.alert('No pudimos registrar la puja', error.message);
     } finally {
       setSubmitting(false);
@@ -683,6 +834,7 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
   const lots = detail?.lots || [];
   const currentLot = detail?.current_lot;
   const upcoming = detail?.state === 'programada';
+  const visibleSeconds = liveSeconds ?? currentLot?.bid_seconds_remaining ?? 60;
 
   return (
     <Screen footer={publicMode ? null : <FooterNav active="discover" onNavigate={goTab} />}>
@@ -708,7 +860,7 @@ function AuctionRoomScreen({ auth, auctionId, goBack, goTab, publicMode = false 
             <Text style={styles.sectionTitle}>Lote en sala</Text>
             <LotCard lot={currentLot} currency={detail.currency} active />
             {!publicMode ? <View style={styles.bidPanel}>
-              <Text style={styles.mutedText}>Tiempo restante: {currentLot.bid_seconds_remaining ?? 60}s</Text>
+              <Text style={styles.timerText}>Tiempo restante: {formatCountdown(visibleSeconds)}</Text>
               <Text style={styles.mutedText}>Mínimo: {money(currentLot.min_bid, detail.currency)}</Text>
               {currentLot.max_bid ? <Text style={styles.mutedText}>Máximo: {money(currentLot.max_bid, detail.currency)}</Text> : null}
               <BidHistory history={currentLot.bid_history || []} currency={detail.currency} />
@@ -859,6 +1011,53 @@ function applyBidUpdate(detail, update) {
   };
 }
 
+function parseServerTimeMs(value) {
+  if (!value) {
+    return null;
+  }
+  const text = String(value);
+  const normalized = /(?:Z|[+-]\d{2}:?\d{2})$/.test(text) ? text : `${text}Z`;
+  const ms = Date.parse(normalized);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function formatDateTime(value) {
+  const ms = parseServerTimeMs(value);
+  if (ms === null) {
+    return value ? String(value) : 'Sin fecha';
+  }
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(ms));
+}
+
+function liveRemainingSeconds(lot) {
+  const deadlineMs = parseServerTimeMs(lot?.bid_deadline_at);
+  if (deadlineMs !== null) {
+    return Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+  }
+  const fallback = Number(lot?.bid_seconds_remaining);
+  return Number.isFinite(fallback) ? Math.max(0, Math.ceil(fallback)) : null;
+}
+
+function formatCountdown(value) {
+  const total = Math.max(0, Number(value) || 0);
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function wonLotsFromDetail(detail, userId) {
+  const byId = new Map();
+  [...(detail?.completed_lots || []), ...(detail?.lots || [])].forEach((lot) => {
+    if (lot?.sold && !lot.sold_to_company && lot.current_bidder_id === userId) {
+      byId.set(lot.id, lot);
+    }
+  });
+  return Array.from(byId.values());
+}
+
 function WatchlistScreen({ auth, navigate, goTab }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -968,26 +1167,40 @@ function BidsScreen({ auth, navigate, goTab }) {
 
 function ConsignmentScreen({ auth, goBack }) {
   const [items, setItems] = useState([]);
+  const [adminItems, setAdminItems] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [reviewingId, setReviewingId] = useState(null);
   const [proposalPayouts, setProposalPayouts] = useState({});
   const [form, setForm] = useState(defaultConsignmentForm());
+  const isAdmin = isConsignmentAdmin(auth.user);
 
   async function load() {
     setLoading(true);
+    if (isAdmin) {
+      setAdminLoading(true);
+    }
     try {
       setItems((await api.consignments(auth.token)) || []);
+      if (isAdmin) {
+        const dashboard = await api.adminDashboard(auth.token);
+        setAdminItems((dashboard?.pending_consignments || []).filter((item) => ['enviada', 'en_revision'].includes(item.status)));
+      } else {
+        setAdminItems([]);
+      }
     } catch (error) {
       Alert.alert('No pudimos cargar tus piezas', error.message);
     } finally {
       setLoading(false);
+      setAdminLoading(false);
     }
   }
 
   useEffect(() => {
     load();
-  }, [auth.token]);
+  }, [auth.token, isAdmin]);
 
   async function pickPhotos() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -1084,11 +1297,32 @@ function ConsignmentScreen({ auth, goBack }) {
       setForm(defaultConsignmentForm());
       setPhotos([]);
       await load();
-      Alert.alert('Pieza enviada', 'La empresa revisara el bien y te informara los proximos pasos por la app.');
+      Alert.alert(
+        'Pieza enviada',
+        'Debes dejar el item en la direccion Av. Santa Fe 3858 dentro de los proximos 3 dias habiles para su revision.'
+      );
     } catch (error) {
       Alert.alert('No pudimos enviar la pieza', error.message);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function reviewAdminConsignment(item, accept) {
+    setReviewingId(item.id);
+    try {
+      await api.reviewConsignment(auth.token, item.id, { approve: accept });
+      await load();
+      Alert.alert(
+        accept ? 'Item aceptado' : 'Item rechazado',
+        accept
+          ? 'Se abrio el chat con el duenio para confirmar fecha, hora, lugar, valor base y comisiones.'
+          : 'El duenio recibio la notificacion de rechazo y la fecha de retorno al punto de retiro.'
+      );
+    } catch (error) {
+      Alert.alert('No pudimos revisar la solicitud', error.message);
+    } finally {
+      setReviewingId(null);
     }
   }
 
@@ -1111,6 +1345,16 @@ function ConsignmentScreen({ auth, goBack }) {
     <Screen>
       <ScrollView contentContainerStyle={styles.contentWithFooter}>
         <Header title="Consignar" onBack={goBack} />
+        {isAdmin ? (
+          <AdminConsignmentReviewSection
+            items={adminItems}
+            loading={adminLoading}
+            reviewingId={reviewingId}
+            onAccept={(item) => reviewAdminConsignment(item, true)}
+            onReject={(item) => reviewAdminConsignment(item, false)}
+          />
+        ) : null}
+
         <View style={styles.panel}>
           <Text style={styles.panelTitle}>Poner pieza en subasta</Text>
           <Field label="TITULO" value={form.title} onChangeText={(value) => setForm({ ...form, title: value })} />
@@ -1146,6 +1390,57 @@ function ConsignmentScreen({ auth, goBack }) {
         ))}
       </ScrollView>
     </Screen>
+  );
+}
+
+function AdminConsignmentReviewSection({ items, loading, reviewingId, onAccept, onReject }) {
+  return (
+    <View style={styles.adminReviewPanel}>
+      <Text style={styles.bidHistoryTitle}>SOLICITUDES PARA REVISAR</Text>
+      {loading ? <ActivityIndicator color={colors.gold} /> : null}
+      {!loading && items.length === 0 ? <Text style={styles.mutedText}>No hay solicitudes pendientes.</Text> : null}
+      {items.map((item) => (
+        <AdminConsignmentCard
+          key={item.id}
+          item={item}
+          reviewing={reviewingId === item.id}
+          onAccept={() => onAccept(item)}
+          onReject={() => onReject(item)}
+        />
+      ))}
+    </View>
+  );
+}
+
+function AdminConsignmentCard({ item, reviewing, onAccept, onReject }) {
+  const photos = item.photos || [];
+  const evidence = item.lawful_origin_evidence?.length
+    ? item.lawful_origin_evidence.join('\n')
+    : 'Sin evidencia adicional declarada.';
+  return (
+    <View style={styles.adminConsignmentCard}>
+      <Text style={styles.smallGold}>{consignmentStatusLabel(item.status)}</Text>
+      <Text style={styles.paymentName}>{item.title}</Text>
+      <Text style={styles.mutedText}>{item.description}</Text>
+      {item.story ? <Text style={styles.mutedText}>Historia: {item.story}</Text> : null}
+      <Text style={styles.mutedText}>Cantidad: {item.item_count || 1}</Text>
+      <Text style={styles.mutedText}>Coleccion: {item.collection_name || 'No aplica'}</Text>
+      <Text style={styles.mutedText}>Cuenta de liquidacion: {item.payout_account || 'No declarada aun'}</Text>
+      <Text style={styles.mutedText}>Evidencia de origen: {evidence}</Text>
+      <Text style={styles.mutedText}>Fotos: {photos.length}</Text>
+      {photos.length ? (
+        <View style={styles.adminPhotoGrid}>
+          {photos.slice(0, 6).map((photo, index) => {
+            const source = imageSource(photo);
+            return source ? <Image key={`${item.id}-${index}`} source={source} style={styles.adminPhoto} /> : null;
+          })}
+        </View>
+      ) : null}
+      <View style={styles.adminActionRow}>
+        <PrimaryButton label={reviewing ? 'REVISANDO...' : 'ACEPTAR ITEM'} onPress={onAccept} disabled={reviewing} style={styles.adminActionButton} />
+        <GhostButton label="RECHAZAR" onPress={reviewing ? () => {} : onReject} style={styles.adminActionButton} />
+      </View>
+    </View>
   );
 }
 
@@ -1185,7 +1480,7 @@ function CheckRow({ label, value, onChange }) {
   );
 }
 
-function ProfileScreen({ auth, setAuth, navigate, goBack, goTab }) {
+function ProfileScreen({ auth, setAuth, navigate, replace, goBack, goTab }) {
   const [profile, setProfile] = useState(auth.user);
   const [payments, setPayments] = useState([]);
   const [metrics, setMetrics] = useState(null);
@@ -1323,6 +1618,11 @@ function ProfileScreen({ auth, setAuth, navigate, goBack, goTab }) {
     }
   }
 
+  function logout() {
+    setAuth({ token: null, user: null });
+    replace('login');
+  }
+
   const avatar = imageSource(profile?.avatar_image_url);
 
   return (
@@ -1341,7 +1641,10 @@ function ProfileScreen({ auth, setAuth, navigate, goBack, goTab }) {
           <Text style={styles.profileCategory}>{categoryLabel(profile?.category)}</Text>
         </View>
 
+        <GhostButton label="LOG OUT" onPress={logout} style={styles.logoutButton} />
+
         {metrics ? <MetricsPanel metrics={metrics} /> : null}
+        {metrics ? <WonItemsSection items={metrics.won_items || []} onOpen={(item) => navigate('wonItemDetail', { item })} /> : null}
 
         <GhostButton label="PONER PIEZA EN SUBASTA" onPress={() => navigate('consignments')} style={styles.topSpace} />
 
@@ -1402,6 +1705,166 @@ function ProfileScreen({ auth, setAuth, navigate, goBack, goTab }) {
   );
 }
 
+function WonItemDetailScreen({ auth, item, goBack, goTab, navigate }) {
+  const [opening, setOpening] = useState(false);
+
+  async function openShippingChat() {
+    if (!item?.purchase_id) {
+      Alert.alert('No pudimos abrir el chat', 'La compra no tiene un identificador valido.');
+      return;
+    }
+    setOpening(true);
+    try {
+      const thread = await api.openShippingChat(auth.token, item.purchase_id);
+      navigate('shippingChat', { threadId: thread.id, thread });
+    } catch (error) {
+      Alert.alert('No pudimos abrir el chat', error.message);
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  if (!item) {
+    return (
+      <Screen>
+        <Header title="Articulo ganado" onBack={goBack} />
+        <Text style={styles.emptyText}>No encontramos el articulo seleccionado.</Text>
+      </Screen>
+    );
+  }
+
+  const source = imageSource(item.image_url);
+  return (
+    <Screen footer={<FooterNav active="bids" onNavigate={goTab} />}>
+      <ScrollView contentContainerStyle={styles.contentWithFooter}>
+        <Header title="Articulo ganado" onBack={goBack} />
+        {source ? <Image source={source} style={styles.wonDetailImage} /> : <View style={styles.wonDetailImageEmpty} />}
+        <Text style={styles.categoryTextLarge}>{item.piece_number}</Text>
+        <Text style={styles.roomTitle}>{item.title}</Text>
+        <Text style={styles.roomCopy}>{item.description || 'Sin descripcion cargada.'}</Text>
+
+        <View style={styles.detailPanel}>
+          <Text style={styles.bidHistoryTitle}>DETALLE DE COMPRA</Text>
+          <BreakdownRow label="Oferta ganadora" value={money(item.hammer_price, item.currency)} />
+          <BreakdownRow label="Impuestos/comisiones adjudicadas" value={money(item.tax_amount ?? item.commission_amount, item.currency)} />
+          <BreakdownRow label="Costo de envio" value={money(item.shipping_amount, item.currency)} />
+          <BreakdownRow label="Total pagado/adjudicado" value={money(item.total_amount, item.currency)} strong />
+        </View>
+
+        <View style={styles.detailPanel}>
+          <Text style={styles.bidHistoryTitle}>VENDEDOR</Text>
+          <Text style={styles.mutedText}>{item.seller_name || 'Malena Garcia'}</Text>
+          <Text style={styles.mutedText}>{item.seller_email || 'm@gmail.com'}</Text>
+        </View>
+
+        <View style={styles.detailPanel}>
+          <Text style={styles.bidHistoryTitle}>COORDINACION DE ENTREGA</Text>
+          <BreakdownRow label="Iniciar antes de" value={formatDateTime(item.shipping_deadline_at)} />
+          <BreakdownRow label="Multa por demora" value={money(item.shipping_penalty_amount, item.currency)} />
+          <Text style={styles.mutedText}>
+            {item.shipping_coordination_started
+              ? 'Coordinacion iniciada. Ya existe un chat abierto para este item.'
+              : 'Si no comenzas la coordinacion dentro de las 48 horas posteriores a ganar el item, se aplicara esta multa.'}
+          </Text>
+        </View>
+
+        <PrimaryButton label={opening ? 'ABRIENDO...' : 'COORDINAR ENVIO'} onPress={openShippingChat} disabled={opening} />
+      </ScrollView>
+    </Screen>
+  );
+}
+
+function BreakdownRow({ label, value, strong = false }) {
+  return (
+    <View style={styles.breakdownRow}>
+      <Text style={styles.mutedText}>{label}</Text>
+      <Text style={[styles.breakdownValue, strong && styles.breakdownValueStrong]}>{value}</Text>
+    </View>
+  );
+}
+
+function ShippingChatScreen({ auth, threadId, initialThread, goBack }) {
+  const [thread, setThread] = useState(initialThread || null);
+  const [body, setBody] = useState('');
+  const [sending, setSending] = useState(false);
+
+  async function load() {
+    if (!threadId) {
+      return;
+    }
+    try {
+      setThread(await api.messageThread(auth.token, threadId));
+    } catch (error) {
+      Alert.alert('No pudimos cargar el chat', error.message);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 3000);
+    return () => clearInterval(interval);
+  }, [threadId, auth.token]);
+
+  async function send() {
+    const cleanBody = body.trim();
+    if (!cleanBody) {
+      return;
+    }
+    setSending(true);
+    try {
+      const updated = await api.sendMessage(auth.token, threadId, cleanBody);
+      setThread(updated);
+      setBody('');
+    } catch (error) {
+      Alert.alert('No pudimos enviar el mensaje', error.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  const sellerName = thread?.seller_name || 'm@gmail.com';
+  const ownerName = thread?.owner_name || thread?.owner_email || 'usuario';
+  const viewingAsSeller = thread?.seller_user_id === auth.user?.id;
+  const counterpartName = viewingAsSeller ? ownerName : sellerName;
+  const messages = thread?.messages || [];
+  return (
+    <Screen>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.fill}>
+        <ScrollView contentContainerStyle={styles.contentWithFooter}>
+          <Header title="Coordinar envio" onBack={goBack} />
+          <Text style={styles.roomCopy}>{thread?.subject || 'Chat de envio'} con {counterpartName}</Text>
+          <View style={styles.chatPanel}>
+            {!messages.length ? <Text style={styles.mutedText}>Todavia no hay mensajes.</Text> : null}
+            {messages.map((message) => {
+              const mine = message.sender_user_id === auth.user?.id;
+              const author = message.sender_type === 'empresa'
+                ? 'ATELIER'
+                : viewingAsSeller
+                  ? ownerName
+                  : sellerName;
+              return (
+                <View key={message.id} style={[styles.messageBubble, mine ? styles.messageBubbleMine : styles.messageBubbleSeller]}>
+                  <Text style={[styles.messageAuthor, mine && styles.messageAuthorMine]}>{mine ? 'Vos' : author}</Text>
+                  <Text style={[styles.messageText, mine && styles.messageTextMine]}>{message.body}</Text>
+                </View>
+              );
+            })}
+          </View>
+          <TextInput
+            value={body}
+            onChangeText={setBody}
+            placeholder="Escribi tu mensaje"
+            placeholderTextColor={colors.muted}
+            multiline
+            style={styles.chatInput}
+          />
+          <PrimaryButton label={sending ? 'ENVIANDO...' : 'ENVIAR MENSAJE'} onPress={send} disabled={sending || !body.trim()} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Screen>
+  );
+}
+
 function PaymentTypeSelector({ value, onChange }) {
   const options = [
     ['tarjeta_credito', 'Tarjeta'],
@@ -1434,6 +1897,36 @@ function MetricsPanel({ metrics }) {
       <Text style={styles.mutedText}>Ofertado: {money(metrics.total_amount_bid, 'USD')}</Text>
       <Text style={styles.mutedText}>Pagado/adjudicado: {money(metrics.total_amount_paid, 'USD')}</Text>
       {categories ? <Text style={styles.mutedText}>Categorias: {categories}</Text> : null}
+    </View>
+  );
+}
+
+function WonItemsSection({ items, onOpen }) {
+  return (
+    <View style={styles.wonItemsPanel}>
+      <View style={styles.wonItemsHeader}>
+        <Text style={styles.bidHistoryTitle}>ARTICULOS GANADOS</Text>
+        <Text style={styles.smallGold}>{items.length}</Text>
+      </View>
+      {!items.length ? (
+        <Text style={styles.mutedText}>Todavia no ganaste articulos.</Text>
+      ) : (
+        items.map((item) => {
+          const source = imageSource(item.image_url);
+          return (
+            <Pressable key={item.purchase_id} onPress={() => onOpen?.(item)} style={styles.wonItemRow}>
+              {source ? <Image source={source} style={styles.wonItemImage} /> : <View style={styles.wonItemImageEmpty} />}
+              <View style={styles.wonItemBody}>
+                <Text style={styles.wonItemPiece}>{item.piece_number}</Text>
+                <Text style={styles.wonItemTitle}>{item.title}</Text>
+                <Text style={styles.mutedText}>Oferta: {money(item.hammer_price, item.currency)}</Text>
+                <Text style={styles.mutedText}>Total con comision/envio: {money(item.total_amount, item.currency)}</Text>
+                <Text style={styles.wonItemAction}>VER DETALLE</Text>
+              </View>
+            </Pressable>
+          );
+        })
+      )}
     </View>
   );
 }
@@ -1567,6 +2060,10 @@ function defaultConsignmentForm() {
     declared_legal_origin: false,
     declared_return_charge_agreement: false,
   };
+}
+
+function isConsignmentAdmin(user) {
+  return String(user?.email || '').trim().toLowerCase() === 'm@gmail.com';
 }
 
 function consignmentStatusLabel(status) {
@@ -1763,6 +2260,12 @@ const styles = StyleSheet.create({
     color: colors.goldSoft,
     fontSize: 15,
     lineHeight: 23,
+  },
+  timerText: {
+    color: colors.gold,
+    fontSize: 18,
+    fontWeight: '900',
+    lineHeight: 24,
   },
   centerLoader: {
     flex: 1,
@@ -1977,6 +2480,9 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     marginTop: 8,
   },
+  logoutButton: {
+    marginBottom: 18,
+  },
   metricsPanel: {
     backgroundColor: colors.panel,
     borderColor: colors.line,
@@ -1985,6 +2491,153 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 18,
     padding: 18,
+  },
+  wonItemsPanel: {
+    backgroundColor: colors.panel,
+    borderColor: colors.line,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+    marginBottom: 18,
+    padding: 18,
+  },
+  wonItemsHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  wonItemRow: {
+    alignItems: 'stretch',
+    backgroundColor: colors.black,
+    borderColor: colors.line,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    padding: 12,
+  },
+  wonItemImage: {
+    borderRadius: 12,
+    height: 120,
+    width: '100%',
+  },
+  wonItemImageEmpty: {
+    backgroundColor: colors.panelSoft,
+    borderRadius: 12,
+    height: 120,
+    width: '100%',
+  },
+  wonItemBody: {
+    gap: 4,
+  },
+  wonItemPiece: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  wonItemTitle: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '900',
+    lineHeight: 23,
+  },
+  wonItemAction: {
+    color: colors.gold,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 2,
+    marginTop: 6,
+  },
+  wonDetailImage: {
+    borderRadius: 18,
+    height: 230,
+    marginBottom: 18,
+    width: '100%',
+  },
+  wonDetailImageEmpty: {
+    backgroundColor: colors.panelSoft,
+    borderRadius: 18,
+    height: 230,
+    marginBottom: 18,
+    width: '100%',
+  },
+  detailPanel: {
+    backgroundColor: colors.panel,
+    borderColor: colors.line,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 10,
+    marginBottom: 16,
+    marginTop: 18,
+    padding: 16,
+  },
+  breakdownRow: {
+    alignItems: 'flex-start',
+    borderBottomColor: colors.line,
+    borderBottomWidth: 1,
+    gap: 4,
+    paddingBottom: 10,
+  },
+  breakdownValue: {
+    color: colors.goldSoft,
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 22,
+  },
+  breakdownValueStrong: {
+    color: colors.gold,
+    fontSize: 19,
+  },
+  chatPanel: {
+    gap: 12,
+    marginBottom: 16,
+    marginTop: 18,
+  },
+  messageBubble: {
+    borderColor: colors.line,
+    borderRadius: 18,
+    borderWidth: 1,
+    maxWidth: '88%',
+    padding: 14,
+  },
+  messageBubbleMine: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.gold,
+  },
+  messageBubbleSeller: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.panel,
+  },
+  messageAuthor: {
+    color: colors.mustardLight,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  messageAuthorMine: {
+    color: colors.ink,
+  },
+  messageText: {
+    color: colors.text,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  messageTextMine: {
+    color: colors.ink,
+  },
+  chatInput: {
+    backgroundColor: colors.panel,
+    borderColor: colors.line,
+    borderRadius: 18,
+    borderWidth: 1,
+    color: colors.text,
+    fontSize: 16,
+    lineHeight: 22,
+    minHeight: 92,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    textAlignVertical: 'top',
   },
   metricsGrid: {
     flexDirection: 'row',
@@ -2050,6 +2703,39 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
     padding: 18,
+  },
+  adminReviewPanel: {
+    gap: 12,
+    marginBottom: 18,
+  },
+  adminConsignmentCard: {
+    backgroundColor: colors.panel,
+    borderColor: colors.line,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 10,
+    padding: 18,
+  },
+  adminPhotoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  adminPhoto: {
+    backgroundColor: colors.panelSoft,
+    borderRadius: 12,
+    height: 92,
+    width: '31%',
+  },
+  adminActionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 6,
+  },
+  adminActionButton: {
+    flex: 1,
+    minWidth: 132,
   },
   insurancePanel: {
     backgroundColor: colors.black,

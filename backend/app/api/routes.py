@@ -368,6 +368,15 @@ def reply_message_thread(
     return container.messages.reply_as_user(current_user, thread_id, payload.body)
 
 
+@api_router.post("/compras/{purchase_id}/coordinar-envio", response_model=MessageThreadResponse)
+def open_purchase_shipping_chat(
+    purchase_id: int,
+    current_user: AppUser = Depends(get_current_user),
+    container: ServiceContainer = Depends(get_container),
+) -> MessageThreadResponse:
+    return container.messages.open_shipping_coordination(current_user, purchase_id)
+
+
 @api_router.get("/metricas/personal", response_model=MetricsResponse)
 def personal_metrics(
     current_user: AppUser = Depends(get_current_user),

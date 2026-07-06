@@ -21,7 +21,16 @@ from app.domain.schemas import (
     UserProfileResponse,
 )
 from app.services.auctions import AuctionService
+from app.services.consignment_rules import (
+    DEFAULT_CONSIGNMENT_BASE_PRICE,
+    DEFAULT_CONSIGNMENT_COMMISSION_RATE,
+    DEFAULT_CONSIGNMENT_STORAGE_LOCATION,
+    INSPECTION_ADDRESS,
+    REJECTION_RETURN_BUSINESS_DAYS,
+    add_business_days,
+)
 from app.services.email import EmailService
+from app.services.messages import MessageService
 from app.services.notifications import NotificationService
 from app.services.security import generate_token, hash_secret
 from app.services.store import StoreBase
@@ -185,9 +194,23 @@ class AdminService:
         )
 
     def store_message_threads(self):
-        from app.services.messages import MessageService
+        return MessageService(self.store, self.notifications).list_for_admin()
 
-        return MessageService(self.store).list_for_admin()
+    def _default_auction_id(self) -> int | None:
+        available = [
+            auction
+            for auction in self.store.auctions.values()
+            if auction.state != AuctionState.CERRADA
+        ]
+        if not available:
+            return None
+        available.sort(key=lambda item: (item.scheduled_date, item.scheduled_time))
+        return available[0].id
+
+    def _open_consignment_review_chat(self, consignment: ConsignmentRecord, body: str) -> None:
+        messages = MessageService(self.store, self.notifications)
+        thread = messages.open_for_consignment(consignment)
+        messages.reply_as_company(thread.id, body)
 
     def _clear_stale_setup_tokens(self, user_id: int) -> None:
         now = utc_now()
@@ -284,41 +307,68 @@ class AdminService:
 
         if payload.request_inspection:
             if not consignment.inspection_address:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes indicar la direccion de inspeccion.")
+                consignment.inspection_address = INSPECTION_ADDRESS
             consignment.status = ConsignmentStatus.EN_REVISION
             message = (
                 "La empresa esta interesada en revisar el bien. Envialo a la direccion indicada; "
                 "si no es aceptado, la devolucion sera con cargo al usuario."
             )
         elif payload.approve is True:
-            if payload.proposed_base_price is None or payload.proposed_base_price <= 0:
+            proposed_base_price = payload.proposed_base_price or DEFAULT_CONSIGNMENT_BASE_PRICE
+            commission_rate = (
+                payload.commission_rate
+                if payload.commission_rate is not None
+                else DEFAULT_CONSIGNMENT_COMMISSION_RATE
+            )
+            assigned_auction_id = payload.assigned_auction_id or self._default_auction_id()
+            if proposed_base_price <= 0:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes informar un valor base valido.")
-            if payload.commission_rate is None or payload.commission_rate < 0:
+            if commission_rate < 0:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes informar una comision valida.")
-            if payload.assigned_auction_id is None:
+            if assigned_auction_id is None:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes asignar una subasta futura.")
-            if payload.assigned_auction_id not in self.store.auctions:
+            if assigned_auction_id not in self.store.auctions:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La subasta asignada no existe.")
 
-            auction = self.store.auctions[payload.assigned_auction_id]
+            auction = self.store.auctions[assigned_auction_id]
             consignment.status = ConsignmentStatus.PENDIENTE_CONFIRMACION
             consignment.rejection_reason = None
-            consignment.proposed_base_price = payload.proposed_base_price
-            consignment.commission_rate = payload.commission_rate
-            consignment.assigned_auction_id = payload.assigned_auction_id
-            consignment.storage_location = payload.storage_location
-            consignment.insurance_policy = payload.insurance_policy
+            consignment.proposed_base_price = proposed_base_price
+            consignment.commission_rate = commission_rate
+            consignment.assigned_auction_id = assigned_auction_id
+            consignment.storage_location = payload.storage_location or DEFAULT_CONSIGNMENT_STORAGE_LOCATION
+            consignment.insurance_policy = payload.insurance_policy or f"POL-CONS-{consignment.id:05d}"
             message = (
                 "La empresa acepto el bien sujeto a tu confirmacion de precio base, comision y gastos. "
                 f"Subasta asignada: {auction.title}, {auction.scheduled_date.isoformat()} "
                 f"{auction.scheduled_time.strftime('%H:%M')}, {auction.location}."
             )
+            self._open_consignment_review_chat(
+                consignment,
+                (
+                    f"Tu item {consignment.title} fue aceptado para avanzar. "
+                    f"Fecha y hora de subasta: {auction.scheduled_date.isoformat()} "
+                    f"{auction.scheduled_time.strftime('%H:%M')}. "
+                    f"Lugar: {auction.location}. "
+                    f"Valor base: {proposed_base_price}. "
+                    f"Comision: {commission_rate}. "
+                    "Confirma desde Consignar si aceptas el valor base y las comisiones."
+                ),
+            )
         elif payload.approve is False:
+            rejection_notified_at = utc_now()
+            return_date = add_business_days(rejection_notified_at.date(), REJECTION_RETURN_BUSINESS_DAYS)
             consignment.status = ConsignmentStatus.RECHAZADA
             consignment.rejection_reason = payload.rejection_reason or "La empresa no avanzo con la pieza."
-            if not consignment.return_shipping_note:
-                consignment.return_shipping_note = "El bien sera devuelto con gastos a cargo del usuario."
-            message = consignment.rejection_reason
+            consignment.return_shipping_note = (
+                f"El item volvera al punto de retiro el {return_date.isoformat()}, "
+                f"{REJECTION_RETURN_BUSINESS_DAYS} dias habiles despues de esta notificacion."
+            )
+            message = (
+                "Tu item a subastar ha sido rechazado por la empresa. "
+                f"{consignment.return_shipping_note} Motivo: {consignment.rejection_reason}"
+            )
+            self._open_consignment_review_chat(consignment, message)
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes solicitar inspeccion, aprobar o rechazar la consignacion.")
 

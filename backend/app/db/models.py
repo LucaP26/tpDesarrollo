@@ -174,6 +174,8 @@ class AppMessageThreadRow(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     owner_user_id: Mapped[int] = mapped_column(Integer, nullable=False)
     consignment_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    purchase_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    seller_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     subject: Mapped[str] = mapped_column(String(250), nullable=False)
     status: Mapped[str] = mapped_column(String(30), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

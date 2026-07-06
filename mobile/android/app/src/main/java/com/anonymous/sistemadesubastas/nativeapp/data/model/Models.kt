@@ -140,6 +140,9 @@ data class CorrespondenceMessage(
 data class MessageThread(
     val id: Int,
     val consignmentId: Int?,
+    val purchaseId: Int?,
+    val sellerUserId: Int?,
+    val sellerName: String?,
     val subject: String,
     val status: String,
     val updatedAt: String,
@@ -150,6 +153,9 @@ data class MessageThread(
         fun fromJson(json: JSONObject): MessageThread = MessageThread(
             id = json.optInt("id"),
             consignmentId = json.optionalInt("consignment_id"),
+            purchaseId = json.optionalInt("purchase_id"),
+            sellerUserId = json.optionalInt("seller_user_id"),
+            sellerName = json.optString("seller_name").takeIf { it.isNotBlank() },
             subject = json.optString("subject"),
             status = json.optString("status"),
             updatedAt = json.optString("updated_at"),
@@ -188,6 +194,7 @@ data class AuctionLot(
     val basePrice: Double,
     val priceAvailable: Boolean,
     val currentBid: Double?,
+    val currentBidderId: Int?,
     val bidHistory: List<PublicBid>,
     val bidSecondsRemaining: Int?,
     val minBid: Double,
@@ -211,6 +218,7 @@ data class AuctionLot(
             basePrice = json.optDouble("base_price"),
             priceAvailable = json.optBoolean("price_available", true),
             currentBid = json.optionalDouble("current_bid"),
+            currentBidderId = json.optionalInt("current_bidder_id"),
             bidHistory = json.optJSONArray("bid_history").toObjectList(PublicBid::fromJson),
             bidSecondsRemaining = if (json.has("bid_seconds_remaining") && !json.isNull("bid_seconds_remaining")) {
                 json.optInt("bid_seconds_remaining")
@@ -371,7 +379,8 @@ data class Metrics(
     val activeBids: Int,
     val totalAmountBid: Double,
     val totalAmountPaid: Double,
-    val categoriesJoined: Map<String, Int>
+    val categoriesJoined: Map<String, Int>,
+    val wonItems: List<WonItem>
 ) {
     companion object {
         fun fromJson(json: JSONObject): Metrics = Metrics(
@@ -382,7 +391,52 @@ data class Metrics(
             totalAmountPaid = json.optDouble("total_amount_paid"),
             categoriesJoined = json.optJSONObject("categories_joined")?.let { values ->
                 values.keys().asSequence().associateWith { key -> values.optInt(key) }
-            }.orEmpty()
+            }.orEmpty(),
+            wonItems = json.optJSONArray("won_items").toObjectList(WonItem::fromJson)
+        )
+    }
+}
+
+data class WonItem(
+    val purchaseId: Int,
+    val auctionId: Int,
+    val lotId: Int,
+    val pieceNumber: String,
+    val title: String,
+    val description: String,
+    val imageUrl: String?,
+    val hammerPrice: Double,
+    val commissionAmount: Double,
+    val shippingAmount: Double,
+    val taxAmount: Double,
+    val totalAmount: Double,
+    val currency: String,
+    val shippingDeadlineAt: String,
+    val shippingPenaltyAmount: Double,
+    val shippingCoordinationStarted: Boolean,
+    val sellerName: String?,
+    val sellerEmail: String?
+) {
+    companion object {
+        fun fromJson(json: JSONObject): WonItem = WonItem(
+            purchaseId = json.optInt("purchase_id"),
+            auctionId = json.optInt("auction_id"),
+            lotId = json.optInt("lot_id"),
+            pieceNumber = json.optString("piece_number"),
+            title = json.optString("title"),
+            description = json.optString("description"),
+            imageUrl = json.optString("image_url").takeIf { it.isNotBlank() },
+            hammerPrice = json.optDouble("hammer_price"),
+            commissionAmount = json.optDouble("commission_amount"),
+            shippingAmount = json.optDouble("shipping_amount"),
+            taxAmount = json.optDouble("tax_amount"),
+            totalAmount = json.optDouble("total_amount"),
+            currency = json.optString("currency"),
+            shippingDeadlineAt = json.optString("shipping_deadline_at"),
+            shippingPenaltyAmount = json.optDouble("shipping_penalty_amount"),
+            shippingCoordinationStarted = json.optBoolean("shipping_coordination_started"),
+            sellerName = json.optString("seller_name").takeIf { it.isNotBlank() },
+            sellerEmail = json.optString("seller_email").takeIf { it.isNotBlank() }
         )
     }
 }
@@ -391,6 +445,7 @@ data class Consignment(
     val id: Int,
     val title: String,
     val description: String,
+    val story: String?,
     val status: String,
     val rejectionReason: String?,
     val proposedBasePrice: Double?,
@@ -410,6 +465,7 @@ data class Consignment(
     val itemCount: Int,
     val collectionName: String?,
     val payoutAccount: String?,
+    val lawfulOriginEvidence: List<String>,
     val photos: List<String>
 ) {
     companion object {
@@ -417,6 +473,7 @@ data class Consignment(
             id = json.optInt("id"),
             title = json.optString("title"),
             description = json.optString("description"),
+            story = json.optString("story").takeIf { it.isNotBlank() },
             status = json.optString("status"),
             rejectionReason = json.optString("rejection_reason").takeIf { it.isNotBlank() },
             proposedBasePrice = json.optionalDouble("proposed_base_price"),
@@ -436,6 +493,7 @@ data class Consignment(
             itemCount = json.optInt("item_count", 1),
             collectionName = json.optString("collection_name").takeIf { it.isNotBlank() },
             payoutAccount = json.optString("payout_account").takeIf { it.isNotBlank() },
+            lawfulOriginEvidence = json.optJSONArray("lawful_origin_evidence").toStringList(),
             photos = json.optJSONArray("photos").toStringList()
         )
     }

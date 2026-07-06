@@ -30,6 +30,7 @@ class MessagesActivity : BaseActivity() {
         binding = ActivityMessagesBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        selectedThreadId = intent.getIntExtra(EXTRA_THREAD_ID, 0).takeIf { it > 0 }
         binding.backButton.setOnClickListener { finish() }
         binding.sendButton.setOnClickListener { sendMessage() }
         loadThreads()
@@ -116,22 +117,29 @@ class MessagesActivity : BaseActivity() {
             return
         }
         thread.messages.forEach { message ->
-            binding.messagesContainer.addView(messageView(message))
+            binding.messagesContainer.addView(messageView(thread, message))
         }
     }
 
-    private fun messageView(message: CorrespondenceMessage): View {
-        val isCompany = message.senderType == "empresa"
+    private fun messageView(thread: MessageThread, message: CorrespondenceMessage): View {
+        val userId = sessionManager.userSnapshot()?.id
+        val mine = userId != null && message.senderUserId == userId
+        val senderName = when {
+            mine -> "Vos"
+            message.senderType == "vendedor" -> thread.sellerName ?: "Vendedor"
+            message.senderType == "empresa" -> "ATELIER"
+            else -> "Comprador"
+        }
         val bubble = TextView(this).apply {
-            setBackgroundResource(if (isCompany) R.drawable.bg_card_surface else R.drawable.bg_chip_surface)
+            setBackgroundResource(if (mine) R.drawable.bg_chip_surface else R.drawable.bg_card_surface)
             setPadding(dp(14), dp(12), dp(14), dp(12))
-            text = "${if (isCompany) "ATELIER" else "Vos"}\n${message.body}\n${Formatters.date(message.createdAt)}"
+            text = "$senderName\n${message.body}\n${Formatters.date(message.createdAt)}"
             setTextColor(ContextCompat.getColor(this@MessagesActivity, R.color.atelier_ink))
             textSize = 14f
         }
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = if (isCompany) Gravity.START else Gravity.END
+            gravity = if (mine) Gravity.END else Gravity.START
             addView(
                 bubble,
                 LinearLayout.LayoutParams(
@@ -181,4 +189,8 @@ class MessagesActivity : BaseActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    companion object {
+        const val EXTRA_THREAD_ID = "extra_thread_id"
+    }
 }

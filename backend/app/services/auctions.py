@@ -37,6 +37,11 @@ from app.domain.schemas import (
 from app.services.notifications import NotificationService
 from app.services.realtime import RealtimeManager
 from app.services.messages import MessageService
+from app.services.shipping_compliance import (
+    COORDINATION_DEADLINE_HOURS,
+    SHIPPING_PENALTY_RATE,
+    apply_overdue_shipping_coordination_penalties,
+)
 from app.services.store import StoreBase
 from app.services.user_categories import promote_user_category
 
@@ -221,6 +226,7 @@ class AuctionService:
         access_block = self._auction_access_block_reason(user, auction)
         if access_block:
             return access_block
+        apply_overdue_shipping_coordination_penalties(self.store, self.notifications, user)
         matching = self._matching_verified_payments(user, auction.currency)
         if not matching:
             return "Necesitas al menos un medio de pago verificado en la moneda de la subasta."
@@ -296,6 +302,39 @@ class AuctionService:
                     commitment += lot.current_bid
         for purchase in self.store.purchases.values():
             if purchase.buyer_user_id == user_id and purchase.currency == currency and not purchase.paid:
+                commitment += purchase.total_amount
+        return commitment
+
+    def _payment_method_commitment(self, user_id: int, currency: Currency, payment_method_id: int, exclude_lot_id: int | None = None) -> float:
+        commitment = 0.0
+        for auction in self.store.auctions.values():
+            if auction.currency != currency or auction.state != AuctionState.ABIERTA:
+                continue
+            for lot_id in auction.lot_ids:
+                if lot_id == exclude_lot_id:
+                    continue
+                lot = self.store.lots[lot_id]
+                if lot.current_bidder_id != user_id or not lot.current_bid:
+                    continue
+                winning_bid = next(
+                    (
+                        self.store.bids[bid_id]
+                        for bid_id in lot.bid_ids
+                        if bid_id in self.store.bids
+                        and self.store.bids[bid_id].user_id == user_id
+                        and self.store.bids[bid_id].amount == lot.current_bid
+                    ),
+                    None,
+                )
+                if winning_bid and winning_bid.payment_method_id == payment_method_id:
+                    commitment += lot.current_bid
+        for purchase in self.store.purchases.values():
+            if (
+                purchase.buyer_user_id == user_id
+                and purchase.currency == currency
+                and not purchase.paid
+                and purchase.payment_method_id == payment_method_id
+            ):
                 commitment += purchase.total_amount
         return commitment
 
@@ -674,12 +713,13 @@ class AuctionService:
             if lot.current_bid is not None and payload.amount <= lot.current_bid:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La oferta debe ser mayor a la mejor actual.")
 
-            available = sum(item.available_amount for item in self._matching_verified_payments(user, auction.currency))
-            commitment = self._current_commitment(user.id, auction.currency)
-            if lot.current_bidder_id == user.id and lot.current_bid:
-                commitment -= lot.current_bid
-            if round(commitment + payload.amount, 2) > round(available, 2):
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La oferta supera los fondos garantizados disponibles.")
+            if payment:
+                commitment = self._payment_method_commitment(user.id, auction.currency, payment.id, exclude_lot_id=lot.id)
+                if round(commitment + payload.amount, 2) > round(payment.available_amount, 2):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Tu método de pago no tiene fondos suficientes.",
+                    )
 
             previous_best_user = lot.current_bidder_id
             for bid_id in lot.bid_ids:
@@ -785,7 +825,11 @@ class AuctionService:
             self.notifications.create(
                 winner.id,
                 "Ganaste la subasta",
-                f"El lote {lot.piece_number} es tuyo. Total a pagar: {purchase.total_amount} {auction.currency.value}.",
+                (
+                    f"El lote {lot.piece_number} es tuyo. Total a pagar: {purchase.total_amount} {auction.currency.value}. "
+                    f"Inicia la coordinacion de entrega dentro de {COORDINATION_DEADLINE_HOURS} horas o se aplicara "
+                    f"una multa del {int(SHIPPING_PENALTY_RATE * 100)}%."
+                ),
                 NotificationKind.OPERACION,
             )
             self.messages.open_purchase_notice(
@@ -797,6 +841,9 @@ class AuctionService:
                     f"Comisiones: {purchase.commission_amount} {auction.currency.value}. "
                     f"Costo de envio a tu direccion declarada: {purchase.shipping_amount} {auction.currency.value}. "
                     f"Total a pagar: {purchase.total_amount} {auction.currency.value}. "
+                    f"Debes iniciar la coordinacion de entrega desde Articulos ganados dentro de las "
+                    f"{COORDINATION_DEADLINE_HOURS} horas posteriores a la adjudicacion. Si no lo haces, "
+                    f"se aplicara una multa del {int(SHIPPING_PENALTY_RATE * 100)}% del total adjudicado. "
                     "Tambien podes retirar personalmente el bien; en ese caso, una vez retirado pierde la cobertura del seguro."
                 ),
             )

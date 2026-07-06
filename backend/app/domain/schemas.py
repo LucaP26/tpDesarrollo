@@ -40,6 +40,8 @@ class MessageThreadRecord(BaseApiModel):
     id: int
     owner_user_id: int
     consignment_id: int | None = None
+    purchase_id: int | None = None
+    seller_user_id: int | None = None
     subject: str
     status: str = "abierto"
     created_at: datetime
@@ -514,13 +516,43 @@ class CorrespondenceMessageResponse(BaseApiModel):
 
 class MessageThreadResponse(BaseApiModel):
     id: int
+    owner_user_id: int | None = None
+    owner_email: str | None = None
+    owner_name: str | None = None
     consignment_id: int | None = None
+    purchase_id: int | None = None
+    seller_user_id: int | None = None
+    seller_email: str | None = None
+    seller_name: str | None = None
     subject: str
     status: str
     created_at: datetime
     updated_at: datetime
     last_message: CorrespondenceMessageResponse | None = None
     messages: list[CorrespondenceMessageResponse] = Field(default_factory=list)
+
+
+class WonItemResponse(BaseApiModel):
+    purchase_id: int
+    auction_id: int
+    lot_id: int
+    piece_number: str
+    title: str
+    description: str
+    image_url: str | None = None
+    hammer_price: float
+    commission_amount: float
+    shipping_amount: float
+    tax_amount: float
+    shipping_deadline_at: datetime
+    shipping_penalty_amount: float
+    shipping_coordination_started: bool = False
+    total_amount: float
+    currency: Currency
+    seller_user_id: int | None = None
+    seller_email: str | None = None
+    seller_name: str | None = None
+    won_at: datetime
 
 
 class MetricsResponse(BaseApiModel):
@@ -530,6 +562,7 @@ class MetricsResponse(BaseApiModel):
     total_amount_bid: float
     total_amount_paid: float
     categories_joined: dict[str, int]
+    won_items: list[WonItemResponse] = Field(default_factory=list)
 
 
 class HistoryEntryResponse(BaseApiModel):
@@ -568,6 +601,10 @@ class ConsignmentResponse(BaseApiModel):
     proposed_base_price: float | None = None
     commission_rate: float | None = None
     assigned_auction_id: int | None = None
+    assigned_auction_title: str | None = None
+    assigned_auction_scheduled_at: datetime | None = None
+    assigned_auction_location: str | None = None
+    assigned_auction_auctioneer_name: str | None = None
     storage_location: str | None = None
     insurance_policy: str | None = None
     inspection_address: str | None = None

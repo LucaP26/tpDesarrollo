@@ -180,6 +180,15 @@
                     android:layout_marginTop="8dp"
                     android:textColor="@color/atelier_text_muted"
                     android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/wonItemsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/atelier_text"
+                    android:textSize="14sp" />
             </LinearLayout>
 
             <LinearLayout
@@ -575,7 +584,7 @@
                 android:layout_height="58dp"
                 android:layout_marginTop="34dp"
                 android:background="@drawable/bg_profile_logout_button"
-                android:text="Cerrar sesion"
+                android:text="Log Out"
                 android:textAllCaps="false"
                 android:textColor="@color/atelier_ink"
                 android:textSize="18sp" />

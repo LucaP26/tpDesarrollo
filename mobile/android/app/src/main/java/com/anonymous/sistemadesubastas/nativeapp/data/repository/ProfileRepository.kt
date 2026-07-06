@@ -51,9 +51,24 @@ class ProfileRepository(private val apiClient: ApiClient) {
         return Consignment.fromJson(apiClient.post("/consignaciones", payload))
     }
 
+    fun adminPendingConsignments(): List<Consignment> {
+        val dashboard = apiClient.get("/admin/dashboard")
+        return parseConsignmentArray(dashboard.optJSONArray("pending_consignments") ?: JSONArray())
+    }
+
+    fun reviewConsignment(consignmentId: Int, accept: Boolean): Consignment {
+        val payload = JSONObject()
+            .put("approve", accept)
+        return Consignment.fromJson(apiClient.post("/admin/consignaciones/$consignmentId/review", payload))
+    }
+
     fun messageThreads(): List<MessageThread> = parseMessageThreadArray(apiClient.getArray("/mensajes"))
 
     fun messageThread(threadId: Int): MessageThread = MessageThread.fromJson(apiClient.get("/mensajes/$threadId"))
+
+    fun openShippingChat(purchaseId: Int): MessageThread {
+        return MessageThread.fromJson(apiClient.post("/compras/$purchaseId/coordinar-envio", JSONObject()))
+    }
 
     fun sendMessage(threadId: Int, body: String): MessageThread {
         val payload = JSONObject()

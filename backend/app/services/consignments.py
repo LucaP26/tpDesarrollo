@@ -8,6 +8,11 @@ from fastapi import HTTPException, status
 
 from app.domain.enums import ConsignmentStatus, NotificationKind, RegistrationStage, UserRole
 from app.domain.schemas import AppUser, AuctionLotRecord, ConsignmentCreate, ConsignmentRecord, ConsignmentResponse
+from app.services.consignment_rules import (
+    CONSIGNMENT_ADMIN_EMAIL,
+    INSPECTION_ADDRESS,
+    INSPECTION_DEADLINE_BUSINESS_DAYS,
+)
 from app.services.notifications import NotificationService
 from app.services.messages import MessageService
 from app.services.store import StoreBase
@@ -109,6 +114,25 @@ class ConsignmentService:
         rows.sort(key=lambda item: item.created_at, reverse=True)
         return [self._response(item) for item in rows]
 
+    def _admin_user(self) -> AppUser | None:
+        return next(
+            (item for item in self.store.users.values() if item.email.strip().lower() == CONSIGNMENT_ADMIN_EMAIL),
+            None,
+        )
+
+    def _admin_notification_message(self, owner: AppUser, consignment: ConsignmentRecord) -> str:
+        evidence = "; ".join(consignment.lawful_origin_evidence) or "Sin evidencia adicional declarada."
+        collection = consignment.collection_name or "No aplica"
+        payout = consignment.payout_account or "No declarada aun"
+        return (
+            f"{owner.first_name} {owner.last_name} ({owner.email}) solicito subastar: {consignment.title}. "
+            f"Descripcion: {consignment.description}. "
+            f"Historia/procedencia: {consignment.story or 'Sin detalle adicional'}. "
+            f"Cantidad: {consignment.item_count}. Coleccion: {collection}. "
+            f"Cuenta de liquidacion: {payout}. Evidencia de origen licito: {evidence}. "
+            f"Fotos cargadas: {len(consignment.photos)}. Revisalas en Consignar > Solicitudes para revisar."
+        )
+
     def _ensure_can_consign(self, user: AppUser) -> None:
         if UserRole.DUENIO in user.roles:
             return
@@ -153,15 +177,27 @@ class ConsignmentService:
             payout_account=payout_account,
             status=ConsignmentStatus.ENVIADA,
             created_at=utc_now(),
+            inspection_address=INSPECTION_ADDRESS,
         )
         self.store.consignments[consignment.id] = consignment
         user.consignment_ids.append(consignment.id)
         self.notifications.create(
             user.id,
-            "Consignacion enviada",
-            "La empresa revisara las fotos, la historia y la procedencia del bien.",
+            "Pieza enviada a revision",
+            (
+                f"Debes dejar el item en {INSPECTION_ADDRESS} dentro de los proximos "
+                f"{INSPECTION_DEADLINE_BUSINESS_DAYS} dias habiles para su revision."
+            ),
             NotificationKind.INFO,
         )
+        admin = self._admin_user()
+        if admin:
+            self.notifications.create(
+                admin.id,
+                "Nueva solicitud de consignacion",
+                self._admin_notification_message(user, consignment),
+                NotificationKind.ALERTA,
+            )
         self.messages.open_for_consignment(consignment)
         self.store.persist_all()
         return self._response(consignment)

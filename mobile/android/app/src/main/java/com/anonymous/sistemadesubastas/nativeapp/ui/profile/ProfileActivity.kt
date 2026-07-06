@@ -24,6 +24,7 @@ import com.anonymous.sistemadesubastas.nativeapp.data.model.ActiveAuction
 import com.anonymous.sistemadesubastas.nativeapp.data.model.Metrics
 import com.anonymous.sistemadesubastas.nativeapp.data.model.PaymentMethod
 import com.anonymous.sistemadesubastas.nativeapp.data.model.UserProfile
+import com.anonymous.sistemadesubastas.nativeapp.data.model.WonItem
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuctionRepository
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.ProfileRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.auctions.AuctionRoomActivity
@@ -252,6 +253,83 @@ class ProfileActivity : BaseActivity() {
         }
         binding.metricsCategoryText.visibility = if (categories.isBlank()) View.GONE else View.VISIBLE
         binding.metricsCategoryText.text = "Categorias: $categories"
+        binding.wonItemsText.text = if (metrics.wonItems.isEmpty()) {
+            "Articulos ganados: todavia no ganaste articulos."
+        } else {
+            metrics.wonItems.joinToString("\n") { item ->
+                "${item.pieceNumber} - ${item.title} - Total ${Formatters.money(item.currency, item.totalAmount)}"
+            }
+        }
+        binding.wonItemsText.setOnClickListener {
+            if (metrics.wonItems.isNotEmpty()) {
+                showWonItemSelector(metrics.wonItems)
+            }
+        }
+    }
+
+    private fun showWonItemSelector(items: List<WonItem>) {
+        if (items.size == 1) {
+            showWonItemDetail(items.first())
+            return
+        }
+        val labels = items.map { "${it.pieceNumber} - ${it.title}" }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle("Articulos ganados")
+            .setItems(labels) { dialog, index ->
+                dialog.dismiss()
+                showWonItemDetail(items[index])
+            }
+            .show()
+    }
+
+    private fun showWonItemDetail(item: WonItem) {
+        val message = buildString {
+            appendLine(item.description.ifBlank { "Sin descripcion cargada." })
+            appendLine()
+            appendLine("Oferta ganadora: ${Formatters.money(item.currency, item.hammerPrice)}")
+            appendLine("Impuestos/comisiones adjudicadas: ${Formatters.money(item.currency, item.taxAmount)}")
+            appendLine("Costo de envio: ${Formatters.money(item.currency, item.shippingAmount)}")
+            appendLine("Total pagado/adjudicado: ${Formatters.money(item.currency, item.totalAmount)}")
+            appendLine()
+            appendLine("Coordinacion de entrega")
+            appendLine("Iniciar antes de: ${Formatters.dateTime(item.shippingDeadlineAt)}")
+            appendLine("Multa por demora: ${Formatters.money(item.currency, item.shippingPenaltyAmount)}")
+            appendLine(
+                if (item.shippingCoordinationStarted) {
+                    "Estado: coordinacion iniciada."
+                } else {
+                    "Si no comenzas la coordinacion dentro de las 48 horas posteriores a ganar el item, se aplicara esta multa."
+                }
+            )
+            appendLine()
+            appendLine("Vendedor: ${item.sellerName ?: "Malena Garcia"}")
+            appendLine(item.sellerEmail ?: "m@gmail.com")
+        }
+        AlertDialog.Builder(this)
+            .setTitle("${item.pieceNumber} - ${item.title}")
+            .setMessage(message)
+            .setNegativeButton("Cerrar", null)
+            .setPositiveButton("Coordinar envio") { _, _ -> openShippingChat(item) }
+            .show()
+    }
+
+    private fun openShippingChat(item: WonItem) {
+        AppExecutors.ioThenMain(
+            task = { profileRepository.openShippingChat(item.purchaseId) },
+            onSuccess = { thread ->
+                startActivity(
+                    Intent(this, MessagesActivity::class.java)
+                        .putExtra(MessagesActivity.EXTRA_THREAD_ID, thread.id)
+                )
+            },
+            onError = { throwable ->
+                showErrorOrHandleSession(
+                    title = "No pudimos abrir el chat",
+                    throwable = throwable,
+                    fallbackMessage = "Intenta de nuevo."
+                )
+            }
+        )
     }
 
     private fun buildPaymentSubtitle(paymentMethod: PaymentMethod): String {

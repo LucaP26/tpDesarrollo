@@ -98,6 +98,20 @@ export const api = {
       token,
       body: { amount, payment_method_id: paymentMethodId || null },
     }),
+  openShippingChat: (token, purchaseId) =>
+    apiRequest(`/compras/${purchaseId}/coordinar-envio`, {
+      method: 'POST',
+      token,
+      body: {},
+    }),
+  messageThreads: (token) => apiRequest('/mensajes', { token }),
+  messageThread: (token, threadId) => apiRequest(`/mensajes/${threadId}`, { token }),
+  sendMessage: (token, threadId, body) =>
+    apiRequest(`/mensajes/${threadId}`, {
+      method: 'POST',
+      token,
+      body: { body },
+    }),
   metrics: (token) => apiRequest('/metricas/personal', { token }),
   activeAuction: (token) => apiRequest('/subastas/activa', { token }),
   watchlist: (token) => apiRequest('/watchlist', { token }),
@@ -137,6 +151,13 @@ export const api = {
       method: 'POST',
       token,
       body: { accept, payout_account: payoutAccount || null },
+    }),
+  adminDashboard: (token) => apiRequest('/admin/dashboard', { token }),
+  reviewConsignment: (token, consignmentId, payload) =>
+    apiRequest(`/admin/consignaciones/${consignmentId}/review`, {
+      method: 'POST',
+      token,
+      body: payload,
     }),
   publicAuctions: () => apiRequest('/catalogos-publicos'),
   publicAuctionDetail: (auctionId) => apiRequest(`/catalogos-publicos/${auctionId}`),

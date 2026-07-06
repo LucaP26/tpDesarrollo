@@ -48,6 +48,8 @@ class AuctionRoomActivity : BaseActivity() {
     private var paymentMethods: List<PaymentMethod> = emptyList()
     private var selectedPaymentMethodId: Int? = null
     private var liveJoinAttempted = false
+    private val knownWonLotIds = mutableSetOf<Int>()
+    private var initializedWonLots = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -149,6 +151,7 @@ class AuctionRoomActivity : BaseActivity() {
                 addAll(detail.completedLots)
             }
         }
+        handleWonLotAlerts(detail, lots)
 
         if (lots.isEmpty()) {
             alert("Sala sin lotes", "Todavia no hay lotes disponibles para este catalogo.")
@@ -283,6 +286,30 @@ class AuctionRoomActivity : BaseActivity() {
         )
     }
 
+    private fun handleWonLotAlerts(detail: AuctionDetail, lots: List<AuctionLot>) {
+        if (publicMode) {
+            return
+        }
+        val userId = sessionManager.userSnapshot()?.id ?: return
+        val wonLots = lots.filter { lot ->
+            lot.sold && !lot.soldToCompany && lot.currentBidderId == userId
+        }
+        if (!initializedWonLots) {
+            knownWonLotIds += wonLots.map { it.id }
+            initializedWonLots = true
+            return
+        }
+        wonLots
+            .filterNot { knownWonLotIds.contains(it.id) }
+            .forEach { lot ->
+                knownWonLotIds += lot.id
+                alert(
+                    "Ganaste el item",
+                    "Ganaste ${lot.title} por ${Formatters.money(detail.currency, lot.currentBid ?: lot.basePrice)}. Ya aparece en Perfil, en Articulos ganados."
+                )
+            }
+    }
+
     private fun placeBid(cardBinding: ItemLotCardBinding, detail: AuctionDetail, lot: AuctionLot) {
         if (!canUseCurrentNetwork(latestNetworkStatus)) {
             alert(
@@ -301,6 +328,11 @@ class AuctionRoomActivity : BaseActivity() {
         val paymentMethodId = selectedPaymentMethodId
         if (paymentMethodId == null) {
             alert("Medio de pago requerido", "Selecciona un medio de pago verificado en ${detail.currency} para esta puja.")
+            return
+        }
+        val selectedPayment = paymentMethods.firstOrNull { it.id == paymentMethodId }
+        if (selectedPayment?.availableAmount != null && amount > selectedPayment.availableAmount) {
+            alert("Error", "Tu método de pago no tiene fondos suficientes.")
             return
         }
 
@@ -322,11 +354,15 @@ class AuctionRoomActivity : BaseActivity() {
             onError = { throwable ->
                 cardBinding.bidButton.isEnabled = true
                 cardBinding.bidButton.text = "Pujar"
-                showErrorOrHandleSession(
-                    title = "No se pudo pujar",
-                    throwable = throwable,
-                    fallbackMessage = "Intenta de nuevo."
-                )
+                if (throwable.message?.contains("fondos", ignoreCase = true) == true) {
+                    alert("Error", "Tu método de pago no tiene fondos suficientes.")
+                } else {
+                    showErrorOrHandleSession(
+                        title = "No se pudo pujar",
+                        throwable = throwable,
+                        fallbackMessage = "Intenta de nuevo."
+                    )
+                }
             }
         )
     }

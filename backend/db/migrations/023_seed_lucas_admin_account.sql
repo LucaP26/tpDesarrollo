@@ -7,6 +7,7 @@
 DECLARE @userId INT;
 DECLARE @countryCode INT = 32;
 DECLARE @passwordHash VARCHAR(500) = '50f58974d14b92a4afcc40497a2db562fd8195ca6fddb57de949c14ef6d28492';
+DECLARE @verifiedAt DATETIME2 = SYSUTCDATETIME();
 
 SELECT @userId = user_id
 FROM dbo.app_legacy_user_metadata
@@ -146,4 +147,121 @@ WHEN NOT MATCHED THEN
         verificador
     )
     VALUES (source.user_id, source.numeroPais, 'si', 'si', 1, -900000);
+
+;WITH seed_payments AS (
+    SELECT
+        sort_order = 1,
+        type = 'tarjeta_credito',
+        display_name = 'Visa Infinite Lucas terminada en 1188',
+        currency = 'USD',
+        issuer_country = 'AR',
+        available_amount = CAST(18000000.00 AS DECIMAL(18, 2)),
+        last_four = '1188',
+        holder_first_name = 'Lucas',
+        holder_last_name = 'Perez Ciccone',
+        issuing_bank = 'Banco Galicia',
+        expiration_date = '12/30'
+    UNION ALL
+    SELECT
+        2,
+        'cuenta_bancaria',
+        'Santander Private USD Lucas',
+        'USD',
+        'AR',
+        CAST(32000000.00 AS DECIMAL(18, 2)),
+        NULL,
+        'Lucas',
+        'Perez Ciccone',
+        'Santander Private Banking',
+        NULL
+    UNION ALL
+    SELECT
+        3,
+        'cheque_certificado',
+        'Cheque certificado ARS Lucas',
+        'ARS',
+        'AR',
+        CAST(950000000.00 AS DECIMAL(18, 2)),
+        NULL,
+        'Lucas',
+        'Perez Ciccone',
+        'Banco Nacion',
+        NULL
+),
+payment_source AS (
+    SELECT
+        id = COALESCE(existing.id, max_id.value + ROW_NUMBER() OVER (ORDER BY seed.sort_order)),
+        user_id = @userId,
+        seed.type,
+        seed.display_name,
+        seed.currency,
+        seed.issuer_country,
+        seed.available_amount,
+        status = 'verificado',
+        seed.last_four,
+        seed.holder_first_name,
+        seed.holder_last_name,
+        seed.issuing_bank,
+        seed.expiration_date,
+        verified_at = COALESCE(existing.verified_at, @verifiedAt)
+    FROM seed_payments seed
+    CROSS JOIN (SELECT value = COALESCE(MAX(id), 0) FROM dbo.app_payment_methods) max_id
+    OUTER APPLY (
+        SELECT TOP 1 id, verified_at
+        FROM dbo.app_payment_methods
+        WHERE user_id = @userId
+          AND display_name = seed.display_name
+    ) existing
+)
+MERGE dbo.app_payment_methods AS target
+USING payment_source AS source
+ON target.id = source.id
+WHEN MATCHED THEN
+    UPDATE SET
+        user_id = source.user_id,
+        type = source.type,
+        display_name = source.display_name,
+        currency = source.currency,
+        issuer_country = source.issuer_country,
+        available_amount = source.available_amount,
+        status = source.status,
+        last_four = source.last_four,
+        holder_first_name = source.holder_first_name,
+        holder_last_name = source.holder_last_name,
+        issuing_bank = source.issuing_bank,
+        expiration_date = source.expiration_date,
+        verified_at = source.verified_at
+WHEN NOT MATCHED THEN
+    INSERT (
+        id,
+        user_id,
+        type,
+        display_name,
+        currency,
+        issuer_country,
+        available_amount,
+        status,
+        last_four,
+        holder_first_name,
+        holder_last_name,
+        issuing_bank,
+        expiration_date,
+        verified_at
+    )
+    VALUES (
+        source.id,
+        source.user_id,
+        source.type,
+        source.display_name,
+        source.currency,
+        source.issuer_country,
+        source.available_amount,
+        source.status,
+        source.last_four,
+        source.holder_first_name,
+        source.holder_last_name,
+        source.issuing_bank,
+        source.expiration_date,
+        source.verified_at
+    );
 GO
