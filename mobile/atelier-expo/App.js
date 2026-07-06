@@ -35,7 +35,7 @@ import {
 import { colors, fonts, spacing } from './src/theme';
 
 const demoCredentials = {
-  email: 'm@gmail.com',
+  email: 'l@gmail.com',
   password: 'Platino123!',
 };
 
@@ -1758,6 +1758,11 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     marginTop: 24,
     textAlign: 'center',
+  },
+  mutedText: {
+    color: colors.goldSoft,
+    fontSize: 15,
+    lineHeight: 23,
   },
   centerLoader: {
     flex: 1,

@@ -28,14 +28,14 @@ SET
     registration_stage = 'registro_completado',
     roles_json = '["cliente","duenio"]'
 FROM dbo.app_legacy_user_metadata m
-WHERE LOWER(m.email) IN ('m@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local');
+WHERE LOWER(m.email) IN ('l@gmail.com', 'm@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local');
 GO
 
 UPDATE p
 SET estado = 'activo'
 FROM dbo.personas p
 INNER JOIN dbo.app_legacy_user_metadata m ON m.user_id = p.identificador
-WHERE LOWER(m.email) IN ('m@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local');
+WHERE LOWER(m.email) IN ('l@gmail.com', 'm@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local');
 GO
 
 ;WITH admin_accounts AS (
@@ -45,7 +45,7 @@ GO
     FROM dbo.app_legacy_user_metadata m
     LEFT JOIN dbo.clientes c ON c.identificador = m.user_id
     LEFT JOIN dbo.duenios d ON d.identificador = m.user_id
-    WHERE LOWER(m.email) IN ('m@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local')
+    WHERE LOWER(m.email) IN ('l@gmail.com', 'm@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local')
 )
 INSERT INTO dbo.paises (numero, nombre, nombreCorto, capital, nacionalidad, idiomas)
 SELECT DISTINCT
@@ -71,7 +71,7 @@ GO
     FROM dbo.app_legacy_user_metadata m
     LEFT JOIN dbo.clientes c ON c.identificador = m.user_id
     LEFT JOIN dbo.duenios d ON d.identificador = m.user_id
-    WHERE LOWER(m.email) IN ('m@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local')
+    WHERE LOWER(m.email) IN ('l@gmail.com', 'm@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local')
 )
 MERGE dbo.clientes AS target
 USING admin_accounts AS source
@@ -94,7 +94,7 @@ GO
     FROM dbo.app_legacy_user_metadata m
     LEFT JOIN dbo.clientes c ON c.identificador = m.user_id
     LEFT JOIN dbo.duenios d ON d.identificador = m.user_id
-    WHERE LOWER(m.email) IN ('m@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local')
+    WHERE LOWER(m.email) IN ('l@gmail.com', 'm@gmail.com', 'p@gmail.com', 'admin@gmail.com', 'admin@atelier.local')
 )
 MERGE dbo.duenios AS target
 USING admin_accounts AS source
