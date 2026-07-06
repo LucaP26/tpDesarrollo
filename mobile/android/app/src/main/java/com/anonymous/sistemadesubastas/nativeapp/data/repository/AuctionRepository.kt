@@ -15,6 +15,10 @@ class AuctionRepository(private val apiClient: ApiClient) {
         return parseAuctionArray(apiClient.getArray("/subastas"))
     }
 
+    fun listPublicAuctions(): List<AuctionSummary> {
+        return parseAuctionArray(apiClient.getArray("/catalogos-publicos", authenticated = false))
+    }
+
     fun watchlist(): List<AuctionSummary> {
         return parseAuctionArray(apiClient.getArray("/watchlist"))
     }
@@ -43,14 +47,20 @@ class AuctionRepository(private val apiClient: ApiClient) {
 
     fun detail(auctionId: Int): AuctionDetail = AuctionDetail.fromJson(apiClient.get("/subastas/$auctionId"))
 
+    fun publicDetail(auctionId: Int): AuctionDetail =
+        AuctionDetail.fromJson(apiClient.get("/catalogos-publicos/$auctionId", authenticated = false))
+
     fun join(auctionId: Int): JoinAuctionResult =
         JoinAuctionResult.fromJson(apiClient.post("/subastas/$auctionId/join", JSONObject()))
 
     fun leave(auctionId: Int): LeaveAuctionResult =
         LeaveAuctionResult.fromJson(apiClient.post("/subastas/$auctionId/abandonar", JSONObject()))
 
-    fun bid(auctionId: Int, lotId: Int, amount: Double) {
+    fun bid(auctionId: Int, lotId: Int, amount: Double, paymentMethodId: Int?) {
         val payload = JSONObject().put("amount", amount)
+        if (paymentMethodId != null) {
+            payload.put("payment_method_id", paymentMethodId)
+        }
         apiClient.post("/subastas/$auctionId/lotes/$lotId/pujas", payload)
     }
 

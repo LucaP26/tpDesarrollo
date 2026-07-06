@@ -21,6 +21,7 @@ import com.anonymous.sistemadesubastas.databinding.ActivityProfileBinding
 import com.anonymous.sistemadesubastas.databinding.ItemPaymentMethodBinding
 import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
 import com.anonymous.sistemadesubastas.nativeapp.data.model.ActiveAuction
+import com.anonymous.sistemadesubastas.nativeapp.data.model.Metrics
 import com.anonymous.sistemadesubastas.nativeapp.data.model.PaymentMethod
 import com.anonymous.sistemadesubastas.nativeapp.data.model.UserProfile
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuctionRepository
@@ -186,8 +187,9 @@ class ProfileActivity : BaseActivity() {
             task = {
                 val profile = profileRepository.profile()
                 val paymentMethods = profileRepository.paymentMethods()
+                val metrics = profileRepository.metrics()
                 val activeAuction = auctionRepository.activeAuction()
-                ProfilePayload(profile, paymentMethods, activeAuction)
+                ProfilePayload(profile, paymentMethods, metrics, activeAuction)
             },
             onSuccess = { payload ->
                 persistSessionUser(payload.profile)
@@ -195,6 +197,7 @@ class ProfileActivity : BaseActivity() {
                 activeAuction = payload.activeAuction
                 renderProfile(payload.profile)
                 renderPaymentMethods(payload.paymentMethods)
+                renderMetrics(payload.metrics)
             },
             onError = { throwable ->
                 showErrorOrHandleSession(
@@ -235,6 +238,22 @@ class ProfileActivity : BaseActivity() {
         }
     }
 
+    private fun renderMetrics(metrics: Metrics) {
+        binding.metricsSummaryText.text = (
+            "Asistidas: ${metrics.auctionsJoined}  |  Ganadas: ${metrics.auctionsWon}  |  " +
+                "Pujas activas: ${metrics.activeBids}"
+            )
+        binding.metricsAmountText.text = (
+            "Ofertado total: ${metrics.totalAmountBid}  |  " +
+                "Adjudicado/pagado: ${metrics.totalAmountPaid}"
+            )
+        val categories = metrics.categoriesJoined.entries.joinToString("  |  ") { entry ->
+            "${Formatters.categoryUpper(entry.key)} ${entry.value}"
+        }
+        binding.metricsCategoryText.visibility = if (categories.isBlank()) View.GONE else View.VISIBLE
+        binding.metricsCategoryText.text = "Categorias: $categories"
+    }
+
     private fun buildPaymentSubtitle(paymentMethod: PaymentMethod): String {
         val values = mutableListOf<String>()
         values += paymentTypeLabel(paymentMethod.type)
@@ -249,7 +268,7 @@ class ProfileActivity : BaseActivity() {
         paymentMethod.lastFour?.let { values += "****$it" }
         paymentMethod.expirationDate?.let { values += "Vence $it" }
         paymentMethod.availableAmount
-            ?.takeIf { paymentMethod.type == PaymentMethodFormActivity.PAYMENT_CHECK }
+            ?.takeIf { it > 0.0 }
             ?.let { values += "Monto ${Formatters.money(paymentMethod.currency, it)}" }
         return values.joinToString(" - ")
     }
@@ -511,6 +530,7 @@ class ProfileActivity : BaseActivity() {
     private data class ProfilePayload(
         val profile: UserProfile,
         val paymentMethods: List<PaymentMethod>,
+        val metrics: Metrics,
         val activeAuction: ActiveAuction?
     )
 

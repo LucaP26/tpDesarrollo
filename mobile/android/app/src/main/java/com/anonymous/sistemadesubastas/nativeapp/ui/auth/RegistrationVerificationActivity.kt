@@ -49,6 +49,7 @@ class RegistrationVerificationActivity : BaseActivity() {
             task = {
                 authRepository.registerOnboarding(
                     email = submission.email,
+                    documentNumber = submission.documentNumber,
                     firstName = submission.firstName,
                     lastName = submission.lastName,
                     gender = submission.gender,
@@ -58,14 +59,6 @@ class RegistrationVerificationActivity : BaseActivity() {
                     countryIsoCode = submission.countryIsoCode,
                     documentFrontImage = submission.documentFrontImage,
                     documentBackImage = submission.documentBackImage,
-                    paymentType = submission.paymentType,
-                    paymentDisplayName = submission.paymentDisplayName,
-                    paymentCurrency = submission.paymentCurrency,
-                    paymentIssuerCountry = submission.paymentIssuerCountry,
-                    paymentAvailableAmount = submission.paymentAvailableAmount,
-                    paymentLastFour = submission.paymentLastFour,
-                    paymentIssuingBank = submission.paymentIssuingBank,
-                    paymentExpirationDate = submission.paymentExpirationDate,
                 )
             },
             onSuccess = {
@@ -75,7 +68,7 @@ class RegistrationVerificationActivity : BaseActivity() {
                 submissionStarted = false
                 alert(
                     "No se pudo completar el registro",
-                    throwable.message ?: "No pudimos enviar el correo de bienvenida. Intenta nuevamente.",
+                    throwable.message ?: "No pudimos enviar la solicitud de registro. Intenta nuevamente.",
                 ) {
                     finish()
                 }

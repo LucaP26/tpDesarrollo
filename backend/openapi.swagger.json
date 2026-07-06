@@ -1,1 +1,4807 @@
-﻿{"openapi":"3.1.0","info":{"title":"Sistema de Subastas API","version":"0.1.0"},"paths":{"/password-setup/open":{"get":{"summary":"Open Password Setup Link","operationId":"open_password_setup_link_password_setup_open_get","responses":{"200":{"description":"Successful Response","content":{"text/html":{"schema":{"type":"string"}}}}}}},"/api/v1/health":{"get":{"summary":"Health","operationId":"health_api_v1_health_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Health Api V1 Health Get"}}}}}}},"/api/v1/auth/pre-register":{"post":{"summary":"Pre Register","operationId":"pre_register_api_v1_auth_pre_register_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PreRegisterRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/RegistrationProgressResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/register-onboarding":{"post":{"summary":"Register Onboarding","operationId":"register_onboarding_api_v1_auth_register_onboarding_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/OnboardingRegistrationRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/complete-registration":{"post":{"summary":"Complete Registration","operationId":"complete_registration_api_v1_auth_complete_registration_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/CompleteRegistrationRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthTokenResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/password-setup/complete":{"post":{"summary":"Complete Password Setup","operationId":"complete_password_setup_api_v1_auth_password_setup_complete_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PasswordSetupRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthTokenResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/login":{"post":{"summary":"Login","operationId":"login_api_v1_auth_login_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/LoginRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuthTokenResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/password-reset/request":{"post":{"summary":"Request Password Reset","operationId":"request_password_reset_api_v1_auth_password_reset_request_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PasswordResetRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/password-reset/confirm":{"post":{"summary":"Confirm Password Reset","operationId":"confirm_password_reset_api_v1_auth_password_reset_confirm_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PasswordResetConfirmRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/auth/password/change":{"post":{"summary":"Change Password","operationId":"change_password_api_v1_auth_password_change_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PasswordChangeRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/auth/profile":{"get":{"summary":"Profile","operationId":"profile_api_v1_auth_profile_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileResponse"}}}}},"security":[{"HTTPBearer":[]}]},"post":{"summary":"Update Profile Post","operationId":"update_profile_post_api_v1_auth_profile_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileUpdateRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]},"patch":{"summary":"Update Profile","operationId":"update_profile_api_v1_auth_profile_patch","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileUpdateRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/auth/profile/avatar":{"post":{"summary":"Update Profile Avatar Post","operationId":"update_profile_avatar_post_api_v1_auth_profile_avatar_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileAvatarUpdateRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]},"patch":{"summary":"Update Profile Avatar","operationId":"update_profile_avatar_api_v1_auth_profile_avatar_patch","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ProfileAvatarUpdateRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/payment-methods":{"get":{"summary":"List Payment Methods","operationId":"list_payment_methods_api_v1_payment_methods_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/PaymentMethodResponse"},"type":"array","title":"Response List Payment Methods Api V1 Payment Methods Get"}}}}},"security":[{"HTTPBearer":[]}]},"post":{"summary":"Create Payment Method","operationId":"create_payment_method_api_v1_payment_methods_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentMethodCreate"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentMethodResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/payment-methods/{payment_id}":{"patch":{"summary":"Update Payment Method","operationId":"update_payment_method_api_v1_payment_methods__payment_id__patch","security":[{"HTTPBearer":[]}],"parameters":[{"name":"payment_id","in":"path","required":true,"schema":{"type":"integer","title":"Payment Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentMethodUpdate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentMethodResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"summary":"Delete Payment Method","operationId":"delete_payment_method_api_v1_payment_methods__payment_id__delete","security":[{"HTTPBearer":[]}],"parameters":[{"name":"payment_id","in":"path","required":true,"schema":{"type":"integer","title":"Payment Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/subastas":{"get":{"summary":"List Auctions","operationId":"list_auctions_api_v1_subastas_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/AuctionSummaryResponse"},"type":"array","title":"Response List Auctions Api V1 Subastas Get"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/watchlist":{"get":{"summary":"List Watchlist","operationId":"list_watchlist_api_v1_watchlist_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/AuctionSummaryResponse"},"type":"array","title":"Response List Watchlist Api V1 Watchlist Get"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/watchlist/{auction_id}":{"post":{"summary":"Add To Watchlist","operationId":"add_to_watchlist_api_v1_watchlist__auction_id__post","security":[{"HTTPBearer":[]}],"parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}},"delete":{"summary":"Remove From Watchlist","operationId":"remove_from_watchlist_api_v1_watchlist__auction_id__delete","security":[{"HTTPBearer":[]}],"parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MessageResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/subastas/activa":{"get":{"summary":"Get Active Auction","operationId":"get_active_auction_api_v1_subastas_activa_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"anyOf":[{"$ref":"#/components/schemas/ActiveAuctionResponse"},{"type":"null"}],"title":"Response Get Active Auction Api V1 Subastas Activa Get"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/subastas/{auction_id}":{"get":{"summary":"Get Auction","operationId":"get_auction_api_v1_subastas__auction_id__get","security":[{"HTTPBearer":[]}],"parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/AuctionDetailResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/subastas/{auction_id}/join":{"post":{"summary":"Join Auction","operationId":"join_auction_api_v1_subastas__auction_id__join_post","security":[{"HTTPBearer":[]}],"parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/JoinAuctionResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/subastas/{auction_id}/abandonar":{"post":{"summary":"Leave Auction","operationId":"leave_auction_api_v1_subastas__auction_id__abandonar_post","security":[{"HTTPBearer":[]}],"parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/LeaveAuctionResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/subastas/{auction_id}/lotes/{lot_id}/pujas":{"post":{"summary":"Create Bid","operationId":"create_bid_api_v1_subastas__auction_id__lotes__lot_id__pujas_post","security":[{"HTTPBearer":[]}],"parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}},{"name":"lot_id","in":"path","required":true,"schema":{"type":"integer","title":"Lot Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/BidCreate"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/BidResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/notificaciones":{"get":{"summary":"List Notifications","operationId":"list_notifications_api_v1_notificaciones_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/NotificationResponse"},"type":"array","title":"Response List Notifications Api V1 Notificaciones Get"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/metricas/personal":{"get":{"summary":"Personal Metrics","operationId":"personal_metrics_api_v1_metricas_personal_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/MetricsResponse"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/historial":{"get":{"summary":"History","operationId":"history_api_v1_historial_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/HistoryEntryResponse"},"type":"array","title":"Response History Api V1 Historial Get"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/consignaciones":{"get":{"summary":"List Consignments","operationId":"list_consignments_api_v1_consignaciones_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"items":{"$ref":"#/components/schemas/ConsignmentResponse"},"type":"array","title":"Response List Consignments Api V1 Consignaciones Get"}}}}},"security":[{"HTTPBearer":[]}]},"post":{"summary":"Create Consignment","operationId":"create_consignment_api_v1_consignaciones_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/ConsignmentCreate"}}},"required":true},"responses":{"201":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ConsignmentResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}},"security":[{"HTTPBearer":[]}]}},"/api/v1/admin/dashboard":{"get":{"summary":"Admin Dashboard Api","operationId":"admin_dashboard_api_api_v1_admin_dashboard_get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}}}}},"/api/v1/admin/clientes/{user_id}/approve":{"post":{"summary":"Admin Approve User","operationId":"admin_approve_user_api_v1_admin_clientes__user_id__approve_post","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminUserApprovalRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/UserProfileResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/admin/medios-pago/{payment_id}/verify":{"post":{"summary":"Admin Verify Payment","operationId":"admin_verify_payment_api_v1_admin_medios_pago__payment_id__verify_post","parameters":[{"name":"payment_id","in":"path","required":true,"schema":{"type":"integer","title":"Payment Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/PaymentMethodResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/admin/consignaciones/{consignment_id}/review":{"post":{"summary":"Admin Review Consignment","operationId":"admin_review_consignment_api_v1_admin_consignaciones__consignment_id__review_post","parameters":[{"name":"consignment_id","in":"path","required":true,"schema":{"type":"integer","title":"Consignment Id"}}],"requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminConsignmentReviewRequest"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"$ref":"#/components/schemas/ConsignmentResponse"}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/admin/subastas":{"post":{"summary":"Admin Create Auction","operationId":"admin_create_auction_api_v1_admin_subastas_post","requestBody":{"content":{"application/json":{"schema":{"$ref":"#/components/schemas/AdminAuctionCreateRequest"}}},"required":true},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/admin/subastas/{auction_id}/close":{"post":{"summary":"Admin Close Auction","operationId":"admin_close_auction_api_v1_admin_subastas__auction_id__close_post","parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/api/v1/admin/subastas/{auction_id}/current-lot/close":{"post":{"summary":"Admin Close Current Lot","operationId":"admin_close_current_lot_api_v1_admin_subastas__auction_id__current_lot_close_post","parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/admin/dashboard":{"get":{"summary":"Admin Dashboard Page","operationId":"admin_dashboard_page_admin_dashboard_get","responses":{"200":{"description":"Successful Response","content":{"text/html":{"schema":{"type":"string"}}}}}}},"/admin/":{"get":{"summary":"Admin Dashboard Page","operationId":"admin_dashboard_page_admin__get","responses":{"200":{"description":"Successful Response","content":{"text/html":{"schema":{"type":"string"}}}}}}},"/admin":{"get":{"summary":"Admin Dashboard Page","operationId":"admin_dashboard_page_admin_get","responses":{"200":{"description":"Successful Response","content":{"text/html":{"schema":{"type":"string"}}}}}}},"/admin/users/{user_id}/approve":{"post":{"summary":"Admin Dashboard Approve User","operationId":"admin_dashboard_approve_user_admin_users__user_id__approve_post","parameters":[{"name":"user_id","in":"path","required":true,"schema":{"type":"integer","title":"User Id"}}],"requestBody":{"content":{"application/x-www-form-urlencoded":{"schema":{"$ref":"#/components/schemas/Body_admin_dashboard_approve_user_admin_users__user_id__approve_post"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/admin/payments/{payment_id}/verify":{"post":{"summary":"Admin Dashboard Verify Payment","operationId":"admin_dashboard_verify_payment_admin_payments__payment_id__verify_post","parameters":[{"name":"payment_id","in":"path","required":true,"schema":{"type":"integer","title":"Payment Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/admin/consignments/{consignment_id}/review":{"post":{"summary":"Admin Dashboard Review Consignment","operationId":"admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post","parameters":[{"name":"consignment_id","in":"path","required":true,"schema":{"type":"integer","title":"Consignment Id"}}],"requestBody":{"content":{"application/x-www-form-urlencoded":{"schema":{"$ref":"#/components/schemas/Body_admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post"}}}},"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/admin/subastas/{auction_id}/close":{"post":{"summary":"Admin Dashboard Close Auction","operationId":"admin_dashboard_close_auction_admin_subastas__auction_id__close_post","parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/admin/subastas/{auction_id}/current-lot/close":{"post":{"summary":"Admin Dashboard Close Current Lot","operationId":"admin_dashboard_close_current_lot_admin_subastas__auction_id__current_lot_close_post","parameters":[{"name":"auction_id","in":"path","required":true,"schema":{"type":"integer","title":"Auction Id"}}],"responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{}}}},"422":{"description":"Validation Error","content":{"application/json":{"schema":{"$ref":"#/components/schemas/HTTPValidationError"}}}}}}},"/":{"get":{"summary":"Root","operationId":"root__get","responses":{"200":{"description":"Successful Response","content":{"application/json":{"schema":{"additionalProperties":true,"type":"object","title":"Response Root  Get"}}}}}}}},"components":{"schemas":{"ActiveAuctionResponse":{"properties":{"auction_id":{"type":"integer","title":"Auction Id"},"title":{"type":"string","title":"Title"},"category":{"$ref":"#/components/schemas/UserCategory"},"currency":{"$ref":"#/components/schemas/Currency"},"scheduled_at":{"type":"string","format":"date-time","title":"Scheduled At"},"location":{"type":"string","title":"Location"},"current_lot_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Current Lot Id"},"current_lot_title":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Current Lot Title"},"current_lot_image_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Current Lot Image Url"},"current_price":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Current Price"},"my_latest_bid":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"My Latest Bid"},"my_is_leading":{"type":"boolean","title":"My Is Leading","default":false}},"type":"object","required":["auction_id","title","category","currency","scheduled_at","location"],"title":"ActiveAuctionResponse"},"AdminAuctionCreateRequest":{"properties":{"title":{"type":"string","title":"Title"},"scheduled_date":{"type":"string","format":"date","title":"Scheduled Date"},"scheduled_time":{"type":"string","format":"time","title":"Scheduled Time"},"category":{"$ref":"#/components/schemas/UserCategory"},"currency":{"$ref":"#/components/schemas/Currency"},"auctioneer_name":{"type":"string","title":"Auctioneer Name"},"location":{"type":"string","title":"Location"},"capacity":{"type":"integer","title":"Capacity","default":100},"has_storage":{"type":"boolean","title":"Has Storage","default":true},"private_security":{"type":"boolean","title":"Private Security","default":true},"lots":{"items":{"$ref":"#/components/schemas/AdminAuctionLotCreate"},"type":"array","title":"Lots"}},"type":"object","required":["title","scheduled_date","scheduled_time","category","currency","auctioneer_name","location","lots"],"title":"AdminAuctionCreateRequest"},"AdminAuctionLotCreate":{"properties":{"product_id":{"type":"integer","title":"Product Id"},"catalog_item_id":{"type":"integer","title":"Catalog Item Id"},"piece_number":{"type":"string","title":"Piece Number"},"title":{"type":"string","title":"Title"},"description":{"type":"string","title":"Description"},"story":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Story"},"artist":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Artist"},"base_price":{"type":"number","title":"Base Price"},"commission_rate":{"type":"number","title":"Commission Rate"},"owner_user_id":{"type":"integer","title":"Owner User Id"},"image_urls":{"items":{"type":"string"},"type":"array","title":"Image Urls"}},"type":"object","required":["product_id","catalog_item_id","piece_number","title","description","base_price","commission_rate","owner_user_id"],"title":"AdminAuctionLotCreate"},"AdminConsignmentReviewRequest":{"properties":{"approve":{"type":"boolean","title":"Approve"},"rejection_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Rejection Reason"},"proposed_base_price":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Proposed Base Price"},"commission_rate":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Commission Rate"},"assigned_auction_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Assigned Auction Id"},"storage_location":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Storage Location"},"insurance_policy":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Insurance Policy"}},"type":"object","required":["approve"],"title":"AdminConsignmentReviewRequest"},"AdminUserApprovalRequest":{"properties":{"category":{"$ref":"#/components/schemas/UserCategory","default":"comun"}},"type":"object","title":"AdminUserApprovalRequest"},"AuctionDetailResponse":{"properties":{"id":{"type":"integer","title":"Id"},"title":{"type":"string","title":"Title"},"scheduled_at":{"type":"string","format":"date-time","title":"Scheduled At"},"category":{"$ref":"#/components/schemas/UserCategory"},"currency":{"$ref":"#/components/schemas/Currency"},"state":{"$ref":"#/components/schemas/AuctionState"},"auctioneer_name":{"type":"string","title":"Auctioneer Name"},"location":{"type":"string","title":"Location"},"can_view_catalog":{"type":"boolean","title":"Can View Catalog","default":true},"view_block_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"View Block Reason"},"can_bid":{"type":"boolean","title":"Can Bid"},"block_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Block Reason"},"current_lot_title":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Current Lot Title"},"best_offer":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Best Offer"},"preview_lot_title":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Preview Lot Title"},"preview_image_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Preview Image Url"},"preview_base_price":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Preview Base Price"},"price_available":{"type":"boolean","title":"Price Available","default":true},"total_lots":{"type":"integer","title":"Total Lots","default":0},"remaining_lots":{"type":"integer","title":"Remaining Lots","default":0},"current_lot":{"anyOf":[{"$ref":"#/components/schemas/AuctionLotView"},{"type":"null"}]},"upcoming_lots":{"items":{"$ref":"#/components/schemas/AuctionLotView"},"type":"array","title":"Upcoming Lots"},"completed_lots":{"items":{"$ref":"#/components/schemas/AuctionLotView"},"type":"array","title":"Completed Lots"},"lots":{"items":{"$ref":"#/components/schemas/AuctionLotView"},"type":"array","title":"Lots"}},"type":"object","required":["id","title","scheduled_at","category","currency","state","auctioneer_name","location","can_bid","lots"],"title":"AuctionDetailResponse"},"AuctionLotView":{"properties":{"id":{"type":"integer","title":"Id"},"piece_number":{"type":"string","title":"Piece Number"},"title":{"type":"string","title":"Title"},"description":{"type":"string","title":"Description"},"story":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Story"},"artist":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Artist"},"image_urls":{"items":{"type":"string"},"type":"array","title":"Image Urls"},"base_price":{"type":"number","title":"Base Price"},"price_available":{"type":"boolean","title":"Price Available","default":true},"commission_rate":{"type":"number","title":"Commission Rate"},"current_bid":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Current Bid"},"current_bidder_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Current Bidder Id"},"bidding_started_at":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Bidding Started At"},"bid_deadline_at":{"anyOf":[{"type":"string","format":"date-time"},{"type":"null"}],"title":"Bid Deadline At"},"bid_seconds_remaining":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Bid Seconds Remaining"},"min_bid":{"type":"number","title":"Min Bid"},"max_bid":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Max Bid"},"can_bid":{"type":"boolean","title":"Can Bid"},"block_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Block Reason"},"sold":{"type":"boolean","title":"Sold"},"sold_to_company":{"type":"boolean","title":"Sold To Company"}},"type":"object","required":["id","piece_number","title","description","image_urls","base_price","commission_rate","min_bid","can_bid","sold","sold_to_company"],"title":"AuctionLotView"},"AuctionState":{"type":"string","enum":["programada","abierta","cerrada"],"title":"AuctionState"},"AuctionSummaryResponse":{"properties":{"id":{"type":"integer","title":"Id"},"title":{"type":"string","title":"Title"},"scheduled_at":{"type":"string","format":"date-time","title":"Scheduled At"},"category":{"$ref":"#/components/schemas/UserCategory"},"currency":{"$ref":"#/components/schemas/Currency"},"state":{"$ref":"#/components/schemas/AuctionState"},"auctioneer_name":{"type":"string","title":"Auctioneer Name"},"location":{"type":"string","title":"Location"},"can_view_catalog":{"type":"boolean","title":"Can View Catalog","default":true},"view_block_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"View Block Reason"},"can_bid":{"type":"boolean","title":"Can Bid"},"block_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Block Reason"},"current_lot_title":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Current Lot Title"},"best_offer":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Best Offer"},"preview_lot_title":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Preview Lot Title"},"preview_image_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Preview Image Url"},"preview_base_price":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Preview Base Price"},"price_available":{"type":"boolean","title":"Price Available","default":true},"total_lots":{"type":"integer","title":"Total Lots","default":0},"remaining_lots":{"type":"integer","title":"Remaining Lots","default":0},"searchable_terms":{"items":{"type":"string"},"type":"array","title":"Searchable Terms"},"in_watchlist":{"type":"boolean","title":"In Watchlist","default":false}},"type":"object","required":["id","title","scheduled_at","category","currency","state","auctioneer_name","location","can_bid"],"title":"AuctionSummaryResponse"},"AuthTokenResponse":{"properties":{"access_token":{"type":"string","title":"Access Token"},"token_type":{"type":"string","title":"Token Type","default":"bearer"},"user":{"$ref":"#/components/schemas/UserProfileResponse"}},"type":"object","required":["access_token","user"],"title":"AuthTokenResponse"},"BidCreate":{"properties":{"amount":{"type":"number","title":"Amount"},"payment_method_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Payment Method Id"}},"type":"object","required":["amount"],"title":"BidCreate"},"BidResponse":{"properties":{"bid_id":{"type":"integer","title":"Bid Id"},"auction_id":{"type":"integer","title":"Auction Id"},"lot_id":{"type":"integer","title":"Lot Id"},"amount":{"type":"number","title":"Amount"},"status":{"$ref":"#/components/schemas/BidStatus"},"current_best_bid":{"type":"number","title":"Current Best Bid"},"current_best_bidder_id":{"type":"integer","title":"Current Best Bidder Id"},"min_bid":{"type":"number","title":"Min Bid"},"max_bid":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Max Bid"}},"type":"object","required":["bid_id","auction_id","lot_id","amount","status","current_best_bid","current_best_bidder_id","min_bid"],"title":"BidResponse"},"BidStatus":{"type":"string","enum":["confirmada","superada","ganadora","rechazada"],"title":"BidStatus"},"Body_admin_dashboard_approve_user_admin_users__user_id__approve_post":{"properties":{"category":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Category"}},"type":"object","title":"Body_admin_dashboard_approve_user_admin_users__user_id__approve_post"},"Body_admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post":{"properties":{"approve":{"type":"boolean","title":"Approve","default":false},"rejection_reason":{"type":"string","title":"Rejection Reason","default":""},"proposed_base_price":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Proposed Base Price"},"commission_rate":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Commission Rate"},"assigned_auction_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Assigned Auction Id"},"storage_location":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Storage Location"},"insurance_policy":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Insurance Policy"}},"type":"object","title":"Body_admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post"},"CompleteRegistrationRequest":{"properties":{"user_id":{"type":"integer","title":"User Id"},"password":{"type":"string","title":"Password"}},"type":"object","required":["user_id","password"],"title":"CompleteRegistrationRequest"},"ConsignmentCreate":{"properties":{"title":{"type":"string","title":"Title"},"description":{"type":"string","title":"Description"},"story":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Story"},"photos":{"items":{"type":"string"},"type":"array","title":"Photos"},"declared_ownership":{"type":"boolean","title":"Declared Ownership"},"declared_legal_origin":{"type":"boolean","title":"Declared Legal Origin"}},"type":"object","required":["title","description","photos","declared_ownership","declared_legal_origin"],"title":"ConsignmentCreate"},"ConsignmentResponse":{"properties":{"id":{"type":"integer","title":"Id"},"title":{"type":"string","title":"Title"},"description":{"type":"string","title":"Description"},"status":{"$ref":"#/components/schemas/ConsignmentStatus"},"rejection_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Rejection Reason"},"proposed_base_price":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Proposed Base Price"},"commission_rate":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Commission Rate"},"assigned_auction_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"Assigned Auction Id"},"storage_location":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Storage Location"},"insurance_policy":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Insurance Policy"},"photos":{"items":{"type":"string"},"type":"array","title":"Photos"}},"type":"object","required":["id","title","description","status","photos"],"title":"ConsignmentResponse"},"ConsignmentStatus":{"type":"string","enum":["borrador","enviada","en_revision","aceptada","rechazada","devuelta"],"title":"ConsignmentStatus"},"Currency":{"type":"string","enum":["ARS","USD"],"title":"Currency"},"HTTPValidationError":{"properties":{"detail":{"items":{"$ref":"#/components/schemas/ValidationError"},"type":"array","title":"Detail"}},"type":"object","title":"HTTPValidationError"},"HistoryEntryResponse":{"properties":{"type":{"type":"string","title":"Type"},"description":{"type":"string","title":"Description"},"amount":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Amount"},"occurred_at":{"type":"string","format":"date-time","title":"Occurred At"}},"type":"object","required":["type","description","occurred_at"],"title":"HistoryEntryResponse"},"JoinAuctionResponse":{"properties":{"auction_id":{"type":"integer","title":"Auction Id"},"connected":{"type":"boolean","title":"Connected"},"can_bid":{"type":"boolean","title":"Can Bid"},"block_reason":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Block Reason"},"websocket_path":{"type":"string","title":"Websocket Path"},"user_category":{"$ref":"#/components/schemas/UserCategory"}},"type":"object","required":["auction_id","connected","can_bid","websocket_path","user_category"],"title":"JoinAuctionResponse"},"LeaveAuctionResponse":{"properties":{"message":{"type":"string","title":"Message"},"auction_id":{"type":"integer","title":"Auction Id"},"removed_bid_amount":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"Removed Bid Amount"},"new_current_bid":{"anyOf":[{"type":"number"},{"type":"null"}],"title":"New Current Bid"},"new_current_bidder_id":{"anyOf":[{"type":"integer"},{"type":"null"}],"title":"New Current Bidder Id"}},"type":"object","required":["message","auction_id"],"title":"LeaveAuctionResponse"},"LoginRequest":{"properties":{"email":{"type":"string","title":"Email"},"password":{"type":"string","title":"Password"}},"type":"object","required":["email","password"],"title":"LoginRequest"},"MessageResponse":{"properties":{"message":{"type":"string","title":"Message"}},"type":"object","required":["message"],"title":"MessageResponse"},"MetricsResponse":{"properties":{"auctions_joined":{"type":"integer","title":"Auctions Joined"},"auctions_won":{"type":"integer","title":"Auctions Won"},"active_bids":{"type":"integer","title":"Active Bids"},"total_amount_bid":{"type":"number","title":"Total Amount Bid"},"total_amount_paid":{"type":"number","title":"Total Amount Paid"},"categories_joined":{"additionalProperties":{"type":"integer"},"type":"object","title":"Categories Joined"}},"type":"object","required":["auctions_joined","auctions_won","active_bids","total_amount_bid","total_amount_paid","categories_joined"],"title":"MetricsResponse"},"NotificationKind":{"type":"string","enum":["info","alerta","operacion"],"title":"NotificationKind"},"NotificationResponse":{"properties":{"id":{"type":"integer","title":"Id"},"title":{"type":"string","title":"Title"},"message":{"type":"string","title":"Message"},"kind":{"$ref":"#/components/schemas/NotificationKind"},"created_at":{"type":"string","format":"date-time","title":"Created At"},"read":{"type":"boolean","title":"Read"}},"type":"object","required":["id","title","message","kind","created_at","read"],"title":"NotificationResponse"},"OnboardingRegistrationRequest":{"properties":{"email":{"type":"string","title":"Email"},"document_number":{"type":"string","title":"Document Number"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"gender":{"type":"string","enum":["femenino","masculino","otro"],"title":"Gender"},"birth_date":{"type":"string","format":"date","title":"Birth Date"},"legal_address":{"type":"string","title":"Legal Address"},"country_code":{"type":"integer","title":"Country Code"},"roles":{"items":{"$ref":"#/components/schemas/UserRole"},"type":"array","title":"Roles"},"document_front_image_url":{"type":"string","title":"Document Front Image Url"},"document_back_image_url":{"type":"string","title":"Document Back Image Url"},"payment_method":{"$ref":"#/components/schemas/PaymentMethodCreate"}},"type":"object","required":["email","document_number","first_name","last_name","gender","birth_date","legal_address","country_code","document_front_image_url","document_back_image_url","payment_method"],"title":"OnboardingRegistrationRequest"},"PasswordChangeRequest":{"properties":{"current_password":{"type":"string","title":"Current Password"},"new_password":{"type":"string","title":"New Password"}},"type":"object","required":["current_password","new_password"],"title":"PasswordChangeRequest"},"PasswordResetConfirmRequest":{"properties":{"email":{"type":"string","title":"Email"},"code":{"type":"string","title":"Code"},"new_password":{"type":"string","title":"New Password"}},"type":"object","required":["email","code","new_password"],"title":"PasswordResetConfirmRequest"},"PasswordResetRequest":{"properties":{"email":{"type":"string","title":"Email"}},"type":"object","required":["email"],"title":"PasswordResetRequest"},"PasswordSetupRequest":{"properties":{"email":{"type":"string","title":"Email"},"token":{"type":"string","title":"Token"},"password":{"type":"string","title":"Password"}},"type":"object","required":["email","token","password"],"title":"PasswordSetupRequest"},"PaymentMethodCreate":{"properties":{"type":{"$ref":"#/components/schemas/PaymentType"},"display_name":{"type":"string","title":"Display Name"},"currency":{"$ref":"#/components/schemas/Currency"},"issuer_country":{"type":"string","title":"Issuer Country"},"available_amount":{"type":"number","title":"Available Amount"},"last_four":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Four"},"holder_first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Holder First Name"},"holder_last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Holder Last Name"},"issuing_bank":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Issuing Bank"},"expiration_date":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Expiration Date"}},"type":"object","required":["type","display_name","currency","issuer_country","available_amount"],"title":"PaymentMethodCreate"},"PaymentMethodResponse":{"properties":{"id":{"type":"integer","title":"Id"},"type":{"$ref":"#/components/schemas/PaymentType"},"display_name":{"type":"string","title":"Display Name"},"currency":{"$ref":"#/components/schemas/Currency"},"issuer_country":{"type":"string","title":"Issuer Country"},"available_amount":{"type":"number","title":"Available Amount"},"status":{"$ref":"#/components/schemas/PaymentStatus"},"last_four":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Four"},"holder_first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Holder First Name"},"holder_last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Holder Last Name"},"issuing_bank":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Issuing Bank"},"expiration_date":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Expiration Date"}},"type":"object","required":["id","type","display_name","currency","issuer_country","available_amount","status"],"title":"PaymentMethodResponse"},"PaymentMethodUpdate":{"properties":{"type":{"$ref":"#/components/schemas/PaymentType"},"display_name":{"type":"string","title":"Display Name"},"currency":{"$ref":"#/components/schemas/Currency"},"issuer_country":{"type":"string","title":"Issuer Country"},"available_amount":{"type":"number","title":"Available Amount"},"last_four":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Last Four"},"holder_first_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Holder First Name"},"holder_last_name":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Holder Last Name"},"issuing_bank":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Issuing Bank"},"expiration_date":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Expiration Date"}},"type":"object","required":["type","display_name","currency","issuer_country","available_amount"],"title":"PaymentMethodUpdate"},"PaymentStatus":{"type":"string","enum":["pendiente","verificado","rechazado"],"title":"PaymentStatus"},"PaymentType":{"type":"string","enum":["cuenta_bancaria","tarjeta_credito","cheque_certificado"],"title":"PaymentType"},"PreRegisterRequest":{"properties":{"email":{"type":"string","title":"Email"},"document_number":{"type":"string","title":"Document Number"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"legal_address":{"type":"string","title":"Legal Address"},"country_code":{"type":"integer","title":"Country Code"},"roles":{"items":{"$ref":"#/components/schemas/UserRole"},"type":"array","title":"Roles"},"document_front_image_url":{"type":"string","title":"Document Front Image Url"},"document_back_image_url":{"type":"string","title":"Document Back Image Url"}},"type":"object","required":["email","document_number","first_name","last_name","legal_address","country_code","document_front_image_url","document_back_image_url"],"title":"PreRegisterRequest"},"ProfileAvatarUpdateRequest":{"properties":{"avatar_image_url":{"type":"string","title":"Avatar Image Url"}},"type":"object","required":["avatar_image_url"],"title":"ProfileAvatarUpdateRequest"},"ProfileUpdateRequest":{"properties":{"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"email":{"type":"string","title":"Email"},"legal_address":{"type":"string","title":"Legal Address"}},"type":"object","required":["first_name","last_name","email","legal_address"],"title":"ProfileUpdateRequest"},"RegistrationProgressResponse":{"properties":{"user_id":{"type":"integer","title":"User Id"},"registration_stage":{"$ref":"#/components/schemas/RegistrationStage"},"approved":{"type":"boolean","title":"Approved"},"message":{"type":"string","title":"Message"}},"type":"object","required":["user_id","registration_stage","approved","message"],"title":"RegistrationProgressResponse"},"RegistrationStage":{"type":"string","enum":["pre_registro","registro_completado"],"title":"RegistrationStage"},"UserCategory":{"type":"string","enum":["comun","especial","plata","oro","platino"],"title":"UserCategory"},"UserProfileResponse":{"properties":{"id":{"type":"integer","title":"Id"},"email":{"type":"string","title":"Email"},"first_name":{"type":"string","title":"First Name"},"last_name":{"type":"string","title":"Last Name"},"full_name":{"type":"string","title":"Full Name"},"document_number":{"type":"string","title":"Document Number"},"legal_address":{"type":"string","title":"Legal Address"},"country_code":{"type":"integer","title":"Country Code"},"gender":{"type":"string","enum":["femenino","masculino","otro"],"title":"Gender","default":"otro"},"category":{"$ref":"#/components/schemas/UserCategory"},"approved":{"type":"boolean","title":"Approved"},"registration_stage":{"$ref":"#/components/schemas/RegistrationStage"},"roles":{"items":{"$ref":"#/components/schemas/UserRole"},"type":"array","title":"Roles"},"avatar_image_url":{"anyOf":[{"type":"string"},{"type":"null"}],"title":"Avatar Image Url"}},"type":"object","required":["id","email","first_name","last_name","full_name","document_number","legal_address","country_code","category","approved","registration_stage","roles"],"title":"UserProfileResponse"},"UserRole":{"type":"string","enum":["cliente","duenio"],"title":"UserRole"},"ValidationError":{"properties":{"loc":{"items":{"anyOf":[{"type":"string"},{"type":"integer"}]},"type":"array","title":"Location"},"msg":{"type":"string","title":"Message"},"type":{"type":"string","title":"Error Type"},"input":{"title":"Input"},"ctx":{"type":"object","title":"Context"}},"type":"object","required":["loc","msg","type"],"title":"ValidationError"}},"securitySchemes":{"HTTPBearer":{"type":"http","scheme":"bearer"}}}}
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Sistema de Subastas API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/password-setup/open": {
+      "get": {
+        "summary": "Open Password Setup Link",
+        "operationId": "open_password_setup_link_password_setup_open_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Api V1 Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/pre-register": {
+      "post": {
+        "summary": "Pre Register",
+        "operationId": "pre_register_api_v1_auth_pre_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationProgressResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register-onboarding": {
+      "post": {
+        "summary": "Register Onboarding",
+        "operationId": "register_onboarding_api_v1_auth_register_onboarding_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OnboardingRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/complete-registration": {
+      "post": {
+        "summary": "Complete Registration",
+        "operationId": "complete_registration_api_v1_auth_complete_registration_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompleteRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password-setup/complete": {
+      "post": {
+        "summary": "Complete Password Setup",
+        "operationId": "complete_password_setup_api_v1_auth_password_setup_complete_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordSetupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password-reset/request": {
+      "post": {
+        "summary": "Request Password Reset",
+        "operationId": "request_password_reset_api_v1_auth_password_reset_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password-reset/confirm": {
+      "post": {
+        "summary": "Confirm Password Reset",
+        "operationId": "confirm_password_reset_api_v1_auth_password_reset_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/password/change": {
+      "post": {
+        "summary": "Change Password",
+        "operationId": "change_password_api_v1_auth_password_change_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/profile": {
+      "get": {
+        "summary": "Profile",
+        "operationId": "profile_api_v1_auth_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Update Profile Post",
+        "operationId": "update_profile_post_api_v1_auth_profile_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update Profile",
+        "operationId": "update_profile_api_v1_auth_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/profile/avatar": {
+      "post": {
+        "summary": "Update Profile Avatar Post",
+        "operationId": "update_profile_avatar_post_api_v1_auth_profile_avatar_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileAvatarUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "summary": "Update Profile Avatar",
+        "operationId": "update_profile_avatar_api_v1_auth_profile_avatar_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileAvatarUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payment-methods": {
+      "get": {
+        "summary": "List Payment Methods",
+        "operationId": "list_payment_methods_api_v1_payment_methods_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PaymentMethodResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Payment Methods Api V1 Payment Methods Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create Payment Method",
+        "operationId": "create_payment_method_api_v1_payment_methods_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/payment-methods/{payment_id}": {
+      "patch": {
+        "summary": "Update Payment Method",
+        "operationId": "update_payment_method_api_v1_payment_methods__payment_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaymentMethodUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Payment Method",
+        "operationId": "delete_payment_method_api_v1_payment_methods__payment_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subastas": {
+      "get": {
+        "summary": "List Auctions",
+        "operationId": "list_auctions_api_v1_subastas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuctionSummaryResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Auctions Api V1 Subastas Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/catalogos-publicos": {
+      "get": {
+        "summary": "List Public Catalogs",
+        "operationId": "list_public_catalogs_api_v1_catalogos_publicos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuctionSummaryResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Public Catalogs Api V1 Catalogos Publicos Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/catalogos-publicos/{auction_id}": {
+      "get": {
+        "summary": "Get Public Catalog",
+        "operationId": "get_public_catalog_api_v1_catalogos_publicos__auction_id__get",
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuctionDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/watchlist": {
+      "get": {
+        "summary": "List Watchlist",
+        "operationId": "list_watchlist_api_v1_watchlist_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AuctionSummaryResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Watchlist Api V1 Watchlist Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/watchlist/{auction_id}": {
+      "post": {
+        "summary": "Add To Watchlist",
+        "operationId": "add_to_watchlist_api_v1_watchlist__auction_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Remove From Watchlist",
+        "operationId": "remove_from_watchlist_api_v1_watchlist__auction_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subastas/activa": {
+      "get": {
+        "summary": "Get Active Auction",
+        "operationId": "get_active_auction_api_v1_subastas_activa_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ActiveAuctionResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Active Auction Api V1 Subastas Activa Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/subastas/{auction_id}": {
+      "get": {
+        "summary": "Get Auction",
+        "operationId": "get_auction_api_v1_subastas__auction_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuctionDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subastas/{auction_id}/join": {
+      "post": {
+        "summary": "Join Auction",
+        "operationId": "join_auction_api_v1_subastas__auction_id__join_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinAuctionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subastas/{auction_id}/abandonar": {
+      "post": {
+        "summary": "Leave Auction",
+        "operationId": "leave_auction_api_v1_subastas__auction_id__abandonar_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaveAuctionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/subastas/{auction_id}/lotes/{lot_id}/pujas": {
+      "post": {
+        "summary": "Create Bid",
+        "operationId": "create_bid_api_v1_subastas__auction_id__lotes__lot_id__pujas_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          },
+          {
+            "name": "lot_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Lot Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BidCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BidResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notificaciones": {
+      "get": {
+        "summary": "List Notifications",
+        "operationId": "list_notifications_api_v1_notificaciones_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Notifications Api V1 Notificaciones Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mensajes": {
+      "get": {
+        "summary": "List Message Threads",
+        "operationId": "list_message_threads_api_v1_mensajes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MessageThreadResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Message Threads Api V1 Mensajes Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/mensajes/{thread_id}": {
+      "get": {
+        "summary": "Get Message Thread",
+        "operationId": "get_message_thread_api_v1_mensajes__thread_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageThreadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Reply Message Thread",
+        "operationId": "reply_message_thread_api_v1_mensajes__thread_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrespondenceMessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageThreadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/metricas/personal": {
+      "get": {
+        "summary": "Personal Metrics",
+        "operationId": "personal_metrics_api_v1_metricas_personal_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/historial": {
+      "get": {
+        "summary": "History",
+        "operationId": "history_api_v1_historial_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HistoryEntryResponse"
+                  },
+                  "type": "array",
+                  "title": "Response History Api V1 Historial Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/consignaciones": {
+      "get": {
+        "summary": "List Consignments",
+        "operationId": "list_consignments_api_v1_consignaciones_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ConsignmentResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Consignments Api V1 Consignaciones Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create Consignment",
+        "operationId": "create_consignment_api_v1_consignaciones_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsignmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/consignaciones/{consignment_id}/propuesta": {
+      "post": {
+        "summary": "Decide Consignment Proposal",
+        "operationId": "decide_consignment_proposal_api_v1_consignaciones__consignment_id__propuesta_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "consignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Consignment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsignmentProposalDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "summary": "Admin Dashboard Api",
+        "operationId": "admin_dashboard_api_api_v1_admin_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/mensajes": {
+      "get": {
+        "summary": "Admin List Message Threads",
+        "operationId": "admin_list_message_threads_api_v1_admin_mensajes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MessageThreadResponse"
+                  },
+                  "type": "array",
+                  "title": "Response Admin List Message Threads Api V1 Admin Mensajes Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/mensajes/{thread_id}": {
+      "post": {
+        "summary": "Admin Reply Message Thread",
+        "operationId": "admin_reply_message_thread_api_v1_admin_mensajes__thread_id__post",
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrespondenceMessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageThreadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/clientes/{user_id}/approve": {
+      "post": {
+        "summary": "Admin Approve User",
+        "operationId": "admin_approve_user_api_v1_admin_clientes__user_id__approve_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUserApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/medios-pago/{payment_id}/verify": {
+      "post": {
+        "summary": "Admin Verify Payment",
+        "operationId": "admin_verify_payment_api_v1_admin_medios_pago__payment_id__verify_post",
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentMethodResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/consignaciones/{consignment_id}/review": {
+      "post": {
+        "summary": "Admin Review Consignment",
+        "operationId": "admin_review_consignment_api_v1_admin_consignaciones__consignment_id__review_post",
+        "parameters": [
+          {
+            "name": "consignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Consignment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminConsignmentReviewRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsignmentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/subastas": {
+      "post": {
+        "summary": "Admin Create Auction",
+        "operationId": "admin_create_auction_api_v1_admin_subastas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminAuctionCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/subastas/{auction_id}/close": {
+      "post": {
+        "summary": "Admin Close Auction",
+        "operationId": "admin_close_auction_api_v1_admin_subastas__auction_id__close_post",
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/subastas/{auction_id}/current-lot/close": {
+      "post": {
+        "summary": "Admin Close Current Lot",
+        "operationId": "admin_close_current_lot_api_v1_admin_subastas__auction_id__current_lot_close_post",
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/dashboard": {
+      "get": {
+        "summary": "Admin Dashboard Page",
+        "operationId": "admin_dashboard_page_admin_dashboard_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/": {
+      "get": {
+        "summary": "Admin Dashboard Page",
+        "operationId": "admin_dashboard_page_admin__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin": {
+      "get": {
+        "summary": "Admin Dashboard Page",
+        "operationId": "admin_dashboard_page_admin_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{user_id}/approve": {
+      "post": {
+        "summary": "Admin Dashboard Approve User",
+        "operationId": "admin_dashboard_approve_user_admin_users__user_id__approve_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_admin_dashboard_approve_user_admin_users__user_id__approve_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/payments/{payment_id}/verify": {
+      "post": {
+        "summary": "Admin Dashboard Verify Payment",
+        "operationId": "admin_dashboard_verify_payment_admin_payments__payment_id__verify_post",
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Payment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/consignments/{consignment_id}/review": {
+      "post": {
+        "summary": "Admin Dashboard Review Consignment",
+        "operationId": "admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post",
+        "parameters": [
+          {
+            "name": "consignment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Consignment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/messages/{thread_id}/reply": {
+      "post": {
+        "summary": "Admin Dashboard Reply Message",
+        "operationId": "admin_dashboard_reply_message_admin_messages__thread_id__reply_post",
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Thread Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_admin_dashboard_reply_message_admin_messages__thread_id__reply_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/subastas/{auction_id}/close": {
+      "post": {
+        "summary": "Admin Dashboard Close Auction",
+        "operationId": "admin_dashboard_close_auction_admin_subastas__auction_id__close_post",
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/subastas/{auction_id}/current-lot/close": {
+      "post": {
+        "summary": "Admin Dashboard Close Current Lot",
+        "operationId": "admin_dashboard_close_current_lot_admin_subastas__auction_id__current_lot_close_post",
+        "parameters": [
+          {
+            "name": "auction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Auction Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActiveAuctionResponse": {
+        "properties": {
+          "auction_id": {
+            "type": "integer",
+            "title": "Auction Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UserCategory"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "current_lot_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Lot Id"
+          },
+          "current_lot_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Lot Title"
+          },
+          "current_lot_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Lot Image Url"
+          },
+          "current_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Price"
+          },
+          "my_latest_bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Latest Bid"
+          },
+          "my_is_leading": {
+            "type": "boolean",
+            "title": "My Is Leading",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "auction_id",
+          "title",
+          "category",
+          "currency",
+          "scheduled_at",
+          "location"
+        ],
+        "title": "ActiveAuctionResponse"
+      },
+      "AdminAuctionCreateRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scheduled Date"
+          },
+          "scheduled_time": {
+            "type": "string",
+            "format": "time",
+            "title": "Scheduled Time"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UserCategory"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "auctioneer_name": {
+            "type": "string",
+            "title": "Auctioneer Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "capacity": {
+            "type": "integer",
+            "title": "Capacity",
+            "default": 100
+          },
+          "has_storage": {
+            "type": "boolean",
+            "title": "Has Storage",
+            "default": true
+          },
+          "private_security": {
+            "type": "boolean",
+            "title": "Private Security",
+            "default": true
+          },
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/AdminAuctionLotCreate"
+            },
+            "type": "array",
+            "title": "Lots"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "scheduled_date",
+          "scheduled_time",
+          "category",
+          "currency",
+          "auctioneer_name",
+          "location",
+          "lots"
+        ],
+        "title": "AdminAuctionCreateRequest"
+      },
+      "AdminAuctionLotCreate": {
+        "properties": {
+          "product_id": {
+            "type": "integer",
+            "title": "Product Id"
+          },
+          "catalog_item_id": {
+            "type": "integer",
+            "title": "Catalog Item Id"
+          },
+          "piece_number": {
+            "type": "string",
+            "title": "Piece Number"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "story": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story"
+          },
+          "artist": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artist"
+          },
+          "base_price": {
+            "type": "number",
+            "title": "Base Price"
+          },
+          "commission_rate": {
+            "type": "number",
+            "title": "Commission Rate"
+          },
+          "owner_user_id": {
+            "type": "integer",
+            "title": "Owner User Id"
+          },
+          "image_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Image Urls"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_id",
+          "catalog_item_id",
+          "piece_number",
+          "title",
+          "description",
+          "base_price",
+          "commission_rate",
+          "owner_user_id"
+        ],
+        "title": "AdminAuctionLotCreate"
+      },
+      "AdminConsignmentReviewRequest": {
+        "properties": {
+          "approve": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approve"
+          },
+          "request_inspection": {
+            "type": "boolean",
+            "title": "Request Inspection",
+            "default": false
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "proposed_base_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Base Price"
+          },
+          "commission_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Rate"
+          },
+          "assigned_auction_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Auction Id"
+          },
+          "storage_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Location"
+          },
+          "insurance_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance Policy"
+          },
+          "inspection_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Address"
+          },
+          "return_shipping_cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Shipping Cost"
+          },
+          "return_shipping_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Shipping Note"
+          },
+          "origin_doubt_reported": {
+            "type": "boolean",
+            "title": "Origin Doubt Reported",
+            "default": false
+          },
+          "origin_doubt_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Doubt Notes"
+          }
+        },
+        "type": "object",
+        "title": "AdminConsignmentReviewRequest"
+      },
+      "AdminUserApprovalRequest": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/UserCategory",
+            "default": "comun"
+          }
+        },
+        "type": "object",
+        "title": "AdminUserApprovalRequest"
+      },
+      "AuctionDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UserCategory"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AuctionState"
+          },
+          "auctioneer_name": {
+            "type": "string",
+            "title": "Auctioneer Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "can_view_catalog": {
+            "type": "boolean",
+            "title": "Can View Catalog",
+            "default": true
+          },
+          "view_block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Block Reason"
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected",
+            "default": false
+          },
+          "can_bid": {
+            "type": "boolean",
+            "title": "Can Bid"
+          },
+          "block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Reason"
+          },
+          "current_lot_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Lot Title"
+          },
+          "best_offer": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Offer"
+          },
+          "preview_lot_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Lot Title"
+          },
+          "preview_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Image Url"
+          },
+          "preview_base_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Base Price"
+          },
+          "price_available": {
+            "type": "boolean",
+            "title": "Price Available",
+            "default": true
+          },
+          "total_lots": {
+            "type": "integer",
+            "title": "Total Lots",
+            "default": 0
+          },
+          "remaining_lots": {
+            "type": "integer",
+            "title": "Remaining Lots",
+            "default": 0
+          },
+          "current_lot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuctionLotView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "upcoming_lots": {
+            "items": {
+              "$ref": "#/components/schemas/AuctionLotView"
+            },
+            "type": "array",
+            "title": "Upcoming Lots"
+          },
+          "completed_lots": {
+            "items": {
+              "$ref": "#/components/schemas/AuctionLotView"
+            },
+            "type": "array",
+            "title": "Completed Lots"
+          },
+          "lots": {
+            "items": {
+              "$ref": "#/components/schemas/AuctionLotView"
+            },
+            "type": "array",
+            "title": "Lots"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "scheduled_at",
+          "category",
+          "currency",
+          "state",
+          "auctioneer_name",
+          "location",
+          "can_bid",
+          "lots"
+        ],
+        "title": "AuctionDetailResponse"
+      },
+      "AuctionLotView": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "piece_number": {
+            "type": "string",
+            "title": "Piece Number"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "story": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story"
+          },
+          "artist": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Artist"
+          },
+          "owner_user_id": {
+            "type": "integer",
+            "title": "Owner User Id"
+          },
+          "owner_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Name"
+          },
+          "image_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Image Urls"
+          },
+          "base_price": {
+            "type": "number",
+            "title": "Base Price"
+          },
+          "price_available": {
+            "type": "boolean",
+            "title": "Price Available",
+            "default": true
+          },
+          "commission_rate": {
+            "type": "number",
+            "title": "Commission Rate"
+          },
+          "current_bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Bid"
+          },
+          "current_bidder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Bidder Id"
+          },
+          "bid_history": {
+            "items": {
+              "$ref": "#/components/schemas/BidPublicView"
+            },
+            "type": "array",
+            "title": "Bid History"
+          },
+          "bidding_started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bidding Started At"
+          },
+          "bid_deadline_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Deadline At"
+          },
+          "bid_seconds_remaining": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bid Seconds Remaining"
+          },
+          "min_bid": {
+            "type": "number",
+            "title": "Min Bid"
+          },
+          "max_bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Bid"
+          },
+          "can_bid": {
+            "type": "boolean",
+            "title": "Can Bid"
+          },
+          "block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Reason"
+          },
+          "sold": {
+            "type": "boolean",
+            "title": "Sold"
+          },
+          "sold_to_company": {
+            "type": "boolean",
+            "title": "Sold To Company"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "piece_number",
+          "title",
+          "description",
+          "owner_user_id",
+          "image_urls",
+          "base_price",
+          "commission_rate",
+          "min_bid",
+          "can_bid",
+          "sold",
+          "sold_to_company"
+        ],
+        "title": "AuctionLotView"
+      },
+      "AuctionState": {
+        "type": "string",
+        "enum": [
+          "programada",
+          "abierta",
+          "cerrada"
+        ],
+        "title": "AuctionState"
+      },
+      "AuctionSummaryResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UserCategory"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AuctionState"
+          },
+          "auctioneer_name": {
+            "type": "string",
+            "title": "Auctioneer Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "can_view_catalog": {
+            "type": "boolean",
+            "title": "Can View Catalog",
+            "default": true
+          },
+          "view_block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Block Reason"
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected",
+            "default": false
+          },
+          "can_bid": {
+            "type": "boolean",
+            "title": "Can Bid"
+          },
+          "block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Reason"
+          },
+          "current_lot_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Lot Title"
+          },
+          "best_offer": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Offer"
+          },
+          "preview_lot_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Lot Title"
+          },
+          "preview_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Image Url"
+          },
+          "preview_base_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preview Base Price"
+          },
+          "price_available": {
+            "type": "boolean",
+            "title": "Price Available",
+            "default": true
+          },
+          "total_lots": {
+            "type": "integer",
+            "title": "Total Lots",
+            "default": 0
+          },
+          "remaining_lots": {
+            "type": "integer",
+            "title": "Remaining Lots",
+            "default": 0
+          },
+          "searchable_terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Searchable Terms"
+          },
+          "in_watchlist": {
+            "type": "boolean",
+            "title": "In Watchlist",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "scheduled_at",
+          "category",
+          "currency",
+          "state",
+          "auctioneer_name",
+          "location",
+          "can_bid"
+        ],
+        "title": "AuctionSummaryResponse"
+      },
+      "AuthTokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserProfileResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token",
+          "user"
+        ],
+        "title": "AuthTokenResponse"
+      },
+      "BidCreate": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "payment_method_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payment Method Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount"
+        ],
+        "title": "BidCreate"
+      },
+      "BidPublicView": {
+        "properties": {
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BidStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "is_mine": {
+            "type": "boolean",
+            "title": "Is Mine",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "status",
+          "created_at"
+        ],
+        "title": "BidPublicView"
+      },
+      "BidResponse": {
+        "properties": {
+          "bid_id": {
+            "type": "integer",
+            "title": "Bid Id"
+          },
+          "auction_id": {
+            "type": "integer",
+            "title": "Auction Id"
+          },
+          "lot_id": {
+            "type": "integer",
+            "title": "Lot Id"
+          },
+          "amount": {
+            "type": "number",
+            "title": "Amount"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BidStatus"
+          },
+          "current_best_bid": {
+            "type": "number",
+            "title": "Current Best Bid"
+          },
+          "current_best_bidder_id": {
+            "type": "integer",
+            "title": "Current Best Bidder Id"
+          },
+          "min_bid": {
+            "type": "number",
+            "title": "Min Bid"
+          },
+          "max_bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Bid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bid_id",
+          "auction_id",
+          "lot_id",
+          "amount",
+          "status",
+          "current_best_bid",
+          "current_best_bidder_id",
+          "min_bid"
+        ],
+        "title": "BidResponse"
+      },
+      "BidStatus": {
+        "type": "string",
+        "enum": [
+          "confirmada",
+          "superada",
+          "ganadora",
+          "rechazada"
+        ],
+        "title": "BidStatus"
+      },
+      "Body_admin_dashboard_approve_user_admin_users__user_id__approve_post": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          }
+        },
+        "type": "object",
+        "title": "Body_admin_dashboard_approve_user_admin_users__user_id__approve_post"
+      },
+      "Body_admin_dashboard_reply_message_admin_messages__thread_id__reply_post": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "Body_admin_dashboard_reply_message_admin_messages__thread_id__reply_post"
+      },
+      "Body_admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post": {
+        "properties": {
+          "approve": {
+            "type": "boolean",
+            "title": "Approve",
+            "default": false
+          },
+          "request_inspection": {
+            "type": "boolean",
+            "title": "Request Inspection",
+            "default": false
+          },
+          "rejection_reason": {
+            "type": "string",
+            "title": "Rejection Reason",
+            "default": ""
+          },
+          "proposed_base_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Base Price"
+          },
+          "commission_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Rate"
+          },
+          "assigned_auction_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Auction Id"
+          },
+          "storage_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Location"
+          },
+          "insurance_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance Policy"
+          },
+          "inspection_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Address"
+          },
+          "return_shipping_cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Shipping Cost"
+          },
+          "return_shipping_note": {
+            "type": "string",
+            "title": "Return Shipping Note",
+            "default": ""
+          },
+          "origin_doubt_reported": {
+            "type": "boolean",
+            "title": "Origin Doubt Reported",
+            "default": false
+          },
+          "origin_doubt_notes": {
+            "type": "string",
+            "title": "Origin Doubt Notes",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "Body_admin_dashboard_review_consignment_admin_consignments__consignment_id__review_post"
+      },
+      "CompleteRegistrationRequest": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "password"
+        ],
+        "title": "CompleteRegistrationRequest"
+      },
+      "ConsignmentCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "story": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story"
+          },
+          "photos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Photos"
+          },
+          "declared_ownership": {
+            "type": "boolean",
+            "title": "Declared Ownership"
+          },
+          "declared_legal_origin": {
+            "type": "boolean",
+            "title": "Declared Legal Origin"
+          },
+          "declared_return_charge_agreement": {
+            "type": "boolean",
+            "title": "Declared Return Charge Agreement"
+          },
+          "lawful_origin_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lawful Origin Evidence"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count",
+            "default": 1
+          },
+          "collection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Name"
+          },
+          "payout_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payout Account"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "photos",
+          "declared_ownership",
+          "declared_legal_origin",
+          "declared_return_charge_agreement"
+        ],
+        "title": "ConsignmentCreate"
+      },
+      "ConsignmentProposalDecisionRequest": {
+        "properties": {
+          "accept": {
+            "type": "boolean",
+            "title": "Accept"
+          },
+          "payout_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payout Account"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accept"
+        ],
+        "title": "ConsignmentProposalDecisionRequest"
+      },
+      "ConsignmentResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "story": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Story"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConsignmentStatus"
+          },
+          "declared_ownership": {
+            "type": "boolean",
+            "title": "Declared Ownership",
+            "default": false
+          },
+          "declared_legal_origin": {
+            "type": "boolean",
+            "title": "Declared Legal Origin",
+            "default": false
+          },
+          "declared_return_charge_agreement": {
+            "type": "boolean",
+            "title": "Declared Return Charge Agreement",
+            "default": false
+          },
+          "lawful_origin_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lawful Origin Evidence"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "proposed_base_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Base Price"
+          },
+          "commission_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Rate"
+          },
+          "assigned_auction_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned Auction Id"
+          },
+          "storage_location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Location"
+          },
+          "insurance_policy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance Policy"
+          },
+          "inspection_address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Address"
+          },
+          "return_shipping_cost": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Shipping Cost"
+          },
+          "return_shipping_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Return Shipping Note"
+          },
+          "origin_doubt_reported": {
+            "type": "boolean",
+            "title": "Origin Doubt Reported",
+            "default": false
+          },
+          "origin_doubt_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin Doubt Notes"
+          },
+          "authority_reported_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authority Reported At"
+          },
+          "item_count": {
+            "type": "integer",
+            "title": "Item Count",
+            "default": 1
+          },
+          "collection_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Name"
+          },
+          "payout_account": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payout Account"
+          },
+          "photos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Photos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "status",
+          "photos"
+        ],
+        "title": "ConsignmentResponse"
+      },
+      "ConsignmentStatus": {
+        "type": "string",
+        "enum": [
+          "borrador",
+          "enviada",
+          "en_revision",
+          "pendiente_confirmacion",
+          "aceptada",
+          "rechazada",
+          "devuelta"
+        ],
+        "title": "ConsignmentStatus"
+      },
+      "CorrespondenceMessageCreate": {
+        "properties": {
+          "body": {
+            "type": "string",
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "body"
+        ],
+        "title": "CorrespondenceMessageCreate"
+      },
+      "CorrespondenceMessageResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "thread_id": {
+            "type": "integer",
+            "title": "Thread Id"
+          },
+          "sender_type": {
+            "type": "string",
+            "title": "Sender Type"
+          },
+          "sender_user_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender User Id"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "thread_id",
+          "sender_type",
+          "body",
+          "created_at"
+        ],
+        "title": "CorrespondenceMessageResponse"
+      },
+      "Currency": {
+        "type": "string",
+        "enum": [
+          "ARS",
+          "USD"
+        ],
+        "title": "Currency"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryEntryResponse": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "description",
+          "occurred_at"
+        ],
+        "title": "HistoryEntryResponse"
+      },
+      "JoinAuctionResponse": {
+        "properties": {
+          "auction_id": {
+            "type": "integer",
+            "title": "Auction Id"
+          },
+          "connected": {
+            "type": "boolean",
+            "title": "Connected"
+          },
+          "can_bid": {
+            "type": "boolean",
+            "title": "Can Bid"
+          },
+          "block_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Reason"
+          },
+          "websocket_path": {
+            "type": "string",
+            "title": "Websocket Path"
+          },
+          "user_category": {
+            "$ref": "#/components/schemas/UserCategory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auction_id",
+          "connected",
+          "can_bid",
+          "websocket_path",
+          "user_category"
+        ],
+        "title": "JoinAuctionResponse"
+      },
+      "LeaveAuctionResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "auction_id": {
+            "type": "integer",
+            "title": "Auction Id"
+          },
+          "removed_bid_amount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Removed Bid Amount"
+          },
+          "new_current_bid": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Current Bid"
+          },
+          "new_current_bidder_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Current Bidder Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message",
+          "auction_id"
+        ],
+        "title": "LeaveAuctionResponse"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginRequest"
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse"
+      },
+      "MessageThreadResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "consignment_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consignment Id"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "last_message": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CorrespondenceMessageResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/CorrespondenceMessageResponse"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "subject",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MessageThreadResponse"
+      },
+      "MetricsResponse": {
+        "properties": {
+          "auctions_joined": {
+            "type": "integer",
+            "title": "Auctions Joined"
+          },
+          "auctions_won": {
+            "type": "integer",
+            "title": "Auctions Won"
+          },
+          "active_bids": {
+            "type": "integer",
+            "title": "Active Bids"
+          },
+          "total_amount_bid": {
+            "type": "number",
+            "title": "Total Amount Bid"
+          },
+          "total_amount_paid": {
+            "type": "number",
+            "title": "Total Amount Paid"
+          },
+          "categories_joined": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Categories Joined"
+          }
+        },
+        "type": "object",
+        "required": [
+          "auctions_joined",
+          "auctions_won",
+          "active_bids",
+          "total_amount_bid",
+          "total_amount_paid",
+          "categories_joined"
+        ],
+        "title": "MetricsResponse"
+      },
+      "NotificationKind": {
+        "type": "string",
+        "enum": [
+          "info",
+          "alerta",
+          "operacion"
+        ],
+        "title": "NotificationKind"
+      },
+      "NotificationResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/NotificationKind"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "read": {
+            "type": "boolean",
+            "title": "Read"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "message",
+          "kind",
+          "created_at",
+          "read"
+        ],
+        "title": "NotificationResponse"
+      },
+      "OnboardingRegistrationRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "document_number": {
+            "type": "string",
+            "title": "Document Number"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "femenino",
+              "masculino",
+              "otro"
+            ],
+            "title": "Gender"
+          },
+          "birth_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Birth Date"
+          },
+          "legal_address": {
+            "type": "string",
+            "title": "Legal Address"
+          },
+          "country_code": {
+            "type": "integer",
+            "title": "Country Code"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/UserRole"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "document_front_image_url": {
+            "type": "string",
+            "title": "Document Front Image Url"
+          },
+          "document_back_image_url": {
+            "type": "string",
+            "title": "Document Back Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "document_number",
+          "first_name",
+          "last_name",
+          "gender",
+          "birth_date",
+          "legal_address",
+          "country_code",
+          "document_front_image_url",
+          "document_back_image_url"
+        ],
+        "title": "OnboardingRegistrationRequest"
+      },
+      "PasswordChangeRequest": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "PasswordChangeRequest"
+      },
+      "PasswordResetConfirmRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "code",
+          "new_password"
+        ],
+        "title": "PasswordResetConfirmRequest"
+      },
+      "PasswordResetRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "PasswordResetRequest"
+      },
+      "PasswordSetupRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "token": {
+            "type": "string",
+            "title": "Token"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "token",
+          "password"
+        ],
+        "title": "PasswordSetupRequest"
+      },
+      "PaymentMethodCreate": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/PaymentType"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "issuer_country": {
+            "type": "string",
+            "title": "Issuer Country"
+          },
+          "available_amount": {
+            "type": "number",
+            "title": "Available Amount"
+          },
+          "last_four": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Four"
+          },
+          "holder_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder First Name"
+          },
+          "holder_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Last Name"
+          },
+          "issuing_bank": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuing Bank"
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiration Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "display_name",
+          "currency",
+          "issuer_country",
+          "available_amount"
+        ],
+        "title": "PaymentMethodCreate"
+      },
+      "PaymentMethodResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PaymentType"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "issuer_country": {
+            "type": "string",
+            "title": "Issuer Country"
+          },
+          "available_amount": {
+            "type": "number",
+            "title": "Available Amount"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "last_four": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Four"
+          },
+          "holder_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder First Name"
+          },
+          "holder_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Last Name"
+          },
+          "issuing_bank": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuing Bank"
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiration Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "display_name",
+          "currency",
+          "issuer_country",
+          "available_amount",
+          "status"
+        ],
+        "title": "PaymentMethodResponse"
+      },
+      "PaymentMethodUpdate": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/PaymentType"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "issuer_country": {
+            "type": "string",
+            "title": "Issuer Country"
+          },
+          "available_amount": {
+            "type": "number",
+            "title": "Available Amount"
+          },
+          "last_four": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Four"
+          },
+          "holder_first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder First Name"
+          },
+          "holder_last_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holder Last Name"
+          },
+          "issuing_bank": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuing Bank"
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiration Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "display_name",
+          "currency",
+          "issuer_country",
+          "available_amount"
+        ],
+        "title": "PaymentMethodUpdate"
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "pendiente",
+          "verificado",
+          "rechazado"
+        ],
+        "title": "PaymentStatus"
+      },
+      "PaymentType": {
+        "type": "string",
+        "enum": [
+          "cuenta_bancaria",
+          "tarjeta_credito",
+          "cheque_certificado"
+        ],
+        "title": "PaymentType"
+      },
+      "PreRegisterRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "document_number": {
+            "type": "string",
+            "title": "Document Number"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "legal_address": {
+            "type": "string",
+            "title": "Legal Address"
+          },
+          "country_code": {
+            "type": "integer",
+            "title": "Country Code"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/UserRole"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "document_front_image_url": {
+            "type": "string",
+            "title": "Document Front Image Url"
+          },
+          "document_back_image_url": {
+            "type": "string",
+            "title": "Document Back Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "document_number",
+          "first_name",
+          "last_name",
+          "legal_address",
+          "country_code",
+          "document_front_image_url",
+          "document_back_image_url"
+        ],
+        "title": "PreRegisterRequest"
+      },
+      "ProfileAvatarUpdateRequest": {
+        "properties": {
+          "avatar_image_url": {
+            "type": "string",
+            "title": "Avatar Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "avatar_image_url"
+        ],
+        "title": "ProfileAvatarUpdateRequest"
+      },
+      "ProfileUpdateRequest": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "legal_address": {
+            "type": "string",
+            "title": "Legal Address"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "legal_address"
+        ],
+        "title": "ProfileUpdateRequest"
+      },
+      "RegistrationProgressResponse": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "registration_stage": {
+            "$ref": "#/components/schemas/RegistrationStage"
+          },
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "registration_stage",
+          "approved",
+          "message"
+        ],
+        "title": "RegistrationProgressResponse"
+      },
+      "RegistrationStage": {
+        "type": "string",
+        "enum": [
+          "pre_registro",
+          "registro_completado"
+        ],
+        "title": "RegistrationStage"
+      },
+      "UserCategory": {
+        "type": "string",
+        "enum": [
+          "comun",
+          "especial",
+          "plata",
+          "oro",
+          "platino"
+        ],
+        "title": "UserCategory"
+      },
+      "UserProfileResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "document_number": {
+            "type": "string",
+            "title": "Document Number"
+          },
+          "legal_address": {
+            "type": "string",
+            "title": "Legal Address"
+          },
+          "country_code": {
+            "type": "integer",
+            "title": "Country Code"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "femenino",
+              "masculino",
+              "otro"
+            ],
+            "title": "Gender",
+            "default": "otro"
+          },
+          "category": {
+            "$ref": "#/components/schemas/UserCategory"
+          },
+          "approved": {
+            "type": "boolean",
+            "title": "Approved"
+          },
+          "registration_stage": {
+            "$ref": "#/components/schemas/RegistrationStage"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/UserRole"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "avatar_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Image Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "full_name",
+          "document_number",
+          "legal_address",
+          "country_code",
+          "category",
+          "approved",
+          "registration_stage",
+          "roles"
+        ],
+        "title": "UserProfileResponse"
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "cliente",
+          "duenio"
+        ],
+        "title": "UserRole"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

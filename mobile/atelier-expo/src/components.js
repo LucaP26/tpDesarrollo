@@ -31,7 +31,17 @@ export function GhostButton({ label, onPress, style }) {
   );
 }
 
-export function Field({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType = 'default', editable = true }) {
+export function Field({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  keyboardType = 'default',
+  editable = true,
+  multiline = false,
+  numberOfLines = 1,
+}) {
   return (
     <View style={styles.fieldBlock}>
       <Text style={styles.fieldLabel}>{label}</Text>
@@ -44,7 +54,10 @@ export function Field({ label, value, onChangeText, placeholder, secureTextEntry
         keyboardType={keyboardType}
         editable={editable}
         autoCapitalize="none"
-        style={[styles.input, !editable && styles.inputDisabled]}
+        multiline={multiline}
+        numberOfLines={numberOfLines}
+        textAlignVertical={multiline ? 'top' : 'center'}
+        style={[styles.input, multiline && styles.inputMultiline, !editable && styles.inputDisabled]}
       />
     </View>
   );
@@ -115,9 +128,11 @@ export function AuctionCard({ auction, onPress, onToggleWatchlist }) {
       <View style={styles.auctionBody}>
         <View style={styles.cardMetaRow}>
           <Text style={styles.categoryText}>{categoryLabel(auction.category)}</Text>
-          <Pressable onPress={onToggleWatchlist} hitSlop={10}>
-            <Text style={[styles.heart, auction.in_watchlist && styles.heartFilled]}>{auction.in_watchlist ? '♥' : '♡'}</Text>
-          </Pressable>
+          {onToggleWatchlist ? (
+            <Pressable onPress={onToggleWatchlist} hitSlop={10}>
+              <Text style={[styles.heart, auction.in_watchlist && styles.heartFilled]}>{auction.in_watchlist ? '♥' : '♡'}</Text>
+            </Pressable>
+          ) : null}
         </View>
         <Text style={styles.auctionTitle}>{auction.title}</Text>
         <Text style={styles.mutedText}>{auction.location}</Text>
@@ -125,7 +140,7 @@ export function AuctionCard({ auction, onPress, onToggleWatchlist }) {
           {isUpcoming ? 'Programada' : 'En vivo'} · {auction.total_lots || 0} piezas
         </Text>
         <View style={styles.cardFooterRow}>
-          <Text style={styles.priceText}>{auction.price_available === false ? 'Precio próximamente' : money(auction.preview_base_price, auction.currency)}</Text>
+          <Text style={styles.priceText}>{auction.price_available === false ? 'Precio visible al registrarte' : money(auction.preview_base_price, auction.currency)}</Text>
           <View style={styles.enterPill}>
             <Text style={styles.enterPillText}>ENTRAR</Text>
           </View>
@@ -145,7 +160,15 @@ export function LotCard({ lot, currency, active = false }) {
         <Text style={styles.lotPiece}>{lot.piece_number}</Text>
         <Text style={styles.lotTitle}>{lot.title}</Text>
         <Text style={styles.lotDescription}>{lot.description}</Text>
-        <Text style={styles.priceText}>{lot.price_available === false ? 'Precio próximamente' : money(lot.current_bid || lot.base_price, currency)}</Text>
+        {lot.owner_name || lot.artist ? (
+          <Text style={styles.lotMeta}>
+            {[lot.owner_name ? `Dueno actual: ${lot.owner_name}` : null, lot.artist ? `Artista/disenador: ${lot.artist}` : null]
+              .filter(Boolean)
+              .join('  |  ')}
+          </Text>
+        ) : null}
+        {lot.story ? <Text style={styles.lotStory}>{lot.story}</Text> : null}
+        <Text style={styles.priceText}>{lot.price_available === false ? 'Precio visible al registrarte' : money(lot.current_bid || lot.base_price, currency)}</Text>
       </View>
     </View>
   );
@@ -185,24 +208,37 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.gold,
     borderRadius: 999,
-    paddingVertical: 16,
+    justifyContent: 'center',
+    minHeight: 54,
+    paddingHorizontal: 18,
+    paddingVertical: 15,
   },
   primaryButtonText: {
-    color: colors.black,
+    color: colors.mustardLight,
+    fontSize: 13,
     fontWeight: '800',
     letterSpacing: 1,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   ghostButton: {
     alignItems: 'center',
-    borderColor: colors.line,
+    backgroundColor: colors.panelSoft,
+    borderColor: colors.goldDark,
     borderRadius: 999,
     borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 52,
+    paddingHorizontal: 18,
     paddingVertical: 13,
   },
   ghostButtonText: {
     color: colors.goldSoft,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
+    lineHeight: 18,
+    textAlign: 'center',
   },
   pressed: {
     opacity: 0.78,
@@ -211,8 +247,8 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   fieldBlock: {
-    gap: 8,
-    marginBottom: 16,
+    gap: 9,
+    marginBottom: 18,
   },
   fieldLabel: {
     color: colors.goldSoft,
@@ -227,8 +263,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: colors.text,
     fontSize: 16,
+    lineHeight: 22,
+    minHeight: 52,
     paddingHorizontal: 18,
     paddingVertical: 15,
+  },
+  inputMultiline: {
+    minHeight: 104,
+    paddingTop: 15,
   },
   inputDisabled: {
     color: colors.muted,
@@ -293,7 +335,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 44,
     justifyContent: 'center',
-    width: 44,
+    minWidth: 44,
+    paddingHorizontal: 4,
   },
   headerBack: {
     color: colors.gold,
@@ -302,9 +345,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: colors.text,
+    flex: 1,
     fontFamily: fonts.serif,
     fontSize: 28,
     fontWeight: '700',
+    lineHeight: 34,
+    textAlign: 'center',
   },
   avatar: {
     alignItems: 'center',
@@ -342,7 +388,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   auctionBody: {
-    gap: 8,
+    gap: 10,
     padding: 18,
   },
   cardMetaRow: {
@@ -368,15 +414,18 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     fontSize: 27,
     fontWeight: '800',
+    lineHeight: 33,
   },
   mutedText: {
     color: colors.muted,
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 23,
   },
   cardFooterRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
     justifyContent: 'space-between',
     marginTop: 8,
   },
@@ -392,7 +441,7 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
   },
   enterPillText: {
-    color: colors.black,
+    color: colors.mustardLight,
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 1,
@@ -411,14 +460,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   lotBody: {
-    gap: 8,
+    gap: 10,
     padding: 18,
   },
   livePill: {
     alignSelf: 'flex-start',
     backgroundColor: colors.gold,
     borderRadius: 999,
-    color: colors.black,
+    color: colors.mustardLight,
     fontSize: 12,
     fontWeight: '900',
     overflow: 'hidden',
@@ -436,10 +485,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.serif,
     fontSize: 26,
     fontWeight: '800',
+    lineHeight: 32,
   },
   lotDescription: {
     color: colors.paper,
     fontSize: 15,
     lineHeight: 23,
+  },
+  lotMeta: {
+    color: colors.muted,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  lotStory: {
+    color: colors.paper,
+    fontSize: 14,
+    lineHeight: 22,
   },
 });

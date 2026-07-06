@@ -51,6 +51,26 @@ class MessageService:
         )
         return thread
 
+    def open_purchase_notice(self, owner_user_id: int, subject: str, body: str) -> MessageThreadRecord:
+        now = utc_now()
+        thread = MessageThreadRecord(
+            id=self.store.next_id("message_threads"),
+            owner_user_id=owner_user_id,
+            consignment_id=None,
+            subject=subject,
+            created_at=now,
+            updated_at=now,
+        )
+        self.store.message_threads[thread.id] = thread
+        self._create_message(
+            thread,
+            sender_type="empresa",
+            sender_user_id=None,
+            body=body,
+            created_at=now,
+        )
+        return thread
+
     def list_for_user(self, user: AppUser) -> list[MessageThreadResponse]:
         rows = [thread for thread in self.store.message_threads.values() if thread.owner_user_id == user.id]
         rows.sort(key=lambda item: item.updated_at, reverse=True)

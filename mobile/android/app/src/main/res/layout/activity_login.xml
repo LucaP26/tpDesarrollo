@@ -144,6 +144,17 @@
                 android:textAllCaps="true"
                 android:textColor="#412D00"
                 android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/publicCatalogsButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_secondary_button"
+                android:text="Ver catalogos publicos"
+                android:textAllCaps="true"
+                android:textColor="@color/atelier_accent"
+                android:textSize="11sp" />
         </LinearLayout>
 
         <LinearLayout

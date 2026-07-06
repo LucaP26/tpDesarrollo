@@ -13,7 +13,10 @@ import com.anonymous.sistemadesubastas.databinding.ItemLotCardBinding
 import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
 import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionDetail
 import com.anonymous.sistemadesubastas.nativeapp.data.model.AuctionLot
+import com.anonymous.sistemadesubastas.nativeapp.data.model.PaymentMethod
+import com.anonymous.sistemadesubastas.nativeapp.data.network.AuctionRealtimeClient
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuctionRepository
+import com.anonymous.sistemadesubastas.nativeapp.data.repository.ProfileRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.FooterTab
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.Formatters
@@ -26,14 +29,29 @@ import java.util.Locale
 class AuctionRoomActivity : BaseActivity() {
     private lateinit var binding: ActivityAuctionRoomBinding
     private val auctionRepository by lazy { AuctionRepository(apiClient) }
+    private val profileRepository by lazy { ProfileRepository(apiClient) }
+    private val realtimeClient by lazy {
+        AuctionRealtimeClient(
+            tokenProvider = { sessionManager.token() },
+            onBidUpdate = {
+                runOnUiThread {
+                    loadAuction()
+                }
+            },
+        )
+    }
     private val auctionId: Int by lazy { intent.getIntExtra(EXTRA_AUCTION_ID, -1) }
+    private val publicMode: Boolean by lazy { intent.getBooleanExtra(EXTRA_PUBLIC_MODE, false) }
     private var latestNetworkStatus: NetworkStatus = NetworkStatus.disconnected()
     private var receivedNetworkCallback = false
     private var lotCountdown: CountDownTimer? = null
+    private var paymentMethods: List<PaymentMethod> = emptyList()
+    private var selectedPaymentMethodId: Int? = null
+    private var liveJoinAttempted = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!sessionManager.isLoggedIn()) {
+        if (!publicMode && !sessionManager.isLoggedIn()) {
             restartToLogin()
             return
         }
@@ -44,19 +62,30 @@ class AuctionRoomActivity : BaseActivity() {
 
         binding = ActivityAuctionRoomBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        bindFooterNavigation(binding.footerNav, FooterTab.BIDS)
+        if (publicMode) {
+            binding.footerNav.root.visibility = View.GONE
+            binding.profileButton.visibility = View.INVISIBLE
+        } else {
+            bindFooterNavigation(binding.footerNav, FooterTab.BIDS)
+        }
 
         binding.backButton.setOnClickListener {
-            startActivity(Intent(this, HomeActivity::class.java))
+            if (!publicMode) {
+                startActivity(Intent(this, HomeActivity::class.java))
+            }
             finish()
         }
         binding.profileButton.setOnClickListener {
-            startActivity(Intent(this, ProfileActivity::class.java))
+            if (!publicMode) {
+                startActivity(Intent(this, ProfileActivity::class.java))
+            }
         }
         binding.leaveButton.setOnClickListener { confirmLeaveAuction() }
 
-        sessionManager.userSnapshot()?.avatarImageUrl?.let { avatarUrl ->
-            RemoteImageLoader.load(binding.profileAvatar, avatarUrl)
+        if (!publicMode) {
+            sessionManager.userSnapshot()?.avatarImageUrl?.let { avatarUrl ->
+                RemoteImageLoader.load(binding.profileAvatar, avatarUrl)
+            }
         }
 
         loadAuction()
@@ -79,9 +108,16 @@ class AuctionRoomActivity : BaseActivity() {
 
     private fun loadAuction() {
         AppExecutors.ioThenMain(
-            task = { auctionRepository.detail(auctionId) },
-            onSuccess = { detail ->
-                renderDetail(detail)
+            task = {
+                val detail = if (publicMode) auctionRepository.publicDetail(auctionId) else auctionRepository.detail(auctionId)
+                val payments = if (publicMode) emptyList() else profileRepository.paymentMethods()
+                AuctionRoomPayload(detail, payments)
+            },
+            onSuccess = { payload ->
+                paymentMethods = payload.paymentMethods
+                ensureSelectedPayment(payload.detail)
+                renderDetail(payload.detail)
+                syncRealtimeConnection(payload.detail)
             },
             onError = { throwable ->
                 showErrorOrHandleSession(
@@ -101,7 +137,7 @@ class AuctionRoomActivity : BaseActivity() {
         binding.categoryText.text = Formatters.categoryUpper(detail.category)
         binding.auctionTitle.text = detail.title
         binding.auctionMeta.text = Formatters.auctionMeta(detail.location, detail.scheduledAt, detail.auctioneerName)
-        binding.leaveButton.visibility = if (detail.state == STATE_SCHEDULED) View.GONE else View.VISIBLE
+        binding.leaveButton.visibility = if (detail.connected) View.VISIBLE else View.GONE
         binding.lotsContainer.removeAllViews()
 
         val lots = if (detail.lots.isNotEmpty()) {
@@ -159,12 +195,25 @@ class AuctionRoomActivity : BaseActivity() {
         cardBinding.pieceNumberText.text = lot.pieceNumber
         cardBinding.lotTitleText.text = lot.title
         cardBinding.lotDescriptionText.text = lot.description
-        if (detail.state == STATE_SCHEDULED || !lot.priceAvailable) {
-            cardBinding.priceText.text = "Precio disponible al iniciar"
-            cardBinding.currentBidText.text = "Las pujas se habilitaran cuando la sala este disponible."
+        val meta = buildLotMeta(lot)
+        cardBinding.lotMetaText.visibility = if (meta.isBlank()) View.GONE else View.VISIBLE
+        cardBinding.lotMetaText.text = meta
+        cardBinding.lotStoryText.visibility = if (lot.story.isNullOrBlank()) View.GONE else View.VISIBLE
+        cardBinding.lotStoryText.text = lot.story.orEmpty()
+        if (!lot.priceAvailable) {
+            cardBinding.priceText.text = "Precio visible al registrarte"
+            cardBinding.currentBidText.text = "Inicia sesion con una cuenta aprobada para ver valores y ofertas."
+            cardBinding.bidHistoryText.visibility = View.GONE
         } else {
             cardBinding.priceText.text = Formatters.money(detail.currency, lot.currentBid ?: lot.basePrice)
-            cardBinding.currentBidText.text = buildBidLine(detail, lot)
+            cardBinding.currentBidText.text = if (detail.state == STATE_SCHEDULED) {
+                "Precio base visible. Las pujas se habilitaran cuando la sala este disponible."
+            } else {
+                buildBidLine(detail, lot)
+            }
+            val bidHistory = buildBidHistoryLine(detail, lot)
+            cardBinding.bidHistoryText.visibility = if (bidHistory.isBlank()) View.GONE else View.VISIBLE
+            cardBinding.bidHistoryText.text = bidHistory
         }
         RemoteImageLoader.load(cardBinding.lotImage, lot.imageUrls.firstOrNull())
     }
@@ -173,7 +222,9 @@ class AuctionRoomActivity : BaseActivity() {
         configureCountdown(cardBinding, lot)
         if (detail.canBid && lot.canBid) {
             cardBinding.bidButton.tag = TAG_BID_ACTION
+            configurePaymentSelector(cardBinding, detail)
             cardBinding.bidInput.visibility = View.VISIBLE
+            cardBinding.paymentSelectorButton.visibility = View.VISIBLE
             cardBinding.bidButton.visibility = View.VISIBLE
             cardBinding.bidButton.setOnClickListener {
                 placeBid(cardBinding, detail, lot)
@@ -181,6 +232,7 @@ class AuctionRoomActivity : BaseActivity() {
         } else {
             cardBinding.bidButton.tag = TAG_REASON_ACTION
             cardBinding.bidInput.visibility = View.GONE
+            cardBinding.paymentSelectorButton.visibility = View.GONE
             cardBinding.bidButton.visibility = View.VISIBLE
             cardBinding.bidButton.setOnClickListener {
                 alert(
@@ -195,6 +247,7 @@ class AuctionRoomActivity : BaseActivity() {
     private fun hideBidSection(cardBinding: ItemLotCardBinding) {
         cardBinding.timerText.visibility = View.GONE
         cardBinding.bidInput.visibility = View.GONE
+        cardBinding.paymentSelectorButton.visibility = View.GONE
         cardBinding.bidButton.visibility = View.GONE
     }
 
@@ -245,12 +298,23 @@ class AuctionRoomActivity : BaseActivity() {
             alert("Monto invalido", "Ingresa un monto numerico para realizar la puja.")
             return
         }
+        val paymentMethodId = selectedPaymentMethodId
+        if (paymentMethodId == null) {
+            alert("Medio de pago requerido", "Selecciona un medio de pago verificado en ${detail.currency} para esta puja.")
+            return
+        }
 
         cardBinding.bidButton.isEnabled = false
         cardBinding.bidButton.text = "Enviando..."
 
         AppExecutors.ioThenMain(
-            task = { auctionRepository.bid(detail.id, lot.id, amount) },
+            task = {
+                val join = auctionRepository.join(detail.id)
+                if (!join.connected || !join.canBid) {
+                    throw RuntimeException(join.blockReason ?: "No podes pujar en esta subasta.")
+                }
+                auctionRepository.bid(detail.id, lot.id, amount, paymentMethodId)
+            },
             onSuccess = {
                 toast("Puja registrada")
                 loadAuction()
@@ -312,6 +376,24 @@ class AuctionRoomActivity : BaseActivity() {
         }
     }
 
+    private fun buildBidHistoryLine(detail: AuctionDetail, lot: AuctionLot): String {
+        if (lot.bidHistory.isEmpty()) {
+            return ""
+        }
+        val offers = lot.bidHistory.takeLast(5).joinToString("  |  ") { bid ->
+            val owner = if (bid.isMine) "Vos" else "Postor"
+            "$owner ${Formatters.money(detail.currency, bid.amount)}"
+        }
+        return "Ofertas visibles: $offers"
+    }
+
+    private fun buildLotMeta(lot: AuctionLot): String {
+        return buildList {
+            lot.ownerName?.let { add("Dueno actual: $it") }
+            lot.artist?.let { add("Artista/disenador: $it") }
+        }.joinToString("  |  ")
+    }
+
     private fun renderNetworkBanner() {
         binding.networkBanner.visibility = if (canUseCurrentNetwork(latestNetworkStatus)) View.GONE else View.VISIBLE
     }
@@ -346,9 +428,78 @@ class AuctionRoomActivity : BaseActivity() {
         bidButton.text = if (isConnected) "Pujar" else "Sin conexion"
     }
 
+    private fun syncRealtimeConnection(detail: AuctionDetail) {
+        if (publicMode || detail.state != STATE_OPEN) {
+            realtimeClient.disconnect()
+            return
+        }
+        if (detail.connected) {
+            realtimeClient.connect(detail.id)
+            return
+        }
+        if (liveJoinAttempted) {
+            return
+        }
+        liveJoinAttempted = true
+        AppExecutors.ioThenMain(
+            task = { auctionRepository.join(detail.id) },
+            onSuccess = { result ->
+                if (result.connected) {
+                    realtimeClient.connect(detail.id)
+                    loadAuction()
+                }
+            },
+            onError = {
+                // Users without access or without registered payment can still inspect the catalog.
+            },
+        )
+    }
+
+    private fun eligiblePayments(detail: AuctionDetail): List<PaymentMethod> {
+        return paymentMethods.filter { payment ->
+            payment.status.equals("verificado", ignoreCase = true) &&
+                payment.currency.equals(detail.currency, ignoreCase = true)
+        }
+    }
+
+    private fun ensureSelectedPayment(detail: AuctionDetail) {
+        val eligible = eligiblePayments(detail)
+        if (eligible.none { it.id == selectedPaymentMethodId }) {
+            selectedPaymentMethodId = eligible.firstOrNull()?.id
+        }
+    }
+
+    private fun configurePaymentSelector(cardBinding: ItemLotCardBinding, detail: AuctionDetail) {
+        val eligible = eligiblePayments(detail)
+        val selected = eligible.firstOrNull { it.id == selectedPaymentMethodId }
+        cardBinding.paymentSelectorButton.text = selected?.let { paymentLabel(it) } ?: "Seleccionar medio de pago"
+        cardBinding.paymentSelectorButton.setOnClickListener {
+            if (eligible.isEmpty()) {
+                alert("Sin medio verificado", "Necesitas un medio de pago verificado en ${detail.currency}.")
+                return@setOnClickListener
+            }
+            val labels = eligible.map(::paymentLabel).toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("Medio de pago")
+                .setItems(labels) { dialog, index ->
+                    selectedPaymentMethodId = eligible[index].id
+                    cardBinding.paymentSelectorButton.text = labels[index]
+                    dialog.dismiss()
+                }
+                .show()
+        }
+    }
+
+    private fun paymentLabel(payment: PaymentMethod): String {
+        val amount = payment.availableAmount?.let { Formatters.money(payment.currency, it) } ?: payment.currency
+        return "${payment.displayName} - $amount"
+    }
+
     companion object {
         const val EXTRA_AUCTION_ID = "extra_auction_id"
+        const val EXTRA_PUBLIC_MODE = "extra_public_mode"
         private const val STATE_SCHEDULED = "programada"
+        private const val STATE_OPEN = "abierta"
         private const val TAG_BID_ACTION = "bid_action"
         private const val TAG_REASON_ACTION = "reason_action"
     }
@@ -356,6 +507,12 @@ class AuctionRoomActivity : BaseActivity() {
     override fun onDestroy() {
         lotCountdown?.cancel()
         lotCountdown = null
+        realtimeClient.disconnect()
         super.onDestroy()
     }
+
+    private data class AuctionRoomPayload(
+        val detail: AuctionDetail,
+        val paymentMethods: List<PaymentMethod>,
+    )
 }

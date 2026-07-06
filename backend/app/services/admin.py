@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from app.core.time import utc_now
 from fastapi import HTTPException, status
 
-from app.domain.enums import AuctionState, ConsignmentStatus, NotificationKind, PaymentStatus
+from app.domain.enums import AuctionState, ConsignmentStatus, NotificationKind, PaymentStatus, RegistrationStage, UserCategory
 from app.domain.schemas import (
     AdminAuctionCreateRequest,
     AdminConsignmentReviewRequest,
@@ -16,11 +16,14 @@ from app.domain.schemas import (
     AuctionSummaryResponse,
     ConsignmentRecord,
     ConsignmentResponse,
+    PasswordResetTokenRecord,
     PaymentMethodResponse,
     UserProfileResponse,
 )
 from app.services.auctions import AuctionService
+from app.services.email import EmailService
 from app.services.notifications import NotificationService
+from app.services.security import generate_token, hash_secret
 from app.services.store import StoreBase
 from app.services.user_categories import promote_user_category
 
@@ -31,10 +34,12 @@ class AdminService:
         store: StoreBase,
         auctions: AuctionService,
         notifications: NotificationService,
+        email: EmailService,
     ) -> None:
         self.store = store
         self.auctions = auctions
         self.notifications = notifications
+        self.email = email
 
     def _user_profile(self, user: AppUser) -> UserProfileResponse:
         return UserProfileResponse(
@@ -46,6 +51,7 @@ class AdminService:
             document_number=user.document_number,
             legal_address=user.legal_address,
             country_code=user.country_code,
+            gender=user.gender,
             category=user.category,
             approved=user.approved,
             registration_stage=user.registration_stage,
@@ -80,6 +86,7 @@ class AdminService:
         )
 
     def _consignment_response(self, item: ConsignmentRecord) -> ConsignmentResponse:
+        auction = self.store.auctions.get(item.assigned_auction_id) if item.assigned_auction_id else None
         return ConsignmentResponse(
             id=item.id,
             title=item.title,
@@ -95,6 +102,10 @@ class AdminService:
             proposed_base_price=item.proposed_base_price,
             commission_rate=item.commission_rate,
             assigned_auction_id=item.assigned_auction_id,
+            assigned_auction_title=auction.title if auction else None,
+            assigned_auction_scheduled_at=datetime.combine(auction.scheduled_date, auction.scheduled_time) if auction else None,
+            assigned_auction_location=auction.location if auction else None,
+            assigned_auction_auctioneer_name=auction.auctioneer_name if auction else None,
             storage_location=item.storage_location,
             insurance_policy=item.insurance_policy,
             inspection_address=item.inspection_address,
@@ -178,16 +189,56 @@ class AdminService:
 
         return MessageService(self.store).list_for_admin()
 
-    def approve_user(self, user_id: int, _category) -> UserProfileResponse:
+    def _clear_stale_setup_tokens(self, user_id: int) -> None:
+        now = utc_now()
+        self.store.password_reset_tokens = {
+            token_id: token
+            for token_id, token in self.store.password_reset_tokens.items()
+            if token.used_at is None and token.expires_at >= now and token.user_id != user_id
+        }
+
+    def _issue_password_setup_token(self, user_id: int) -> tuple[int, str]:
+        self._clear_stale_setup_tokens(user_id)
+        raw_token = generate_token()
+        now = utc_now()
+        token_id = self.store.next_id("password_reset_tokens")
+        self.store.password_reset_tokens[token_id] = PasswordResetTokenRecord(
+            id=token_id,
+            user_id=user_id,
+            token_hash=hash_secret(raw_token),
+            created_at=now,
+            expires_at=now + timedelta(hours=self.email.settings.password_setup_link_ttl_hours),
+            used_at=None,
+        )
+        return token_id, raw_token
+
+    def approve_user(self, user_id: int, category: UserCategory) -> UserProfileResponse:
         user = self.store.users.get(user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+
+        token_id: int | None = None
+        if not user.password_hash:
+            token_id, welcome_token = self._issue_password_setup_token(user.id)
+            try:
+                self.email.send_welcome_password_setup_email(
+                    recipient=user.email,
+                    full_name=f"{user.first_name} {user.last_name}".strip(),
+                    gender=user.gender,
+                    token=welcome_token,
+                )
+            except Exception:
+                self.store.password_reset_tokens.pop(token_id, None)
+                raise
+
         user.approved = True
-        promote_user_category(self.store, self.notifications, user)
+        user.category = category
+        if not user.password_hash:
+            user.registration_stage = RegistrationStage.PRE_REGISTRO
         self.notifications.create(
             user.id,
             "Cuenta aprobada",
-            f"La empresa aprobo tu registro con categoria {user.category.value}.",
+            f"La empresa aprobo tu registro con categoria {user.category.value}. Revisa tu correo para crear tu clave personal.",
             NotificationKind.OPERACION,
         )
         self.store.persist_all()
@@ -199,6 +250,9 @@ class AdminService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medio de pago no encontrado.")
         payment.status = PaymentStatus.VERIFICADO
         payment.verified_at = utc_now()
+        user = self.store.users.get(payment.user_id)
+        if user:
+            promote_user_category(self.store, self.notifications, user)
         self.notifications.create(
             payment.user_id,
             "Medio de pago verificado",

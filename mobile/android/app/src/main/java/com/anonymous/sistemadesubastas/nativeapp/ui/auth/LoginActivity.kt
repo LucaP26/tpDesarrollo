@@ -7,6 +7,7 @@ import com.anonymous.sistemadesubastas.nativeapp.data.core.AppExecutors
 import com.anonymous.sistemadesubastas.nativeapp.data.repository.AuthRepository
 import com.anonymous.sistemadesubastas.nativeapp.ui.common.BaseActivity
 import com.anonymous.sistemadesubastas.nativeapp.ui.home.HomeActivity
+import com.anonymous.sistemadesubastas.nativeapp.ui.auctions.AuctionsActivity
 import com.anonymous.sistemadesubastas.nativeapp.system.NetworkStatus
 
 class LoginActivity : BaseActivity() {
@@ -24,6 +25,12 @@ class LoginActivity : BaseActivity() {
         binding.passwordInput.setText("Platino123!")
 
         binding.loginButton.setOnClickListener { submitLogin() }
+        binding.publicCatalogsButton.setOnClickListener {
+            startActivity(
+                Intent(this, AuctionsActivity::class.java)
+                    .putExtra(AuctionsActivity.EXTRA_PUBLIC_MODE, true)
+            )
+        }
         binding.forgotButton.setOnClickListener {
             startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }

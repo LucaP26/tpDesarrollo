@@ -6,6 +6,7 @@ export const colors = {
   gold: '#c99a3d',
   goldDark: '#8d6428',
   goldSoft: '#e0bd73',
+  mustardLight: '#f2d58d',
   paper: '#f7f1e7',
   text: '#f4ecdd',
   muted: '#b9ad9d',

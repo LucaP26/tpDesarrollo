@@ -255,6 +255,16 @@ def list_auctions(current_user: AppUser = Depends(get_current_user), container: 
     return container.auctions.list_auctions(current_user)
 
 
+@api_router.get("/catalogos-publicos", response_model=list[AuctionSummaryResponse])
+def list_public_catalogs(container: ServiceContainer = Depends(get_container)) -> list[AuctionSummaryResponse]:
+    return container.auctions.list_public_auctions()
+
+
+@api_router.get("/catalogos-publicos/{auction_id}", response_model=AuctionDetailResponse)
+def get_public_catalog(auction_id: int, container: ServiceContainer = Depends(get_container)) -> AuctionDetailResponse:
+    return container.auctions.get_public_auction(auction_id)
+
+
 @api_router.get("/watchlist", response_model=list[AuctionSummaryResponse])
 def list_watchlist(
     current_user: AppUser = Depends(get_current_user),

@@ -111,6 +111,8 @@ class ConsignmentActivity : BaseActivity() {
             itemBinding.statusText.text = Formatters.consignmentStatus(consignment.status)
             itemBinding.descriptionText.text = consignment.description
             itemBinding.metaText.text = buildMeta(consignment)
+            itemBinding.insuranceButton.visibility = if (consignment.insurancePolicy.isNullOrBlank()) View.GONE else View.VISIBLE
+            itemBinding.insuranceButton.setOnClickListener { showInsuranceDetails(consignment) }
             val canDecideProposal = consignment.status.equals(STATUS_PENDING_CONFIRMATION, ignoreCase = true)
             itemBinding.proposalActions.visibility = if (canDecideProposal) View.VISIBLE else View.GONE
             itemBinding.acceptProposalButton.setOnClickListener { decideProposal(consignment, accept = true) }
@@ -127,12 +129,35 @@ class ConsignmentActivity : BaseActivity() {
         }
         consignment.collectionName?.let { parts += "Coleccion $it" }
         consignment.inspectionAddress?.let { parts += "Enviar a inspeccion: $it" }
+        consignment.assignedAuctionTitle?.let { title ->
+            val schedule = consignment.assignedAuctionScheduledAt ?: "fecha a confirmar"
+            val location = consignment.assignedAuctionLocation ?: "lugar a confirmar"
+            parts += "Subasta asignada: $title - $schedule - $location"
+        }
         consignment.proposedBasePrice?.let { parts += "Base propuesta ${Formatters.money("USD", it)}" }
         consignment.commissionRate?.let { parts += "Comision $it" }
+        consignment.storageLocation?.let { parts += "Deposito: $it" }
+        consignment.insurancePolicy?.let { parts += "Poliza: $it" }
+        if (consignment.originDoubtReported) {
+            parts += "Duda de origen informada a autoridades"
+        }
+        consignment.originDoubtNotes?.let { parts += "Origen: $it" }
         consignment.returnShippingCost?.let { parts += "Devolucion ${Formatters.money("USD", it)}" }
         consignment.returnShippingNote?.let { parts += it }
         consignment.rejectionReason?.takeIf { it.isNotBlank() }?.let { parts += it }
         return parts.joinToString(" - ")
+    }
+
+    private fun showInsuranceDetails(consignment: Consignment) {
+        alert(
+            "Poliza de seguro",
+            (
+                "Poliza contratada: ${consignment.insurancePolicy}.\n\n" +
+                    "Deposito actual: ${consignment.storageLocation ?: "No informado"}.\n\n" +
+                    "Si queres aumentar el valor asegurado, comunicate con la compania indicada en la poliza " +
+                    "y abona la diferencia del premio correspondiente."
+                )
+        )
     }
 
     private fun decideProposal(consignment: Consignment, accept: Boolean) {

@@ -31,7 +31,16 @@
               <p>{{ user.email }} - DNI {{ user.document_number }}</p>
             </div>
             <div class="actions">
-              <p>La categoria se asigna automaticamente segun subastas participadas y medios de pago cargados.</p>
+              <label>
+                Categoria segun investigacion
+                <select name="category">
+                  {% for category in categories %}
+                  <option value="{{ category.value }}" {% if category.value == "comun" %}selected{% endif %}>
+                    {{ category.value }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
               <button type="submit">Aprobar</button>
             </div>
           </form>

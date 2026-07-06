@@ -27,7 +27,7 @@ from app.db.models import (
     AppWatchlistRow,
 )
 from app.db.sqlserver import ensure_database_ready
-from app.domain.constants import COMPANY_CLIENT_ID
+from app.domain.constants import ADMIN_CONSIGNMENT_EMAILS, COMPANY_CLIENT_ID
 from app.domain.enums import (
     AuctionState,
     BidStatus,
@@ -149,6 +149,16 @@ class StoreBase:
         self.id_sequences["password_reset_tokens"] = max(self.password_reset_tokens.keys(), default=0)
         attendance_ids = [auction_id for auctions in self.auction_attendance_by_user.values() for auction_id in auctions]
         self.id_sequences["attendance"] = len(attendance_ids)
+
+    def _ensure_admin_consignment_accounts(self) -> None:
+        for user in self.users.values():
+            if user.email.strip().lower() not in ADMIN_CONSIGNMENT_EMAILS:
+                continue
+            user.approved = True
+            user.registration_stage = RegistrationStage.REGISTRO_COMPLETADO
+            for role in (UserRole.CLIENTE, UserRole.DUENIO):
+                if role not in user.roles:
+                    user.roles.append(role)
 
 class SqlServerStore(StoreBase):
     def __init__(self, settings: Settings) -> None:
@@ -552,6 +562,7 @@ class SqlServerStore(StoreBase):
             for row in attendance_rows:
                 self.auction_attendance_by_user[row["cliente"]].add(row["subasta"])
 
+        self._ensure_admin_consignment_accounts()
         self._rebuild_relationships()
         self._reset_sequences_from_state()
 

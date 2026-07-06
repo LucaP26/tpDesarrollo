@@ -21,17 +21,23 @@ class AuctionsActivity : BaseActivity() {
     private lateinit var binding: ActivityAuctionsBinding
     private val auctionRepository by lazy { AuctionRepository(apiClient) }
     private var allAuctions: List<AuctionSummary> = emptyList()
+    private val publicMode: Boolean
+        get() = intent.getBooleanExtra(EXTRA_PUBLIC_MODE, false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!sessionManager.isLoggedIn()) {
+        if (!publicMode && !sessionManager.isLoggedIn()) {
             restartToLogin()
             return
         }
 
         binding = ActivityAuctionsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        bindFooterNavigation(binding.footerNav, FooterTab.DISCOVER)
+        if (publicMode) {
+            binding.footerNav.root.visibility = View.GONE
+        } else {
+            bindFooterNavigation(binding.footerNav, FooterTab.DISCOVER)
+        }
 
         binding.backButton.setOnClickListener { finish() }
         binding.searchInput.addTextChangedListener(
@@ -56,7 +62,9 @@ class AuctionsActivity : BaseActivity() {
 
     private fun loadAuctions() {
         AppExecutors.ioThenMain(
-            task = { auctionRepository.listAuctions() },
+            task = {
+                if (publicMode) auctionRepository.listPublicAuctions() else auctionRepository.listAuctions()
+            },
             onSuccess = { auctions ->
                 allAuctions = auctions
                 renderAuctions(filterAuctions(binding.searchInput.text?.toString().orEmpty()))
@@ -132,10 +140,10 @@ class AuctionsActivity : BaseActivity() {
             priceText.text = if (auction.priceAvailable) {
                 Formatters.money(auction.currency, auction.bestOffer ?: auction.previewBasePrice)
             } else {
-                "Precio disponible al iniciar"
+                "Precio visible al registrarte"
             }
             actionButton.text = "Entrar"
-            wishlistButton.visibility = View.VISIBLE
+            wishlistButton.visibility = if (publicMode) View.GONE else View.VISIBLE
             wishlistButton.alpha = if (auction.state == STATE_SCHEDULED && auction.canViewCatalog) 1f else 0.45f
             wishlistButton.text = if (auction.inWatchlist) "♥" else "♡"
             wishlistButton.contentDescription = if (auction.inWatchlist) {
@@ -152,41 +160,22 @@ class AuctionsActivity : BaseActivity() {
         }.root
 
     private fun openAuctionCard(auction: AuctionSummary) {
-        if (!auction.canViewCatalog) {
+        if (publicMode) {
+            openAuctionRoom(auction)
+        } else if (!auction.canViewCatalog) {
             alert(
                 "Catalogo restringido",
                 auction.viewBlockReason ?: "Tu categoria todavia no puede ver esta sala."
             )
         } else {
-            if (auction.state == STATE_SCHEDULED) {
-                openAuctionRoom(auction)
-            } else {
-                joinAndOpen(auction)
-            }
+            openAuctionRoom(auction)
         }
     }
 
-    private fun joinAndOpen(auction: AuctionSummary) {
-        AppExecutors.ioThenMain(
-            task = { auctionRepository.join(auction.id) },
-            onSuccess = { result ->
-                if (result.connected) {
-                    openAuctionRoom(auction)
-                } else {
-                    alert("No se pudo ingresar", result.blockReason ?: "No fue posible entrar a la sala.")
-                }
-            },
-            onError = { throwable ->
-                showErrorOrHandleSession(
-                    title = "No se pudo ingresar",
-                    throwable = throwable,
-                    fallbackMessage = "Intenta de nuevo en unos instantes."
-                )
-            }
-        )
-    }
-
     private fun toggleWatchlist(auction: AuctionSummary) {
+        if (publicMode) {
+            return
+        }
         if (!auction.canViewCatalog) {
             alert(
                 "Catalogo restringido",
@@ -233,11 +222,13 @@ class AuctionsActivity : BaseActivity() {
         startActivity(
             Intent(this, AuctionRoomActivity::class.java)
                 .putExtra(AuctionRoomActivity.EXTRA_AUCTION_ID, auction.id)
+                .putExtra(AuctionRoomActivity.EXTRA_PUBLIC_MODE, publicMode)
         )
     }
 
     companion object {
         const val EXTRA_FILTER = "extra_filter"
+        const val EXTRA_PUBLIC_MODE = "extra_public_mode"
         private const val STATE_SCHEDULED = "programada"
     }
 }

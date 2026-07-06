@@ -129,19 +129,29 @@ class PaymentMethodFormActivity : BaseActivity() {
 
         val holderFirstName = binding.holderFirstNameInput.text?.toString().orEmpty().trim()
         val holderLastName = binding.holderLastNameInput.text?.toString().orEmpty().trim()
+        val issuerCountry = binding.issuerCountryInput.text?.toString().orEmpty().trim().uppercase()
         val cardNumber = keepNumeric(binding.cardNumberInput.text?.toString().orEmpty())
         val securityCode = keepNumeric(binding.securityCodeInput.text?.toString().orEmpty())
         val expirationDate = selectedExpirationDate?.format(EXPIRATION_VALUE_FORMAT)
-        val checkAmount = keepNumeric(binding.checkAmountInput.text?.toString().orEmpty())
+        val amountText = keepNumeric(binding.checkAmountInput.text?.toString().orEmpty())
 
         if (holderFirstName.isBlank() || holderLastName.isBlank()) {
             alert("Faltan datos", "Ingresa nombre y apellido del titular para continuar.")
             return
         }
+        if (issuerCountry.isBlank()) {
+            alert("Pais emisor obligatorio", "Indica el pais emisor del medio de pago.")
+            return
+        }
+        val numericAmount = amountText.toDoubleOrNull()
+        if (numericAmount == null || numericAmount <= 0.0) {
+            alert("Monto invalido", "Ingresa el monto reservado o disponible para la subasta.")
+            return
+        }
 
         val payload = org.json.JSONObject()
             .put("type", selectedPaymentType.value)
-            .put("issuer_country", DEFAULT_ISSUER_COUNTRY)
+            .put("issuer_country", issuerCountry)
             .put("holder_first_name", holderFirstName)
             .put("holder_last_name", holderLastName)
 
@@ -161,8 +171,8 @@ class PaymentMethodFormActivity : BaseActivity() {
                 }
                 payload
                     .put("display_name", "${selectedCardBrand.value} terminada en ${cardNumber.takeLast(4)}")
-                    .put("currency", DEFAULT_CARD_CURRENCY)
-                    .put("available_amount", 0.0)
+                    .put("currency", selectedCurrency.value)
+                    .put("available_amount", numericAmount)
                     .put("last_four", cardNumber.takeLast(4))
                     .put("issuing_bank", selectedBank.value)
                     .put("expiration_date", expirationDate)
@@ -172,16 +182,11 @@ class PaymentMethodFormActivity : BaseActivity() {
                 payload
                     .put("display_name", "Cuenta bancaria ${selectedBank.value}")
                     .put("currency", selectedCurrency.value)
-                    .put("available_amount", 0.0)
+                    .put("available_amount", numericAmount)
                     .put("issuing_bank", selectedBank.value)
             }
 
             PAYMENT_CHECK -> {
-                val numericAmount = checkAmount.toDoubleOrNull()
-                if (numericAmount == null || numericAmount <= 0.0) {
-                    alert("Monto invalido", "Ingresa un monto valido para el cheque certificado.")
-                    return
-                }
                 payload
                     .put("display_name", "Cheque certificado ${selectedCurrency.value}")
                     .put("currency", selectedCurrency.value)
@@ -222,14 +227,12 @@ class PaymentMethodFormActivity : BaseActivity() {
         binding.expirationDateValue.text = selectedExpirationDate?.format(EXPIRATION_DISPLAY_FORMAT)
             ?: "Selecciona la fecha de vencimiento"
 
-        binding.currencyFieldGroup.visibility =
-            if (paymentType == PAYMENT_BANK || paymentType == PAYMENT_CHECK) android.view.View.VISIBLE else android.view.View.GONE
+        binding.currencyFieldGroup.visibility = android.view.View.VISIBLE
         binding.bankFieldGroup.visibility =
             if (paymentType == PAYMENT_CARD || paymentType == PAYMENT_BANK) android.view.View.VISIBLE else android.view.View.GONE
         binding.cardFieldsGroup.visibility =
             if (paymentType == PAYMENT_CARD) android.view.View.VISIBLE else android.view.View.GONE
-        binding.checkAmountGroup.visibility =
-            if (paymentType == PAYMENT_CHECK) android.view.View.VISIBLE else android.view.View.GONE
+        binding.checkAmountGroup.visibility = android.view.View.VISIBLE
     }
 
     private fun showExpirationDatePicker() {
@@ -290,8 +293,6 @@ class PaymentMethodFormActivity : BaseActivity() {
         const val PAYMENT_BANK = "cuenta_bancaria"
         const val PAYMENT_CHECK = "cheque_certificado"
 
-        private const val DEFAULT_ISSUER_COUNTRY = "AR"
-        private const val DEFAULT_CARD_CURRENCY = "ARS"
         private val NON_DIGITS_REGEX = Regex("[^0-9]")
         private val EXPIRATION_DISPLAY_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MM/yyyy")
         private val EXPIRATION_VALUE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("MM/yy")

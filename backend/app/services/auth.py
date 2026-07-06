@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from fastapi import HTTPException, status
 
 from app.core.time import utc_now
-from app.domain.enums import NotificationKind, PaymentStatus, RegistrationStage, UserCategory
+from app.domain.enums import NotificationKind, PaymentStatus, PaymentType, RegistrationStage, UserCategory
 from app.domain.schemas import (
     AppUser,
     AuthTokenResponse,
@@ -134,6 +134,35 @@ class AuthService:
             expiration_date=payload.expiration_date,
         )
 
+    def _ensure_payment_management_allowed(self, user: AppUser) -> None:
+        if not user.approved:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="La empresa debe aprobar tu registro antes de cargar medios de pago.",
+            )
+        if user.registration_stage != RegistrationStage.REGISTRO_COMPLETADO:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Completa la creacion de tu contrasena antes de cargar medios de pago.",
+            )
+
+    def _validate_payment_payload(self, payload: PaymentMethodCreate) -> None:
+        if not payload.display_name.strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El nombre del medio de pago es obligatorio.")
+        if not payload.issuer_country.strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes indicar el pais emisor del medio de pago.")
+        if payload.available_amount <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Debes declarar un monto reservado o disponible mayor a cero.",
+            )
+        if not (payload.holder_first_name or "").strip() or not (payload.holder_last_name or "").strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nombre y apellido del titular son obligatorios.")
+        if payload.type == PaymentType.TARJETA_CREDITO and not (payload.last_four or "").strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La tarjeta debe informar sus ultimos cuatro digitos.")
+        if payload.type == PaymentType.CUENTA_BANCARIA and not (payload.issuing_bank or "").strip():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La cuenta bancaria debe informar el banco emisor.")
+
     def _is_legal_adult(self, birth_date: date) -> bool:
         today = utc_now().date()
         age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
@@ -145,6 +174,7 @@ class AuthService:
             if (
                 existing.registration_stage == RegistrationStage.PRE_REGISTRO
                 and not existing.password_hash
+                and not existing.approved
             ):
                 existing.document_number = payload.document_number
                 existing.first_name = payload.first_name
@@ -159,7 +189,7 @@ class AuthService:
                     user_id=existing.id,
                     registration_stage=existing.registration_stage,
                     approved=existing.approved,
-                    message="Pre-registro actualizado. Continua con la carga del medio de pago.",
+                    message="Pre-registro actualizado. La empresa revisara tus datos antes de habilitar el acceso.",
                 )
 
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El email ya esta registrado.")
@@ -193,7 +223,7 @@ class AuthService:
             user_id=user.id,
             registration_stage=user.registration_stage,
             approved=user.approved,
-            message="Pre-registro creado. Falta aprobacion de la empresa y definir la clave.",
+            message="Pre-registro creado. La empresa verificara tus datos y, si te aprueba, recibiras el acceso para crear tu clave.",
         )
 
     def register_onboarding(self, payload: OnboardingRegistrationRequest) -> MessageResponse:
@@ -204,7 +234,7 @@ class AuthService:
                 detail="Solo las personas mayores de 18 anos pueden acceder al sitio.",
             )
         existing = self._find_user_by_email(normalized_email)
-        if existing and existing.password_hash:
+        if existing and (existing.password_hash or existing.approved):
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="El email ya esta registrado.")
 
         if existing:
@@ -221,9 +251,6 @@ class AuthService:
             user.document_front_image_url = payload.document_front_image_url
             user.document_back_image_url = payload.document_back_image_url
             user.registration_stage = RegistrationStage.PRE_REGISTRO
-            for payment_id in list(user.payment_method_ids):
-                self.store.payment_methods.pop(payment_id, None)
-            user.payment_method_ids.clear()
         else:
             user = AppUser(
                 id=self.store.next_id("users"),
@@ -244,32 +271,23 @@ class AuthService:
             )
             self.store.users[user.id] = user
 
-        payment = self._build_payment_method(user, payload.payment_method)
-        self.store.payment_methods[payment.id] = payment
-        user.payment_method_ids = [payment.id]
-
-        welcome_token = self._issue_password_setup_token(user.id)
         self.notifications.create(
             user.id,
             "Solicitud recibida",
-            "Te enviamos un correo de bienvenida para que completes la creacion de tu contrasena personal.",
+            "La empresa revisara tus datos, documentacion y origen antes de aprobar tu categoria.",
             NotificationKind.INFO,
         )
         self.store.persist_all()
-        self.email.send_welcome_password_setup_email(
-            recipient=user.email,
-            full_name=f"{user.first_name} {user.last_name}".strip(),
-            gender=user.gender,
-            token=welcome_token,
-        )
         return MessageResponse(
-            message="Te enviamos un correo de bienvenida para que crees tu contrasena y actives tu acceso a Atelier."
+            message="Solicitud recibida. La empresa verificara tu identidad y te enviara el acceso para crear tu contrasena si eres aprobado."
         )
 
     def complete_registration(self, payload: CompleteRegistrationRequest) -> AuthTokenResponse:
         user = self.store.users.get(payload.user_id)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado.")
+        if not user.approved:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="La empresa debe aprobar el registro antes de crear la clave.")
 
         self._validate_password_strength(payload.password)
         user.password_hash = hash_password(payload.password)
@@ -290,6 +308,8 @@ class AuthService:
         user = self._find_user_by_email(normalized_email)
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No encontramos una cuenta con ese correo.")
+        if not user.approved:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="La empresa aun no aprobo tu registro.")
         self._validate_password_strength(payload.password)
 
         self._clear_stale_reset_tokens()
@@ -474,6 +494,8 @@ class AuthService:
         ]
 
     def create_payment_method(self, user: AppUser, payload: PaymentMethodCreate) -> PaymentMethodResponse:
+        self._ensure_payment_management_allowed(user)
+        self._validate_payment_payload(payload)
         payment = PaymentMethodRecord(
             id=self.store.next_id("payments"),
             user_id=user.id,
@@ -514,6 +536,8 @@ class AuthService:
         )
 
     def update_payment_method(self, user: AppUser, payment_id: int, payload: PaymentMethodUpdate) -> PaymentMethodResponse:
+        self._ensure_payment_management_allowed(user)
+        self._validate_payment_payload(payload)
         payment = self.store.payment_methods.get(payment_id)
         if not payment or payment.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Medio de pago no encontrado.")

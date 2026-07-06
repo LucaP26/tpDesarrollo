@@ -142,6 +142,28 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"
+            android:text="Numero de documento"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/documentNumberInput"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="DNI, pasaporte o documento"
+            android:inputType="text"
+            android:paddingBottom="14dp"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
             android:text="Fecha de nacimiento"
             android:textAllCaps="true"
             android:textColor="@color/atelier_text_muted"
@@ -318,7 +340,8 @@
             android:text="Medio de pago"
             android:textAllCaps="true"
             android:textColor="@color/atelier_text_muted"
-            android:textSize="11sp" />
+            android:textSize="11sp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/paymentTypeValue"
@@ -329,13 +352,15 @@
             android:gravity="center_vertical"
             android:paddingBottom="14dp"
             android:textColor="@color/atelier_ink"
-            android:textSize="18sp" />
+            android:textSize="18sp"
+            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/currencyFieldGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/currencyValue"
@@ -353,7 +378,8 @@
             android:id="@+id/bankFieldGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/bankValue"
@@ -371,7 +397,8 @@
             android:id="@+id/cardFieldsGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/cardBrandValue"
@@ -427,7 +454,8 @@
             android:id="@+id/checkAmountGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:visibility="gone">
 
             <EditText
                 android:id="@+id/checkAmountInput"
@@ -459,7 +487,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:gravity="center"
-            android:text="Si todo esta correcto, te enviaremos un correo de bienvenida para que generes tu contrasena personal."
+            android:text="Si todo esta correcto, la empresa revisara tu solicitud y te enviara el acceso para generar tu contrasena personal."
             android:textColor="@color/atelier_text"
             android:textSize="12sp" />
     </LinearLayout>

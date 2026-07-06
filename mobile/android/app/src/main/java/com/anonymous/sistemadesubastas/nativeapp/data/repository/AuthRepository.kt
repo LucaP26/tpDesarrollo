@@ -15,6 +15,7 @@ class AuthRepository(private val apiClient: ApiClient) {
 
     fun registerOnboarding(
         email: String,
+        documentNumber: String,
         firstName: String,
         lastName: String,
         gender: String,
@@ -23,19 +24,11 @@ class AuthRepository(private val apiClient: ApiClient) {
         countryCode: Int,
         countryIsoCode: String,
         documentFrontImage: String,
-        documentBackImage: String,
-        paymentType: String,
-        paymentDisplayName: String,
-        paymentCurrency: String,
-        paymentIssuerCountry: String,
-        paymentAvailableAmount: Double,
-        paymentLastFour: String? = null,
-        paymentIssuingBank: String? = null,
-        paymentExpirationDate: String? = null
+        documentBackImage: String
     ): String {
         val payload = JSONObject()
             .put("email", email)
-            .put("document_number", "TMP-${System.currentTimeMillis().toString().takeLast(6)}")
+            .put("document_number", documentNumber)
             .put("first_name", firstName)
             .put("last_name", lastName)
             .put("gender", gender)
@@ -44,23 +37,9 @@ class AuthRepository(private val apiClient: ApiClient) {
             .put("country_code", countryCode)
             .put("document_front_image_url", documentFrontImage)
             .put("document_back_image_url", documentBackImage)
-            .put(
-                "payment_method",
-                JSONObject()
-                    .put("type", paymentType)
-                    .put("display_name", paymentDisplayName)
-                    .put("currency", paymentCurrency)
-                    .put("issuer_country", paymentIssuerCountry)
-                    .put("available_amount", paymentAvailableAmount)
-                    .apply {
-                        paymentLastFour?.let { put("last_four", it) }
-                        paymentIssuingBank?.let { put("issuing_bank", it) }
-                        paymentExpirationDate?.let { put("expiration_date", it) }
-                    }
-            )
 
         val response = apiClient.post("/auth/register-onboarding", payload, authenticated = false)
-        return response.optString("message", "Te enviamos un correo para crear tu contrasena.")
+        return response.optString("message", "Solicitud recibida. La empresa revisara tus datos.")
     }
 
     fun completePasswordSetup(email: String, token: String, password: String): AuthResponse {

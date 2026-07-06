@@ -50,6 +50,21 @@ export const api = {
       method: 'POST',
       body: { email, password },
     }),
+  registerOnboarding: (payload) =>
+    apiRequest('/auth/register-onboarding', {
+      method: 'POST',
+      body: payload,
+    }),
+  preRegister: (payload) =>
+    apiRequest('/auth/pre-register', {
+      method: 'POST',
+      body: payload,
+    }),
+  completePasswordSetup: (email, token, password) =>
+    apiRequest('/auth/password-setup/complete', {
+      method: 'POST',
+      body: { email, token, password },
+    }),
   profile: (token) => apiRequest('/auth/profile', { token }),
   updateProfile: (token, payload) =>
     apiRequest('/auth/profile', {
@@ -77,12 +92,13 @@ export const api = {
       token,
       body: {},
     }),
-  bid: (token, auctionId, lotId, amount) =>
+  bid: (token, auctionId, lotId, amount, paymentMethodId) =>
     apiRequest(`/subastas/${auctionId}/lotes/${lotId}/pujas`, {
       method: 'POST',
       token,
-      body: { amount },
+      body: { amount, payment_method_id: paymentMethodId || null },
     }),
+  metrics: (token) => apiRequest('/metricas/personal', { token }),
   activeAuction: (token) => apiRequest('/subastas/activa', { token }),
   watchlist: (token) => apiRequest('/watchlist', { token }),
   addWatchlist: (token, auctionId) =>
@@ -109,4 +125,19 @@ export const api = {
       token,
       body: payload,
     }),
+  consignments: (token) => apiRequest('/consignaciones', { token }),
+  createConsignment: (token, payload) =>
+    apiRequest('/consignaciones', {
+      method: 'POST',
+      token,
+      body: payload,
+    }),
+  decideConsignmentProposal: (token, consignmentId, accept, payoutAccount) =>
+    apiRequest(`/consignaciones/${consignmentId}/propuesta`, {
+      method: 'POST',
+      token,
+      body: { accept, payout_account: payoutAccount || null },
+    }),
+  publicAuctions: () => apiRequest('/catalogos-publicos'),
+  publicAuctionDetail: (auctionId) => apiRequest(`/catalogos-publicos/${auctionId}`),
 };

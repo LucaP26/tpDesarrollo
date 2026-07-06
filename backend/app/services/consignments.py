@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime
+
+from app.domain.constants import ADMIN_CONSIGNMENT_EMAILS
 from app.core.time import utc_now
 from fastapi import HTTPException, status
 
-from app.domain.enums import ConsignmentStatus, NotificationKind, UserRole
+from app.domain.enums import ConsignmentStatus, NotificationKind, RegistrationStage, UserRole
 from app.domain.schemas import AppUser, AuctionLotRecord, ConsignmentCreate, ConsignmentRecord, ConsignmentResponse
 from app.services.notifications import NotificationService
 from app.services.messages import MessageService
@@ -17,6 +20,7 @@ class ConsignmentService:
         self.messages = messages
 
     def _response(self, item: ConsignmentRecord) -> ConsignmentResponse:
+        auction = self.store.auctions.get(item.assigned_auction_id) if item.assigned_auction_id else None
         return ConsignmentResponse(
             id=item.id,
             title=item.title,
@@ -32,6 +36,10 @@ class ConsignmentService:
             proposed_base_price=item.proposed_base_price,
             commission_rate=item.commission_rate,
             assigned_auction_id=item.assigned_auction_id,
+            assigned_auction_title=auction.title if auction else None,
+            assigned_auction_scheduled_at=datetime.combine(auction.scheduled_date, auction.scheduled_time) if auction else None,
+            assigned_auction_location=auction.location if auction else None,
+            assigned_auction_auctioneer_name=auction.auctioneer_name if auction else None,
             storage_location=item.storage_location,
             insurance_policy=item.insurance_policy,
             inspection_address=item.inspection_address,
@@ -101,9 +109,20 @@ class ConsignmentService:
         rows.sort(key=lambda item: item.created_at, reverse=True)
         return [self._response(item) for item in rows]
 
+    def _ensure_can_consign(self, user: AppUser) -> None:
+        if UserRole.DUENIO in user.roles:
+            return
+        if user.email.strip().lower() in ADMIN_CONSIGNMENT_EMAILS:
+            user.approved = True
+            user.registration_stage = RegistrationStage.REGISTRO_COMPLETADO
+            user.roles.append(UserRole.DUENIO)
+            if UserRole.CLIENTE not in user.roles:
+                user.roles.append(UserRole.CLIENTE)
+            return
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tu cuenta no esta habilitada para consignar bienes.")
+
     def create(self, user: AppUser, payload: ConsignmentCreate) -> ConsignmentResponse:
-        if UserRole.DUENIO not in user.roles:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Tu cuenta no esta habilitada para consignar bienes.")
+        self._ensure_can_consign(user)
         if len(payload.photos) < 6:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debes cargar al menos 6 fotos del bien.")
         if not payload.declared_ownership or not payload.declared_legal_origin or not payload.declared_return_charge_agreement:

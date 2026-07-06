@@ -107,6 +107,13 @@ class BidRecord(BaseApiModel):
     payment_method_id: int | None = None
 
 
+class BidPublicView(BaseApiModel):
+    amount: float
+    status: BidStatus
+    created_at: datetime
+    is_mine: bool = False
+
+
 class AuctionLotRecord(BaseApiModel):
     id: int
     auction_id: int
@@ -166,6 +173,10 @@ class ConsignmentRecord(BaseApiModel):
     proposed_base_price: float | None = None
     commission_rate: float | None = None
     assigned_auction_id: int | None = None
+    assigned_auction_title: str | None = None
+    assigned_auction_scheduled_at: datetime | None = None
+    assigned_auction_location: str | None = None
+    assigned_auction_auctioneer_name: str | None = None
     storage_location: str | None = None
     insurance_policy: str | None = None
     inspection_address: str | None = None
@@ -239,7 +250,6 @@ class OnboardingRegistrationRequest(BaseApiModel):
     roles: list[UserRole] = Field(default_factory=lambda: [UserRole.CLIENTE, UserRole.DUENIO])
     document_front_image_url: str
     document_back_image_url: str
-    payment_method: "PaymentMethodCreate"
 
 
 class RegistrationProgressResponse(BaseApiModel):
@@ -361,6 +371,7 @@ class AuctionSummaryResponse(BaseApiModel):
     location: str
     can_view_catalog: bool = True
     view_block_reason: str | None = None
+    connected: bool = False
     can_bid: bool
     block_reason: str | None = None
     current_lot_title: str | None = None
@@ -382,12 +393,15 @@ class AuctionLotView(BaseApiModel):
     description: str
     story: str | None = None
     artist: str | None = None
+    owner_user_id: int
+    owner_name: str | None = None
     image_urls: list[str]
     base_price: float
     price_available: bool = True
     commission_rate: float
     current_bid: float | None = None
     current_bidder_id: int | None = None
+    bid_history: list[BidPublicView] = Field(default_factory=list)
     bidding_started_at: datetime | None = None
     bid_deadline_at: datetime | None = None
     bid_seconds_remaining: int | None = None
@@ -410,6 +424,7 @@ class AuctionDetailResponse(BaseApiModel):
     location: str
     can_view_catalog: bool = True
     view_block_reason: str | None = None
+    connected: bool = False
     can_bid: bool
     block_reason: str | None = None
     current_lot_title: str | None = None

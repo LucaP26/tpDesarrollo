@@ -116,6 +116,29 @@
             android:textColorHint="@color/atelier_surface_high"
             android:textSize="18sp" />
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:text="Pais emisor"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/issuerCountryInput"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_editorial_field"
+            android:hint="AR, US, UY..."
+            android:inputType="textCapCharacters"
+            android:paddingBottom="14dp"
+            android:text="AR"
+            android:textColor="@color/atelier_ink"
+            android:textColorHint="@color/atelier_surface_high"
+            android:textSize="18sp" />
+
         <LinearLayout
             android:id="@+id/currencyFieldGroup"
             android:layout_width="match_parent"

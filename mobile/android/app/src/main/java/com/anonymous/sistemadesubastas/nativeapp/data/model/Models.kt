@@ -59,6 +59,7 @@ data class AuctionSummary(
     val location: String,
     val auctioneerName: String,
     val canViewCatalog: Boolean,
+    val connected: Boolean,
     val canBid: Boolean,
     val viewBlockReason: String?,
     val bestOffer: Double?,
@@ -81,6 +82,7 @@ data class AuctionSummary(
             location = json.optString("location"),
             auctioneerName = json.optString("auctioneer_name"),
             canViewCatalog = json.optBoolean("can_view_catalog"),
+            connected = json.optBoolean("connected"),
             canBid = json.optBoolean("can_bid"),
             viewBlockReason = json.optString("view_block_reason").takeIf { it.isNotBlank() },
             bestOffer = json.optionalDouble("best_offer"),
@@ -157,15 +159,36 @@ data class MessageThread(
     }
 }
 
+data class PublicBid(
+    val amount: Double,
+    val status: String,
+    val createdAt: String,
+    val isMine: Boolean
+) {
+    companion object {
+        fun fromJson(json: JSONObject): PublicBid = PublicBid(
+            amount = json.optDouble("amount"),
+            status = json.optString("status"),
+            createdAt = json.optString("created_at"),
+            isMine = json.optBoolean("is_mine")
+        )
+    }
+}
+
 data class AuctionLot(
     val id: Int,
     val pieceNumber: String,
     val title: String,
     val description: String,
+    val story: String?,
+    val artist: String?,
+    val ownerUserId: Int,
+    val ownerName: String?,
     val imageUrls: List<String>,
     val basePrice: Double,
     val priceAvailable: Boolean,
     val currentBid: Double?,
+    val bidHistory: List<PublicBid>,
     val bidSecondsRemaining: Int?,
     val minBid: Double,
     val maxBid: Double?,
@@ -180,10 +203,15 @@ data class AuctionLot(
             pieceNumber = json.optString("piece_number"),
             title = json.optString("title"),
             description = json.optString("description"),
+            story = json.optString("story").takeIf { it.isNotBlank() },
+            artist = json.optString("artist").takeIf { it.isNotBlank() },
+            ownerUserId = json.optInt("owner_user_id"),
+            ownerName = json.optString("owner_name").takeIf { it.isNotBlank() },
             imageUrls = json.optJSONArray("image_urls").toStringList(),
             basePrice = json.optDouble("base_price"),
             priceAvailable = json.optBoolean("price_available", true),
             currentBid = json.optionalDouble("current_bid"),
+            bidHistory = json.optJSONArray("bid_history").toObjectList(PublicBid::fromJson),
             bidSecondsRemaining = if (json.has("bid_seconds_remaining") && !json.isNull("bid_seconds_remaining")) {
                 json.optInt("bid_seconds_remaining")
             } else {
@@ -208,6 +236,7 @@ data class AuctionDetail(
     val currency: String,
     val location: String,
     val auctioneerName: String,
+    val connected: Boolean,
     val canBid: Boolean,
     val blockReason: String?,
     val priceAvailable: Boolean,
@@ -226,6 +255,7 @@ data class AuctionDetail(
             currency = json.optString("currency"),
             location = json.optString("location"),
             auctioneerName = json.optString("auctioneer_name"),
+            connected = json.optBoolean("connected"),
             canBid = json.optBoolean("can_bid"),
             blockReason = json.optString("block_reason").takeIf { it.isNotBlank() },
             priceAvailable = json.optBoolean("price_available", true),
@@ -239,11 +269,13 @@ data class AuctionDetail(
 
 data class JoinAuctionResult(
     val connected: Boolean,
+    val canBid: Boolean,
     val blockReason: String?
 ) {
     companion object {
         fun fromJson(json: JSONObject): JoinAuctionResult = JoinAuctionResult(
             connected = json.optBoolean("connected"),
+            canBid = json.optBoolean("can_bid"),
             blockReason = json.optString("block_reason").takeIf { it.isNotBlank() }
         )
     }
@@ -336,13 +368,21 @@ private data class NameParts(
 data class Metrics(
     val auctionsJoined: Int,
     val auctionsWon: Int,
-    val activeBids: Int
+    val activeBids: Int,
+    val totalAmountBid: Double,
+    val totalAmountPaid: Double,
+    val categoriesJoined: Map<String, Int>
 ) {
     companion object {
         fun fromJson(json: JSONObject): Metrics = Metrics(
             auctionsJoined = json.optInt("auctions_joined"),
             auctionsWon = json.optInt("auctions_won"),
-            activeBids = json.optInt("active_bids")
+            activeBids = json.optInt("active_bids"),
+            totalAmountBid = json.optDouble("total_amount_bid"),
+            totalAmountPaid = json.optDouble("total_amount_paid"),
+            categoriesJoined = json.optJSONObject("categories_joined")?.let { values ->
+                values.keys().asSequence().associateWith { key -> values.optInt(key) }
+            }.orEmpty()
         )
     }
 }
@@ -356,9 +396,17 @@ data class Consignment(
     val proposedBasePrice: Double?,
     val commissionRate: Double?,
     val assignedAuctionId: Int?,
+    val assignedAuctionTitle: String?,
+    val assignedAuctionScheduledAt: String?,
+    val assignedAuctionLocation: String?,
+    val assignedAuctionAuctioneerName: String?,
+    val storageLocation: String?,
+    val insurancePolicy: String?,
     val inspectionAddress: String?,
     val returnShippingCost: Double?,
     val returnShippingNote: String?,
+    val originDoubtReported: Boolean,
+    val originDoubtNotes: String?,
     val itemCount: Int,
     val collectionName: String?,
     val payoutAccount: String?,
@@ -374,9 +422,17 @@ data class Consignment(
             proposedBasePrice = json.optionalDouble("proposed_base_price"),
             commissionRate = json.optionalDouble("commission_rate"),
             assignedAuctionId = json.optionalInt("assigned_auction_id"),
+            assignedAuctionTitle = json.optString("assigned_auction_title").takeIf { it.isNotBlank() },
+            assignedAuctionScheduledAt = json.optString("assigned_auction_scheduled_at").takeIf { it.isNotBlank() },
+            assignedAuctionLocation = json.optString("assigned_auction_location").takeIf { it.isNotBlank() },
+            assignedAuctionAuctioneerName = json.optString("assigned_auction_auctioneer_name").takeIf { it.isNotBlank() },
+            storageLocation = json.optString("storage_location").takeIf { it.isNotBlank() },
+            insurancePolicy = json.optString("insurance_policy").takeIf { it.isNotBlank() },
             inspectionAddress = json.optString("inspection_address").takeIf { it.isNotBlank() },
             returnShippingCost = json.optionalDouble("return_shipping_cost"),
             returnShippingNote = json.optString("return_shipping_note").takeIf { it.isNotBlank() },
+            originDoubtReported = json.optBoolean("origin_doubt_reported"),
+            originDoubtNotes = json.optString("origin_doubt_notes").takeIf { it.isNotBlank() },
             itemCount = json.optInt("item_count", 1),
             collectionName = json.optString("collection_name").takeIf { it.isNotBlank() },
             payoutAccount = json.optString("payout_account").takeIf { it.isNotBlank() },

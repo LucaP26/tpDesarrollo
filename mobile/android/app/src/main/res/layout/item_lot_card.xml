@@ -62,6 +62,26 @@
             android:textSize="15sp" />
 
         <TextView
+            android:id="@+id/lotMetaText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:lineSpacingExtra="3dp"
+            android:textColor="@color/atelier_text_muted"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/lotStoryText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="3dp"
+            android:textColor="@color/atelier_text"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/priceText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -77,6 +97,16 @@
             android:layout_marginTop="8dp"
             android:textColor="@color/atelier_ink"
             android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/bidHistoryText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:lineSpacingExtra="3dp"
+            android:textColor="@color/atelier_text"
+            android:textSize="13sp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/timerText"
@@ -103,6 +133,17 @@
             android:paddingHorizontal="16dp"
             android:textColor="@color/atelier_ink"
             android:textColorHint="@color/atelier_text_muted" />
+
+        <Button
+            android:id="@+id/paymentSelectorButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_secondary_button"
+            android:text="Seleccionar medio de pago"
+            android:textAllCaps="true"
+            android:textColor="@color/atelier_accent"
+            android:textSize="11sp" />
 
         <Button
             android:id="@+id/bidButton"

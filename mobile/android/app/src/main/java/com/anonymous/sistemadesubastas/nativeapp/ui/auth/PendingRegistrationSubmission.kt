@@ -2,6 +2,7 @@ package com.anonymous.sistemadesubastas.nativeapp.ui.auth
 
 data class PendingRegistrationSubmission(
     val email: String,
+    val documentNumber: String,
     val firstName: String,
     val lastName: String,
     val gender: String,
@@ -11,14 +12,6 @@ data class PendingRegistrationSubmission(
     val countryIsoCode: String,
     val documentFrontImage: String,
     val documentBackImage: String,
-    val paymentType: String,
-    val paymentDisplayName: String,
-    val paymentCurrency: String,
-    val paymentIssuerCountry: String,
-    val paymentAvailableAmount: Double,
-    val paymentLastFour: String? = null,
-    val paymentIssuingBank: String? = null,
-    val paymentExpirationDate: String? = null,
 )
 
 object PendingRegistrationSubmissionStore {

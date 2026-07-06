@@ -193,7 +193,6 @@ class RegisterActivity : BaseActivity() {
         binding.birthDateValue.text = "Selecciona tu fecha de nacimiento"
         binding.expirationDateInput.text = "Selecciona la fecha de vencimiento"
         updateDocumentUi()
-        updatePaymentUi()
     }
 
     override fun shouldMonitorNetwork(): Boolean = true
@@ -213,6 +212,7 @@ class RegisterActivity : BaseActivity() {
         val firstName = binding.firstNameInput.text?.toString().orEmpty().trim()
         val lastName = binding.lastNameInput.text?.toString().orEmpty().trim()
         val email = binding.emailInput.text?.toString().orEmpty().trim().lowercase()
+        val documentNumber = binding.documentNumberInput.text?.toString().orEmpty().trim()
         val gender = selectedGender?.value
         val birthDate = selectedBirthDate
         val street = binding.streetInput.text?.toString().orEmpty().trim()
@@ -220,15 +220,12 @@ class RegisterActivity : BaseActivity() {
         val city = binding.cityInput.text?.toString().orEmpty().trim()
         val region = binding.regionInput.text?.toString().orEmpty().trim()
         val postalCode = binding.postalCodeInput.text?.toString().orEmpty().trim()
-        val cardNumber = keepNumeric(binding.cardNumberInput.text?.toString().orEmpty())
-        val securityCode = keepNumeric(binding.securityCodeInput.text?.toString().orEmpty())
-        val expirationDate = selectedExpirationDate?.format(EXPIRATION_VALUE_FORMAT).orEmpty()
-        val checkAmount = keepNumeric(binding.checkAmountInput.text?.toString().orEmpty())
 
         if (
             firstName.isBlank() ||
             lastName.isBlank() ||
             email.isBlank() ||
+            documentNumber.isBlank() ||
             gender.isNullOrBlank() ||
             birthDate == null ||
             street.isBlank() ||
@@ -253,56 +250,11 @@ class RegisterActivity : BaseActivity() {
             return
         }
 
-        when (selectedPaymentType.value) {
-            PAYMENT_CARD -> {
-                if (cardNumber.length != 16) {
-                    alert("Numero de tarjeta invalido", "El numero de tarjeta debe tener exactamente 16 digitos.")
-                    return
-                }
-                if (securityCode.length != 3) {
-                    alert("Codigo de seguridad invalido", "Ingresa un codigo de seguridad de 3 digitos.")
-                    return
-                }
-                if (!isValidExpirationDate(expirationDate)) {
-                    alert("Vencimiento invalido", "Ingresa la fecha de vencimiento con formato MM/AA.")
-                    return
-                }
-            }
-
-            PAYMENT_CHECK -> {
-                if (checkAmount.isBlank() || checkAmount.toDoubleOrNull() == null || checkAmount.toDouble() <= 0) {
-                    alert("Monto invalido", "Ingresa un monto valido para el cheque certificado.")
-                    return
-                }
-            }
-        }
-
         val legalAddress = "$street $number, $city, $region, $postalCode"
-        val paymentDisplayName = when (selectedPaymentType.value) {
-            PAYMENT_CARD -> "${selectedCardBrand.value} terminada en ${cardNumber.takeLast(4)}"
-            PAYMENT_BANK -> "Cuenta bancaria ${selectedBank.label}"
-            PAYMENT_CHECK -> "Cheque certificado ${selectedCurrency.value}"
-            else -> selectedPaymentType.label
-        }
-        val paymentAmount = if (selectedPaymentType.value == PAYMENT_CHECK) {
-            checkAmount.toDouble()
-        } else {
-            0.0
-        }
-        val paymentLastFour = if (selectedPaymentType.value == PAYMENT_CARD) {
-            cardNumber.takeLast(4)
-        } else {
-            null
-        }
-        val paymentBank = if (selectedPaymentType.value == PAYMENT_BANK) {
-            selectedBank.value
-        } else {
-            null
-        }
-        val paymentExpiration = if (selectedPaymentType.value == PAYMENT_CARD) expirationDate else null
 
         PendingRegistrationSubmissionStore.current = PendingRegistrationSubmission(
             email = email,
+            documentNumber = documentNumber,
             firstName = firstName,
             lastName = lastName,
             gender = gender,
@@ -312,14 +264,6 @@ class RegisterActivity : BaseActivity() {
             countryIsoCode = selectedCountry.isoCode,
             documentFrontImage = frontDocument!!.dataUrl,
             documentBackImage = backDocument!!.dataUrl,
-            paymentType = selectedPaymentType.value,
-            paymentDisplayName = paymentDisplayName,
-            paymentCurrency = selectedCurrency.value,
-            paymentIssuerCountry = selectedCountry.isoCode,
-            paymentAvailableAmount = paymentAmount,
-            paymentLastFour = paymentLastFour,
-            paymentIssuingBank = paymentBank,
-            paymentExpirationDate = paymentExpiration,
         )
         startActivity(Intent(this, RegistrationVerificationActivity::class.java))
     }
